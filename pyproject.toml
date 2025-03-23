@@ -16,6 +16,7 @@ packages = [
 
 [tool.poetry.dependencies]
 dotenv = "^0.9.9"
+mcp = "^1.5.0"
 
 [tool.poetry.group.dev.dependencies]
 black = "^25.1.0"
