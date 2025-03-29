@@ -4,35 +4,35 @@ mcp = FastMCP("calculator", debug=False)
 
 
 @mcp.tool()
-def add(a: str | float, b: str | float) -> str:
-    return float(a) + float(b)
+def add(a: float, b: float) -> str:
+    return a + b
 
 
 @mcp.tool()
-def subtract(a: str | float, b: str | float) -> str:
-    return float(a) - float(b)
+def subtract(a: float, b: float) -> float:
+    return a - b
 
 
 @mcp.tool()
-def multiply(a: str | float, b: str | float) -> str:
-    return float(a) * float(b)
+def multiply(a: float, b: float) -> float:
+    return a * b
 
 
 @mcp.tool()
-def divide(a: str | float, b: str | float) -> str:
-    if float(b) == 0:
+def divide(a: float, b: float) -> float:
+    if b == 0:
         raise ValueError("Cannot divide by zero.")
 
-    return float(a) / float(b)
+    return a / b
 
 
 @mcp.tool()
-def power(a: str | float, b: str | float) -> str:
-    return float(a) ** float(b)
+def power(a: float, b: float) -> float:
+    return a**b
 
 
 @mcp.tool()
-def sqrt(a: str | float) -> str:
+def sqrt(a: float) -> float:
     a = float(a)
 
     if a < 0:

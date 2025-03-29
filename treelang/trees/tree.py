@@ -1,4 +1,5 @@
 import asyncio
+import json
 from typing import Any, List, Union, Dict
 from collections.abc import Callable
 from mcp import ClientSession
@@ -88,8 +89,8 @@ class TreeFunction(TreeNode):
         output = await session.call_tool(self.name, params)
         # check if the output is a list of strings
         if isinstance(output.content, list) and len(output.content):
-            # return the first item
-            return output.content[0].text
+            # return the result attempting to transform it into its appropriate type
+            return json.loads(output.content[0].text)
         return output.content
 
 

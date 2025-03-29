@@ -138,10 +138,10 @@ class TestAST(unittest.TestCase):
 
     def test_eval(self):
         def add(a, b):
-            return int(a) + int(b)
+            return a + b
 
         def mul(a, b):
-            return int(a) * int(b)
+            return a * b
 
         class MockClientSession(ClientSession):
             async def call_tool(name, arguments):
