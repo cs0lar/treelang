@@ -81,12 +81,16 @@ class TreeFunction(TreeNode):
         tool_properties = tool.inputSchema["properties"].keys()
 
         # evaluate each parameter in order
-        result = await asyncio.gather(*[param.eval(session) for param in self.params])
+        results = await asyncio.gather(*[param.eval(session) for param in self.params])
         # create a dictionary of parameter names and values
-        params = dict(zip(tool_properties, result))
-
+        params = dict(zip(tool_properties, results))
         # invoke the underlying tool
-        return await session.call_tool(self.name, params)
+        output = await session.call_tool(self.name, params)
+        # check if the output is a list of strings
+        if isinstance(output.content, list) and len(output.content):
+            # return the first item
+            return output.content[0].text
+        return output.content
 
 
 class TreeValue(TreeNode):

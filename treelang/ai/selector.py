@@ -33,4 +33,5 @@ class AllToolsSelector(BaseToolSelector):
     """
 
     async def select(self, session: ClientSession, **kwargs) -> List[types.Tool]:
-        return await session.list_tools().tools
+        response = await session.list_tools()
+        return response.tools

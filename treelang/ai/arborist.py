@@ -2,7 +2,7 @@ import json
 import os
 from typing import Any
 from enum import Enum
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from dotenv import load_dotenv
 from mcp import ClientSession
 from openai import OpenAI
@@ -27,7 +27,13 @@ class EvalType(Enum):
     WALK = "walk"
 
 
-class EvalResponse(BaseModel):
+class Model(BaseModel):
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+    )
+
+
+class EvalResponse(Model):
     """
     Data model representing the response of an evaluation process.
 
@@ -166,9 +172,15 @@ class OpenAIArborist(BaseArborist):
         if available_tools:
             params["tools"] = [
                 {
-                    "name": tool.name,
-                    "description": tool.description,
-                    "parameters": tool.inputSchema["properties"],
+                    "type": "function",
+                    "function": {
+                        "name": tool.name,
+                        "description": tool.description,
+                        "parameters": {
+                            "type": "object",
+                            "properties": tool.inputSchema["properties"],
+                        },
+                    },
                 }
                 for tool in available_tools
             ]
@@ -176,7 +188,6 @@ class OpenAIArborist(BaseArborist):
         completion = self.openai.chat.completions.create(**params)
         message = completion.choices[0].message.model_dump(mode="json")
         content = message["content"]
-
         treejson = json.loads(content)
         tree = AST.parse(treejson)
         tree = self.prune(tree)

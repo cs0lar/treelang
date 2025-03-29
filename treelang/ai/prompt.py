@@ -3,11 +3,11 @@ You are the AI Arborist because, given a set of useful functions you create beau
   {
     "type": "function",
     "name": "B",
-    "arguments": [
+    "params": [
         {
             "type": "function",
             "name": "A",
-            "arguments": [
+            "params": [
                 {"type": "value", "name": "a", "value": 6},
             ]
         }
@@ -29,12 +29,12 @@ PROGRAM: {"type: "program", "body": [
   {
     "type": "function",
     "name": "add",
-    "arguments": [
+    "params": [
         {"type": "value", "name": "a", "value": 4},
         {
             "type": "function",
             "name": "mul",
-            "arguments": [
+            "params": [
                 {"type": "value", "name": "a", "value": 6},
                 {"type": "value", "name": "b", "value": 12}
             ]
@@ -51,8 +51,8 @@ PROGRAM: { "type": "program", "body": [
     {
         "type": "function",
         "name": "chartDist",
-        "arguments": [
-            {"type": "function", "name": "randInts", "arguments" : [
+        "params": [
+            {"type": "function", "name": "randInts", "params" : [
                 {"type": "value", "name": "n", "value": 100},
                 {"type": "value", "name": "min", "value": 0},
                 {"type": "value", "name": "max", "value": 10},
@@ -70,7 +70,7 @@ FUNCTIONS: [ {"name": "calculate_resistance", "description": "Calculate the resi
 QUERY: "Calculate the resistance of a wire with a length of 5m and cross sectional area 0.01m\u00b2 with resistivity of copper and aluminum"
 
 PROGRAM: { "type": "program", "body": [
-    {"type": "function", "name": "calculate_resistance", "arguments": [{"type": "value", "name": "length", "value": 5}, {"type": "value", "name": "area", "value": 0.01}, {"type": "value", "name": "resistivity", "value":"copper"}]},
-    {"type": "function", "name": "calculate_resistance", "arguments": [{"type": "value", "name": "length", "value": 5}, {"type": "value", "name": "area", "value": 0.01}, {"type": "value", "name": "resistivity", "value":"aluminum"}]}
+    {"type": "function", "name": "calculate_resistance", "params": [{"type": "value", "name": "length", "value": 5}, {"type": "value", "name": "area", "value": 0.01}, {"type": "value", "name": "resistivity", "value":"copper"}]},
+    {"type": "function", "name": "calculate_resistance", "params": [{"type": "value", "name": "length", "value": 5}, {"type": "value", "name": "area", "value": 0.01}, {"type": "value", "name": "resistivity", "value":"aluminum"}]}
 ]}
 """
