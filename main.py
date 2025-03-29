@@ -30,5 +30,6 @@ async def main():
             response = await arborist.eval("is (7^2 - 10)/5 + sqrt(49) * (6-2) > 30?")
             print(f"(7^2 - 10)/5 + sqrt(49) * (6-2) > 30? = {response.content}")
 
+
 if __name__ == "__main__":
     asyncio.run(main())
