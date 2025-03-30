@@ -1,6 +1,7 @@
 import unittest
 import asyncio
 from unittest.mock import AsyncMock, Mock, patch
+from mcp import ClientSession
 import mcp.types as types
 from treelang.trees.tree import (
     AST,
@@ -8,7 +9,6 @@ from treelang.trees.tree import (
     TreeProgram,
     TreeFunction,
     TreeValue,
-    ClientSession,
 )
 
 
@@ -146,10 +146,12 @@ class TestAST(unittest.TestCase):
         class MockClientSession(ClientSession):
             async def call_tool(name, arguments):
                 if name == "add":
-                    return add(**arguments)
+                    content = add(**arguments)
                 elif name == "mul":
-                    return mul(**arguments)
-                return None
+                    content = mul(**arguments)
+                return types.CallToolResult(
+                    content=[types.TextContent(type="text", text=str(content))]
+                )
 
             async def list_tools():
                 return AsyncMock(
@@ -173,7 +175,7 @@ class TestAST(unittest.TestCase):
             [program] = AST.parse(self.ast)
             result = asyncio.run(AST.eval(program, session))
             self.assertIsNotNone(result)
-            self.assertEqual(result, (12 * 6) + 4)
+            self.assertEqual(int(result), (12 * 6) + 4)
 
     def test_visit(self):
         node = TreeNode("test")
