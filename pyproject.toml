@@ -12,6 +12,10 @@ packages = [
     {include = "treelang"}
 ]
 
+[project.urls]
+Homepage = "https://github.com/cs0lar/treelang"
+Issues = "https://github.com/cs0lar/treelang/issues"
+
 [tool.poetry]
 
 [tool.poetry.dependencies]
