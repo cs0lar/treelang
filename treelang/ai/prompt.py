@@ -75,7 +75,6 @@ PROGRAM: { "type": "program", "body": [
 ]}
 """
 
-
 EXPLAIN_EVALUATION_SYSTEM_PROMPT = """
 You are a helpful assistant that explains structured data (such as JSON or numerical values) in clear, professional, and approachable English.
 
