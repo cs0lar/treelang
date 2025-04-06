@@ -7,7 +7,11 @@ from dotenv import load_dotenv
 from mcp import ClientSession
 from openai import OpenAI
 
-from treelang.ai.prompt import ARBORIST_SYSTEM_PROMPT
+from treelang.ai.prompt import (
+    ARBORIST_SYSTEM_PROMPT,
+    EXPLAIN_EVALUATION_SYSTEM_PROMPT,
+    EXPLAIN_EVALUATION_USER_PROMPT,
+)
 from treelang.ai.selector import AllToolsSelector, BaseToolSelector
 from treelang.trees.tree import AST, TreeNode
 
@@ -38,13 +42,51 @@ class EvalResponse(Model):
     Data model representing the response of an evaluation process.
 
     Attributes:
+        query (str): The original query that was evaluated.
         type (EvalType): The type of evaluation being performed.
         content (Any): The content of the evaluation response. This can be a TreeNode
         if type is TREE or Any if type is WALK depending on the evaluation.
+
+    Methods:
+        explain() -> str:
+            Generates an English explanation of the evaluation response.
     """
 
+    query: str
     type: EvalType
     content: TreeNode | Any
+
+    def explain(self) -> str:
+        """
+        Generates an English explanation of the evaluation response.
+
+        Returns:
+            str: A string representation of the evaluation response.
+        """
+        openai = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+
+        if self.type == EvalType.TREE:
+            raise ValueError("Cannot explain a tree response.")
+
+        query = EXPLAIN_EVALUATION_USER_PROMPT.format(
+            question=self.query, data={"data": self.content}
+        )
+
+        messages = [
+            {"role": "system", "content": EXPLAIN_EVALUATION_SYSTEM_PROMPT},
+            {"role": "user", "content": query},
+        ]
+
+        params = {
+            "model": "gpt-4o-2024-11-20",
+            "messages": messages,
+        }
+
+        completion = openai.chat.completions.create(**params)
+        message = completion.choices[0].message.model_dump(mode="json")
+        content = message["content"]
+
+        return content
 
 
 class BaseArborist:
@@ -193,6 +235,8 @@ class OpenAIArborist(BaseArborist):
         tree = self.prune(tree)
 
         if type == EvalType.WALK:
-            return EvalResponse(type=EvalType.WALK, content=await self.walk(tree))
+            return EvalResponse(
+                query=query, type=EvalType.WALK, content=await self.walk(tree)
+            )
         else:
-            return EvalResponse(type=EvalType.TREE, content=tree)
+            return EvalResponse(query=query, type=EvalType.TREE, content=tree)
