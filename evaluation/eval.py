@@ -238,4 +238,3 @@ if __name__ == "__main__":
 
     # terminate the server
     os.kill(os.getpid(), signal.SIGINT)
-    
