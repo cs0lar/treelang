@@ -74,3 +74,31 @@ PROGRAM: { "type": "program", "body": [
     {"type": "function", "name": "calculate_resistance", "params": [{"type": "value", "name": "length", "value": 5}, {"type": "value", "name": "area", "value": 0.01}, {"type": "value", "name": "resistivity", "value":"aluminum"}]}
 ]}
 """
+
+
+EXPLAIN_EVALUATION_SYSTEM_PROMPT = """
+You are a helpful assistant that explains structured data (such as JSON or numerical values) in clear, professional, and approachable English.
+
+Your goal is to interpret the data and generate a human-friendly report or explanation that is:
+- Informal but professional in tone (like you're chatting with a smart colleague)
+- Easy to understand for non-technical readers
+- Focused on what matters most, based on the user's original question
+
+The user's question will be provided alongside the data—use it to guide your explanation, highlighting what's most relevant and phrasing your response in a way that addresses their likely intent. Avoid unnecessary technical jargon unless it adds value, and explain it briefly if used.
+
+"""
+EXPLAIN_EVALUATION_USER_PROMPT = """
+The following JSON data was returned in response to this user question:
+
+**User Question:**  
+{question}
+
+Please explain the data as a clear and intuitive English report.  
+- Include all important details relevant to the question.  
+- Keep the tone informal but professional.  
+- Structure the explanation clearly and logically.  
+
+**JSON Data:**  
+```json
+{data}
+"""
