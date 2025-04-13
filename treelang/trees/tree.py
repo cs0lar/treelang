@@ -1,8 +1,10 @@
 import asyncio
 import json
+import types
 from typing import Any, List, Union, Dict
 from collections.abc import Callable
 from mcp import ClientSession
+from mcp.types import AnyFunction
 
 
 class TreeNode:
@@ -229,3 +231,40 @@ class AST:
 
         cls.visit(ast, _f)
         return representation
+
+    @staticmethod
+    def tool(ast: TreeNode, session: ClientSession) -> AnyFunction:
+        """
+        Converts the given AST into a callable function that can be
+        added as a tool to the MCP server.
+
+        Args:
+            ast (TreeNode): The AST to convert.
+
+        Returns:
+            AnyFunction: The callable function representation of the AST.
+        """
+        if not isinstance(ast, TreeProgram):
+            raise ValueError("AST root must be a TreeProgram")
+
+        # the program must have a name and description
+        if not ast.name:
+            raise ValueError("AST program must have a name")
+        if not ast.description:
+            raise ValueError("AST program must have a description")
+
+        # extract the programs' parameters from the tree
+        params = {"parameters": {"type": "object", "properties": {}}}
+
+        def inject(dfn: Dict[str, Any]):
+            async def _f(node: TreeNode):
+                if isinstance(node, TreeFunction):
+                    other_dfn = await node.get_tool_definition(session)
+                    dfn["parameters"]["properties"].update(
+                        other_dfn.parameters["properties"]
+                    )
+
+            return _f
+
+        AST.visit(ast, inject(params))
+        # convert the AST to a callable function

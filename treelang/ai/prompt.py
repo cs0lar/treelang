@@ -101,3 +101,52 @@ Please explain the data as a clear and intuitive English report.
 ```json
 {data}
 """
+
+TREE_DESCRIPTOR_SYSTEM_PROMPT = """
+You are given an Abstract Syntax Tree (AST) that represents a computation. Your task is to summarize this computation in a clear and concise way by producing two things:
+
+1- A variable-friendly name that could be used in any programming language. This name should:
+    * Be valid as a variable name (e.g., camelCase, snake_case, or similar conventions).
+    * Be short, readable, and descriptive of the overall computation.
+    * Avoid including specific values from the AST—focus instead on structure and intent.
+
+2- A brief description (1-2 sentences) that captures the essence of the computation. This description should:
+    * Generalize any specific literals or constants in the AST as parameters or inputs.
+    * Explain the purpose or outcome of the computation.
+    * Highlight notable characteristics (e.g., chaining, nesting, transformations).
+    * Be clear and informative without excessive technical detail.
+
+OUTPUT FORMAT (strictly JSON):
+{
+  "name": "descriptiveComputationName",
+  "description": "A concise explanation of what this computation does, generalized and focused on its core logic."
+}
+
+EXAMPLE
+
+TREE: { "type": "program", "body": [
+    {
+        "type": "function",
+        "name": "chartDist",
+        "params": [
+            {"type": "function", "name": "randInts", "params" : [
+                {"type": "value", "name": "n", "value": 100},
+                {"type": "value", "name": "min", "value": 0},
+                {"type": "value", "name": "max", "value": 10},
+            ]},
+            {"type": "value", "name": "bins", "value": 10},
+            {"type": "value", "name": "title", "value": "Distribution of random integers"},
+            {"type": "value", "name": "xlabel", "value": "number"},
+            {"type": "value", "name": "ylabel", "value": "count"},
+        ]
+    }
+]}
+
+OUTPUT: 
+{
+  "name": "plotRandomIntDistribution",
+  "description": "Generates a histogram showing the distribution of randomly generated integers within a specified range and bin count."
+}
+"""
+
+TREE_DESCRIPTOR_USER_PROMPT = """Based on the given Abstract Syntax Tree, generate a name and description for the computation: {tree}"""

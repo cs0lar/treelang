@@ -1,6 +1,6 @@
 import json
 import os
-from typing import Any
+from typing import Any, Dict
 from enum import Enum
 from pydantic import BaseModel, ConfigDict
 from dotenv import load_dotenv
@@ -11,9 +11,11 @@ from treelang.ai.prompt import (
     ARBORIST_SYSTEM_PROMPT,
     EXPLAIN_EVALUATION_SYSTEM_PROMPT,
     EXPLAIN_EVALUATION_USER_PROMPT,
+    TREE_DESCRIPTOR_SYSTEM_PROMPT,
+    TREE_DESCRIPTOR_USER_PROMPT,
 )
 from treelang.ai.selector import AllToolsSelector, BaseToolSelector
-from treelang.trees.tree import AST, TreeNode
+from treelang.trees.tree import AST, TreeNode, TreeProgram
 
 load_dotenv()
 
@@ -37,6 +39,12 @@ class Model(BaseModel):
     )
 
 
+class TreeDescription(Model):
+    name: str
+    description: str
+    properties: dict[str, Any]
+
+
 class EvalResponse(Model):
     """
     Data model representing the response of an evaluation process.
@@ -46,6 +54,8 @@ class EvalResponse(Model):
         type (EvalType): The type of evaluation being performed.
         content (Any): The content of the evaluation response. This can be a TreeNode
         if type is TREE or Any if type is WALK depending on the evaluation.
+        json (dict[str, Any] | None): The JSON representation of the tree if available.
+            This is used for tree responses to generate a description of the tree.
 
     Methods:
         explain() -> str:
@@ -55,6 +65,7 @@ class EvalResponse(Model):
     query: str
     type: EvalType
     content: TreeNode | Any
+    json: dict[str, Any] | None = None
 
     def explain(self) -> str:
         """
@@ -87,6 +98,49 @@ class EvalResponse(Model):
         content = message["content"]
 
         return content
+
+    def describe(self) -> TreeNode:
+        """
+        Generates a name and a description for the response tree.
+        It uses an LLM to generate a description based on the tree's JSON representation.
+        The name and description are set on the tree root node (a TreeProgram instance).
+
+        Raises:
+            ValueError: If the tree is not a TreeProgram instance or if the JSON representation is not available.
+
+        Returns:
+            TreeNode: The tree with the name and description set.
+        """
+        openai = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+
+        if self.type == EvalType.WALK:
+            raise ValueError("Only tree responses can be described.")
+
+        if not self.json:
+            raise ValueError("No JSON representation of the tree available.")
+
+        if not isinstance(self.content, TreeProgram):
+            raise ValueError("Only TreeProgram instances can be described.")
+
+        query = TREE_DESCRIPTOR_USER_PROMPT.format(tree=json.dumps(self.json))
+        messages = [
+            {"role": "system", "content": TREE_DESCRIPTOR_SYSTEM_PROMPT},
+            {"role": "user", "content": query},
+        ]
+        params = {
+            "model": "gpt-4o-2024-11-20",
+            "messages": messages,
+            "response_format": {"type": "json_object"},
+        }
+
+        completion = openai.chat.completions.create(**params)
+        message = completion.choices[0].message.model_dump(mode="json")
+        response = json.loads(message["content"])
+
+        self.content.name = response["name"]
+        self.content.description = response["description"]
+
+        return self.content
 
 
 class BaseArborist:
@@ -239,4 +293,6 @@ class OpenAIArborist(BaseArborist):
                 query=query, type=EvalType.WALK, content=await self.walk(tree)
             )
         else:
-            return EvalResponse(query=query, type=EvalType.TREE, content=tree)
+            return EvalResponse(
+                query=query, type=EvalType.TREE, content=tree, json=treejson
+            )
