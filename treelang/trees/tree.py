@@ -1,6 +1,6 @@
 import asyncio
 import json
-import types
+from inspect import signature, Parameter
 from typing import Any, List, Union, Dict
 from collections.abc import Callable
 from mcp import ClientSession
@@ -247,6 +247,8 @@ class AST:
         if not isinstance(ast, TreeProgram):
             raise ValueError("AST root must be a TreeProgram")
 
+        tool_signature = None
+
         # the program must have a name and description
         if not ast.name:
             raise ValueError("AST program must have a name")
@@ -255,6 +257,7 @@ class AST:
 
         # extract the programs' parameters from the tree
         params = {"parameters": {"type": "object", "properties": {}}}
+        param_objects = []
 
         def inject(dfn: Dict[str, Any]):
             async def _f(node: TreeNode):
@@ -267,4 +270,55 @@ class AST:
             return _f
 
         AST.visit(ast, inject(params))
+        # create a function signature from the parameters
+        for property in params["parameters"]["properties"]:
+            param_objects.append(
+                Parameter(
+                    property,
+                    Parameter.KEYWORD_ONLY,
+                    annotation=params["parameters"]["properties"][property],
+                )
+            )
+        try:
+            tool_signature = signature(
+                parameters=param_objects,
+            )
+        except ValueError as e:
+            raise ValueError(f"Invalid function signature for {ast.name}") from e
+
         # convert the AST to a callable function
+        async def wrapper(*args, **kwargs):
+            try:
+                # bind the arguments to our tool signature
+                bound_args = tool_signature.bind(*args, **kwargs)
+                # apply the default values if any
+                bound_args.apply_defaults()
+            except TypeError as e:
+                raise TypeError(
+                    f"Argument binding failed for {ast.name}(): {e}"
+                ) from e
+            # evaluating this tool is equivalent to evaluating the AST
+            # thus, we need to inject the arguments into the AST
+            try:
+                def inject(*vargs, **vwargs) -> Callable[[TreeNode], None]:
+                    def _f(node: TreeNode) -> None:
+                        if isinstance(node, TreeValue):
+                            if vwargs and node.name in vwargs:
+                                node.value = vwargs[node.name]
+                            elif vargs:
+                                node.value = vargs.pop()
+
+                    return _f
+
+                AST.visit(ast, inject(*bound_args.args, **bound_args.kwargs))
+                # finally, evaluate the AST
+                return await ast.eval(session)
+            except Exception as e:
+                raise RuntimeError(f"Error executing {ast.name}(): {e}") from e
+
+        # set the function's signature and metadata
+        wrapper.__name__ = ast.name
+        wrapper.__doc__ = ast.description
+        wrapper.__signature__ = tool_signature
+
+        return wrapper
