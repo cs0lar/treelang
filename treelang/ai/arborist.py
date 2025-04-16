@@ -54,7 +54,7 @@ class EvalResponse(Model):
         type (EvalType): The type of evaluation being performed.
         content (Any): The content of the evaluation response. This can be a TreeNode
         if type is TREE or Any if type is WALK depending on the evaluation.
-        json (dict[str, Any] | None): The JSON representation of the tree if available.
+        jsontree (dict[str, Any] | None): The JSON representation of the tree if available.
             This is used for tree responses to generate a description of the tree.
 
     Methods:
@@ -65,7 +65,7 @@ class EvalResponse(Model):
     query: str
     type: EvalType
     content: TreeNode | Any
-    json: dict[str, Any] | None = None
+    jsontree: dict[str, Any] | None = None
 
     def explain(self) -> str:
         """
@@ -116,13 +116,13 @@ class EvalResponse(Model):
         if self.type == EvalType.WALK:
             raise ValueError("Only tree responses can be described.")
 
-        if not self.json:
+        if not self.jsontree:
             raise ValueError("No JSON representation of the tree available.")
 
         if not isinstance(self.content, TreeProgram):
             raise ValueError("Only TreeProgram instances can be described.")
 
-        query = TREE_DESCRIPTOR_USER_PROMPT.format(tree=json.dumps(self.json))
+        query = TREE_DESCRIPTOR_USER_PROMPT.format(tree=json.dumps(self.jsontree))
         messages = [
             {"role": "system", "content": TREE_DESCRIPTOR_SYSTEM_PROMPT},
             {"role": "user", "content": query},
@@ -284,8 +284,8 @@ class OpenAIArborist(BaseArborist):
         completion = self.openai.chat.completions.create(**params)
         message = completion.choices[0].message.model_dump(mode="json")
         content = message["content"]
-        treejson = json.loads(content)
-        tree = AST.parse(treejson)
+        jsontree = json.loads(content)
+        tree = AST.parse(jsontree)
         tree = self.prune(tree)
 
         if type == EvalType.WALK:
@@ -294,5 +294,5 @@ class OpenAIArborist(BaseArborist):
             )
         else:
             return EvalResponse(
-                query=query, type=EvalType.TREE, content=tree, json=treejson
+                query=query, type=EvalType.TREE, content=tree, jsontree=jsontree
             )
