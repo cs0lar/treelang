@@ -89,8 +89,17 @@ class TreeFunction(TreeNode):
         output = await session.call_tool(self.name, params)
         # check if the output is a list of strings
         if isinstance(output.content, list) and len(output.content):
+            if output.content[0].text.startswith("Error"):
+                raise RuntimeError(
+                    f"Error calling tool {self.name}: {output.content[0].text}"
+                )
             # return the result attempting to transform it into its appropriate type
-            return json.loads(output.content[0].text)
+            content = (
+                output.content[0].text
+                if len(output.content) == 1
+                else "[" + ",".join([out.text for out in output.content]) + "]"
+            )
+            return json.loads(content)
         return output.content
 
 
