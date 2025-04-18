@@ -1,6 +1,7 @@
 import asyncio
 import json
 from inspect import Signature, Parameter
+import random
 from typing import Any, List, Union, Dict
 from collections.abc import Callable
 from mcp import ClientSession
@@ -91,8 +92,17 @@ class TreeFunction(TreeNode):
         output = await session.call_tool(self.name, params)
         # check if the output is a list of strings
         if isinstance(output.content, list) and len(output.content):
+            if output.content[0].text.startswith("Error"):
+                raise RuntimeError(
+                    f"Error calling tool {self.name}: {output.content[0].text}"
+                )
             # return the result attempting to transform it into its appropriate type
-            return json.loads(output.content[0].text)
+            content = (
+                output.content[0].text
+                if len(output.content) == 1
+                else "[" + ",".join([out.text for out in output.content]) + "]"
+            )
+            return json.loads(content)
         return output.content
 
 
@@ -295,31 +305,44 @@ class AST:
             raise ValueError("AST program must have a description")
 
         # extract the programs' parameters from the tree
-        params = {"parameters": {"type": "object", "properties": {}}}
         param_objects = []
 
-        def inject(dfn: Dict[str, Any]):
+        # the arguments of the new tool are to be gathered from
+        # the leaves of the tree
+        def inject(
+            param_objs: List[Parameter],
+            props: Dict[str, Any],
+            arg_names: List[str],
+        ) -> Callable[[TreeNode], None]:
             async def _f(node: TreeNode):
                 if isinstance(node, TreeFunction):
                     other_dfn = await node.get_tool_definition(session)
-                    dfn["parameters"]["properties"].update(
-                        other_dfn.inputSchema["properties"]
-                    )
+                    # let's get this function's parameters
+                    props["props"] = other_dfn.inputSchema["properties"]
+
+                if isinstance(node, TreeValue):
+                    # since this is a leaf node, we can add it to the parameters
+                    # of the new tool
+                    if node.name in props["props"]:
+                        key = node.name
+                        # be mindful of duplicate arguments names
+                        if key in arg_names:
+                            key = key + f"_{random.randint(1, 1000)}"
+                        arg_names.append(key)
+                        param_objs.append(
+                            Parameter(
+                                key,
+                                Parameter.KEYWORD_ONLY,
+                                annotation=types_map.get(
+                                    props["props"][node.name]["type"], Any
+                                ),
+                            )
+                        )
 
             return _f
 
-        await AST.avisit(ast, inject(params))
-        # create a function signature from the parameters
-        for property in params["parameters"]["properties"]:
-            param_objects.append(
-                Parameter(
-                    property,
-                    Parameter.KEYWORD_ONLY,
-                    annotation=types_map.get(
-                        params["parameters"]["properties"][property]["type"], Any
-                    ),
-                )
-            )
+        await AST.avisit(ast, inject(param_objects, {"props": {}}, []))
+
         try:
             tool_signature = Signature(
                 parameters=param_objects,
@@ -360,5 +383,5 @@ class AST:
         wrapper.__name__ = ast.name
         wrapper.__doc__ = ast.description
         wrapper.__signature__ = tool_signature
-
+        print(f"Tool {ast.name} registered with signature: {tool_signature}")
         return wrapper
