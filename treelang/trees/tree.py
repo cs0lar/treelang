@@ -59,16 +59,17 @@ class TreeFunction(TreeNode):
     Attributes:
         name (str): The name of the function.
         params (List[str]): The list of parameters of the function.
-        session (ClientSession): The session object to interact with the MCP server.
+        arg (str): The name of the argument this function computes the value (if this is nested function).
 
     Methods:
         eval(ClientSession): Evaluates the function by evaluating each statement in the body.
     """
 
-    def __init__(self, name: str, params: List[TreeNode]) -> None:
+    def __init__(self, name: str, params: List[TreeNode], arg: str = None) -> None:
         super().__init__("function")
         self.name = name
         self.params = params
+        self.arg = arg
 
     async def get_tool_definition(self, session) -> Dict[str, Any]:
         response = await session.list_tools()
@@ -87,7 +88,27 @@ class TreeFunction(TreeNode):
         # evaluate each parameter in order
         results = await asyncio.gather(*[param.eval(session) for param in self.params])
         # create a dictionary of parameter names and values
-        params = dict(zip(tool_properties, results))
+        params = {
+            param: next(
+                (
+                    results[i]
+                    for i, p in enumerate(self.params)
+                    if p.name == param
+                    or (isinstance(p, TreeFunction) and p.arg == param)
+                ),
+                None,
+            )
+            for param in tool_properties
+        }
+        print(f"params: {params}")
+        print(f"tool_properties: {tool_properties}")
+
+        # check if all parameters are present
+        missing_params = [param for param, value in params.items() if value is None]
+        if missing_params:
+            raise ValueError(
+                f"Missing parameters {', '.join(missing_params)} for tool {self.name}"
+            )
         # invoke the underlying tool
         output = await session.call_tool(self.name, params)
         # check if the output is a list of strings
@@ -152,7 +173,7 @@ class AST:
         if node_type == "program":
             return TreeProgram(cls.parse(ast["body"]))
         if node_type == "function":
-            return TreeFunction(ast["name"], cls.parse(ast["params"]))
+            return TreeFunction(ast["name"], cls.parse(ast["params"]), ast["arg"])
         if node_type == "value":
             return TreeValue(ast["name"], ast["value"])
 
@@ -311,37 +332,44 @@ class AST:
         # the leaves of the tree
         def inject(
             param_objs: List[Parameter],
-            props: Dict[str, Any],
+            props: List[Dict[str, Any]],
             arg_names: List[str],
         ) -> Callable[[TreeNode], None]:
             async def _f(node: TreeNode):
                 if isinstance(node, TreeFunction):
                     other_dfn = await node.get_tool_definition(session)
-                    # let's get this function's parameters
-                    props["props"] = other_dfn.inputSchema["properties"]
+                    # let's get this function's parameters into the props stack
+                    props.append(other_dfn.inputSchema["properties"])
 
                 if isinstance(node, TreeValue):
                     # since this is a leaf node, we can add it to the parameters
                     # of the new tool
-                    if node.name in props["props"]:
-                        key = node.name
-                        # be mindful of duplicate arguments names
-                        if key in arg_names:
-                            key = key + f"_{random.randint(1, 1000)}"
-                        arg_names.append(key)
-                        param_objs.append(
-                            Parameter(
-                                key,
-                                Parameter.KEYWORD_ONLY,
-                                annotation=types_map.get(
-                                    props["props"][node.name]["type"], Any
-                                ),
-                            )
+                    if node.name not in props[-1]:
+                        # if we are here, we are are now processing
+                        # a function node up the tree and we can
+                        # pop the properties stack
+                        props.pop()
+
+                    properties = props[-1]
+
+                    key = node.name
+                    # be mindful of duplicate arguments names
+                    if key in arg_names:
+                        key = key + f"_{random.randint(1, 1000)}"
+                    arg_names.append(key)
+                    param_objs.append(
+                        Parameter(
+                            key,
+                            Parameter.KEYWORD_ONLY,
+                            annotation=types_map.get(
+                                properties[node.name]["type"], Any
+                            ),
                         )
+                    )
 
             return _f
 
-        await AST.avisit(ast, inject(param_objects, {"props": {}}, []))
+        await AST.avisit(ast, inject(param_objects, [], []))
 
         try:
             tool_signature = Signature(
@@ -383,5 +411,5 @@ class AST:
         wrapper.__name__ = ast.name
         wrapper.__doc__ = ast.description
         wrapper.__signature__ = tool_signature
-        print(f"Tool {ast.name} registered with signature: {tool_signature}")
+
         return wrapper

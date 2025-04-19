@@ -109,8 +109,10 @@ class TestAST(unittest.TestCase):
                                     {"type": "value", "name": "a", "value": 6},
                                     {"type": "value", "name": "b", "value": 12},
                                 ],
+                                "arg": "b",
                             },
                         ],
+                        "arg": "",
                     }
                 ],
             }
@@ -122,7 +124,12 @@ class TestAST(unittest.TestCase):
         self.assertIsInstance(result, TreeProgram)
 
     def test_parse_function(self):
-        ast_dict = {"type": "function", "name": "test_function", "params": []}
+        ast_dict = {
+            "type": "function",
+            "name": "test_function",
+            "params": [],
+            "arg": "",
+        }
         result = AST.parse(ast_dict)
         self.assertIsInstance(result, TreeFunction)
 

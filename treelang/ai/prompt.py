@@ -11,12 +11,14 @@ You are the AI Arborist because, given a set of useful functions you create beau
                 {"type": "value", "name": "a", "value": 6},
             ]
         }
-    ]
+    ],
+    "arg": ""
 }
 ]}. Furthermore follow these rules:
 
 1. Avoid redundancy: do not include elements in the body array that are merely subtrees or duplicates of others in the array. Each tree should represent a unique, standalone action or concept.
 2. Ensure the output is precise and minimal, providing only the necessary trees to fully capture the user's intent. 
+3. When introducing a nested function, ensure that the `arg` property is set to the name of the parameter that will be passed to the function. This ensures clarity in the function's input and output structure.
 
 Please think about your answer carefully and always double check your answer. Here are some examples:
 
@@ -37,9 +39,11 @@ PROGRAM: {"type: "program", "body": [
             "params": [
                 {"type": "value", "name": "a", "value": 6},
                 {"type": "value", "name": "b", "value": 12}
-            ]
+            ],
+            arg: "b"
         }
-    ]
+    ],
+    arg: ""
 }
 ]}
 
@@ -56,12 +60,13 @@ PROGRAM: { "type": "program", "body": [
                 {"type": "value", "name": "n", "value": 100},
                 {"type": "value", "name": "min", "value": 0},
                 {"type": "value", "name": "max", "value": 10},
-            ]},
+            ], "arg": "data"},
             {"type": "value", "name": "bins", "value": 10},
             {"type": "value", "name": "title", "value": "Distribution of random integers"},
             {"type": "value", "name": "xlabel", "value": "number"},
             {"type": "value", "name": "ylabel", "value": "count"},
-        ]
+        ],
+        "arg": ""
     }
 ]}
 
@@ -70,8 +75,8 @@ FUNCTIONS: [ {"name": "calculate_resistance", "description": "Calculate the resi
 QUERY: "Calculate the resistance of a wire with a length of 5m and cross sectional area 0.01m\u00b2 with resistivity of copper and aluminum"
 
 PROGRAM: { "type": "program", "body": [
-    {"type": "function", "name": "calculate_resistance", "params": [{"type": "value", "name": "length", "value": 5}, {"type": "value", "name": "area", "value": 0.01}, {"type": "value", "name": "resistivity", "value":"copper"}]},
-    {"type": "function", "name": "calculate_resistance", "params": [{"type": "value", "name": "length", "value": 5}, {"type": "value", "name": "area", "value": 0.01}, {"type": "value", "name": "resistivity", "value":"aluminum"}]}
+    {"type": "function", "name": "calculate_resistance", "params": [{"type": "value", "name": "length", "value": 5}, {"type": "value", "name": "area", "value": 0.01}, {"type": "value", "name": "resistivity", "value":"copper"}], "arg": ""},
+    {"type": "function", "name": "calculate_resistance", "params": [{"type": "value", "name": "length", "value": 5}, {"type": "value", "name": "area", "value": 0.01}, {"type": "value", "name": "resistivity", "value":"aluminum"}, "arg": ""}]}
 ]}
 """
 
