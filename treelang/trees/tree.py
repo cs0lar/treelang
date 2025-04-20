@@ -1,8 +1,11 @@
 import asyncio
 import json
+from inspect import Signature, Parameter
+import random
 from typing import Any, List, Union, Dict
 from collections.abc import Callable
 from mcp import ClientSession
+from mcp.types import AnyFunction
 
 
 class TreeNode:
@@ -56,7 +59,6 @@ class TreeFunction(TreeNode):
     Attributes:
         name (str): The name of the function.
         params (List[str]): The list of parameters of the function.
-        session (ClientSession): The session object to interact with the MCP server.
 
     Methods:
         eval(ClientSession): Evaluates the function by evaluating each statement in the body.
@@ -193,6 +195,35 @@ class AST:
                 cls.visit(param, op)  # Recursively visit each parameter of the function
 
     @classmethod
+    async def avisit(cls, ast: TreeNode, op: Callable[[TreeNode], None]) -> None:
+        """
+        Performs an asynchronous depth-first visit of the AST and applies the given operation to each node.
+
+        Args:
+            ast (TreeNode): The root node of the AST.
+            op (Callable[[TreeNode], None]): The operation to apply to each node.
+
+        Returns:
+            None
+        """
+        if asyncio.iscoroutinefunction(op):
+            await op(ast)  # Apply the asynchronous operation to the current node
+        else:
+            return cls.visit(ast, op)  # Fallback to synchronous visit
+
+        if isinstance(ast, TreeProgram):
+            for statement in ast.body:
+                await cls.avisit(
+                    statement, op
+                )  # Recursively visit each statement in the program
+
+        elif isinstance(ast, TreeFunction):
+            for param in ast.params:
+                await cls.avisit(
+                    param, op
+                )  # Recursively visit each parameter of the function
+
+    @classmethod
     def repr(cls, ast: TreeNode) -> str:
         """
         Returns a string representation of the given TreeNode.
@@ -238,3 +269,125 @@ class AST:
 
         cls.visit(ast, _f)
         return representation
+
+    @staticmethod
+    async def tool(ast: TreeNode, session: ClientSession) -> AnyFunction:
+        """
+        Converts the given AST into a callable function that can be
+        added as a tool to the MCP server.
+
+        Args:
+            ast (TreeNode): The AST to convert.
+
+        Returns:
+            AnyFunction: The callable function representation of the AST.
+        """
+        if not isinstance(ast, TreeProgram):
+            raise ValueError("AST root must be a TreeProgram")
+
+        tool_signature = None
+
+        # map json types from tool definitions to python types
+        types_map = {
+            "string": str,
+            "integer": int,
+            "number": float,
+            "boolean": bool,
+            "array": list,
+            "object": dict,
+        }
+
+        # the program must have a name and description
+        if not ast.name:
+            raise ValueError("AST program must have a name")
+        if not ast.description:
+            raise ValueError("AST program must have a description")
+
+        # extract the programs' parameters from the tree
+        param_objects = []
+
+        # the arguments of the new tool are to be gathered from
+        # the leaves of the tree
+        def inject(
+            param_objs: List[Parameter],
+            props: List[Dict[str, Any]],
+            arg_names: List[str],
+        ) -> Callable[[TreeNode], None]:
+            async def _f(node: TreeNode):
+                if isinstance(node, TreeFunction):
+                    other_dfn = await node.get_tool_definition(session)
+                    # let's get this function's parameters into the props stack
+                    props.append(other_dfn.inputSchema["properties"])
+
+                if isinstance(node, TreeValue):
+                    # since this is a leaf node, we can add it to the parameters
+                    # of the new tool
+                    if node.name not in props[-1]:
+                        # if we are here, we are are now processing
+                        # a function node up the tree and we can
+                        # pop the properties stack
+                        props.pop()
+
+                    properties = props[-1]
+
+                    key = node.name
+                    # be mindful of duplicate arguments names
+                    if key in arg_names:
+                        key = key + f"_{random.randint(1, 1000)}"
+                    arg_names.append(key)
+                    param_objs.append(
+                        Parameter(
+                            key,
+                            Parameter.KEYWORD_ONLY,
+                            annotation=types_map.get(
+                                properties[node.name]["type"], Any
+                            ),
+                        )
+                    )
+
+            return _f
+
+        await AST.avisit(ast, inject(param_objects, [], []))
+
+        try:
+            tool_signature = Signature(
+                parameters=param_objects,
+            )
+        except ValueError as e:
+            raise ValueError(f"Invalid function signature for {ast.name}") from e
+
+        # convert the AST to a callable function
+        async def wrapper(*args, **kwargs):
+            try:
+                # bind the arguments to our tool signature
+                bound_args = tool_signature.bind(*args, **kwargs)
+                # apply the default values if any
+                bound_args.apply_defaults()
+            except TypeError as e:
+                raise TypeError(f"Argument binding failed for {ast.name}(): {e}") from e
+            # evaluating this tool is equivalent to evaluating the AST
+            # thus, we need to inject the arguments'values into the AST
+            try:
+
+                def inject(*vargs, **vwargs) -> Callable[[TreeNode], None]:
+                    def _f(node: TreeNode) -> None:
+                        if isinstance(node, TreeValue):
+                            if vwargs and node.name in vwargs:
+                                node.value = vwargs[node.name]
+                            elif vargs:
+                                node.value = vargs.pop()
+
+                    return _f
+
+                AST.visit(ast, inject(*bound_args.args, **bound_args.kwargs))
+                # finally, evaluate the AST
+                return await ast.eval(session)
+            except Exception as e:
+                raise RuntimeError(f"Error executing {ast.name}(): {e}") from e
+
+        # set the function's signature and metadata
+        wrapper.__name__ = ast.name
+        wrapper.__doc__ = ast.description
+        wrapper.__signature__ = tool_signature
+
+        return wrapper
