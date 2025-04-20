@@ -18,6 +18,7 @@
 - **LLM Integration**: Use LLMs (e.g., OpenAI models) to generate ASTs.
 - **Tool Selection**: Dynamically select tools (functions) available in the system.
 - **Asynchronous Execution**: Fully asynchronous design for efficient computation.
+- **Tool generation from Trees**: Convert `treelang` ASTs into Tools that can be added dynamically to MCP servers.
 
 ## Installation
 
