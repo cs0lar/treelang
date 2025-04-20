@@ -109,10 +109,8 @@ class TestAST(unittest.TestCase):
                                     {"type": "value", "name": "a", "value": 6},
                                     {"type": "value", "name": "b", "value": 12},
                                 ],
-                                "arg": "b",
                             },
                         ],
-                        "arg": "",
                     }
                 ],
             }
@@ -124,12 +122,7 @@ class TestAST(unittest.TestCase):
         self.assertIsInstance(result, TreeProgram)
 
     def test_parse_function(self):
-        ast_dict = {
-            "type": "function",
-            "name": "test_function",
-            "params": [],
-            "arg": "",
-        }
+        ast_dict = {"type": "function", "name": "test_function", "params": []}
         result = AST.parse(ast_dict)
         self.assertIsInstance(result, TreeFunction)
 
@@ -199,6 +192,140 @@ class TestAST(unittest.TestCase):
         )
         result = AST.repr(ast)
         self.assertEqual(result, '{"foo_1": {}, "z": [10]}')
+
+
+class TestToolMethod(unittest.IsolatedAsyncioTestCase):
+    def setUp(self):
+        self.ast = TreeProgram(
+            body=[
+                TreeFunction(
+                    name="add",
+                    params=[
+                        TreeValue(name="a", value=None),
+                        TreeValue(name="b", value=None),
+                    ],
+                )
+            ],
+            name="add_tool",
+            description="Adds two numbers",
+        )
+
+    async def test_tool_creation(self):
+        session = AsyncMock(spec=ClientSession)
+        session.list_tools.return_value = types.ListToolsResult(
+            tools=[
+                types.Tool(
+                    name="add",
+                    description="Adds two numbers",
+                    inputSchema={
+                        "properties": {
+                            "a": {"type": "integer"},
+                            "b": {"type": "integer"},
+                        }
+                    },
+                )
+            ]
+        )
+        tool_function = await AST.tool(self.ast, session)
+
+        self.assertEqual(tool_function.__name__, "add_tool")
+        self.assertEqual(tool_function.__doc__, "Adds two numbers")
+        self.assertTrue(callable(tool_function))
+        self.assertIn("a", tool_function.__signature__.parameters)
+        self.assertIn("b", tool_function.__signature__.parameters)
+
+    async def test_tool_execution(self):
+        async def mock_call_tool(name, arguments):
+            if name == "add":
+                return types.CallToolResult(
+                    content=[
+                        types.TextContent(
+                            type="text", text=str(arguments["a"] + arguments["b"])
+                        )
+                    ]
+                )
+
+        session = AsyncMock(spec=ClientSession)
+        session.list_tools.return_value = types.ListToolsResult(
+            tools=[
+                types.Tool(
+                    name="add",
+                    description="Adds two numbers",
+                    inputSchema={
+                        "properties": {
+                            "a": {"type": "integer"},
+                            "b": {"type": "integer"},
+                        }
+                    },
+                )
+            ]
+        )
+        session.call_tool = mock_call_tool
+
+        tool_function = await AST.tool(self.ast, session)
+        result = await tool_function(a=5, b=10)
+        self.assertEqual(result, 15)
+
+    async def test_tool_missing_parameters(self):
+        session = AsyncMock(spec=ClientSession)
+        session.list_tools.return_value = types.ListToolsResult(
+            tools=[
+                types.Tool(
+                    name="add",
+                    description="Adds two numbers",
+                    inputSchema={
+                        "properties": {
+                            "a": {"type": "integer"},
+                            "b": {"type": "integer"},
+                        }
+                    },
+                )
+            ]
+        )
+        tool_function = await AST.tool(self.ast, session)
+
+        with self.assertRaises(TypeError):
+            await tool_function(a=5)
+
+    async def test_tool_invalid_ast(self):
+        invalid_ast = TreeValue(name="invalid", value=42)
+        session = AsyncMock(spec=ClientSession)
+
+        with self.assertRaises(ValueError):
+            await AST.tool(invalid_ast, session)
+
+    async def test_tool_runtime_error(self):
+        async def mock_call_tool(name, arguments):
+            if name == "add":
+                return types.CallToolResult(
+                    content=[
+                        types.TextContent(
+                            type="text", text="Error: Something went wrong"
+                        )
+                    ]
+                )
+
+        session = AsyncMock(spec=ClientSession)
+        session.list_tools.return_value = types.ListToolsResult(
+            tools=[
+                types.Tool(
+                    name="add",
+                    description="Adds two numbers",
+                    inputSchema={
+                        "properties": {
+                            "a": {"type": "integer"},
+                            "b": {"type": "integer"},
+                        }
+                    },
+                )
+            ]
+        )
+        session.call_tool = mock_call_tool
+
+        tool_function = await AST.tool(self.ast, session)
+
+        with self.assertRaises(RuntimeError):
+            await tool_function(a=5, b=10)
 
 
 if __name__ == "__main__":

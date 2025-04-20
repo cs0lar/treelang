@@ -59,17 +59,15 @@ class TreeFunction(TreeNode):
     Attributes:
         name (str): The name of the function.
         params (List[str]): The list of parameters of the function.
-        arg (str): The name of the argument this function computes the value (if this is nested function).
 
     Methods:
         eval(ClientSession): Evaluates the function by evaluating each statement in the body.
     """
 
-    def __init__(self, name: str, params: List[TreeNode], arg: str = None) -> None:
+    def __init__(self, name: str, params: List[TreeNode]) -> None:
         super().__init__("function")
         self.name = name
         self.params = params
-        self.arg = arg
 
     async def get_tool_definition(self, session) -> Dict[str, Any]:
         response = await session.list_tools()
@@ -88,27 +86,7 @@ class TreeFunction(TreeNode):
         # evaluate each parameter in order
         results = await asyncio.gather(*[param.eval(session) for param in self.params])
         # create a dictionary of parameter names and values
-        params = {
-            param: next(
-                (
-                    results[i]
-                    for i, p in enumerate(self.params)
-                    if p.name == param
-                    or (isinstance(p, TreeFunction) and p.arg == param)
-                ),
-                None,
-            )
-            for param in tool_properties
-        }
-        print(f"params: {params}")
-        print(f"tool_properties: {tool_properties}")
-
-        # check if all parameters are present
-        missing_params = [param for param, value in params.items() if value is None]
-        if missing_params:
-            raise ValueError(
-                f"Missing parameters {', '.join(missing_params)} for tool {self.name}"
-            )
+        params = dict(zip(tool_properties, results))
         # invoke the underlying tool
         output = await session.call_tool(self.name, params)
         # check if the output is a list of strings
@@ -173,7 +151,7 @@ class AST:
         if node_type == "program":
             return TreeProgram(cls.parse(ast["body"]))
         if node_type == "function":
-            return TreeFunction(ast["name"], cls.parse(ast["params"]), ast["arg"])
+            return TreeFunction(ast["name"], cls.parse(ast["params"]))
         if node_type == "value":
             return TreeValue(ast["name"], ast["value"])
 
