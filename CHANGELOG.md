@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.3.1] - 2025-04-26
+
+### Added
+- badges to `README.md`
+
+### Changed
+- `README.md` wording and layout.
+
 ## [0.3.0] - 2025-04-20
 
 ### Added
