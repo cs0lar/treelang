@@ -1,5 +1,5 @@
 # 🌲 `treelang`
-[![PyPI version](https://badge.fury.io/py/treelang.svg)](https://pypi.org/project/treelang/)
+![PyPI - Version](https://img.shields.io/pypi/v/treelang?label=pypi%20package&color=green)
 [![PyPI Downloads](https://static.pepy.tech/badge/treelang)](https://pepy.tech/projects/treelang)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
