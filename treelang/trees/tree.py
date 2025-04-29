@@ -1,11 +1,10 @@
 import asyncio
-import json
 from inspect import Signature, Parameter
 import random
 from typing import Any, List, Union, Dict
 from collections.abc import Callable
-from mcp import ClientSession
-from mcp.types import AnyFunction
+
+from treelang.ai.tool import ToolProvider
 
 
 class TreeNode:
@@ -16,13 +15,13 @@ class TreeNode:
         type (str): The type of the AST node.
 
     Methods:
-        eval(ClientSession): Evaluates the AST node. This method should be implemented by subclasses.
+        eval(ToolProvider): Evaluates the node using the provided ToolProvider.
     """
 
     def __init__(self, node_type: str) -> None:
         self.type = node_type
 
-    async def eval(self, session: ClientSession) -> Any:
+    async def eval(self, provider: ToolProvider) -> Any:
         raise NotImplementedError()
 
 
@@ -36,7 +35,7 @@ class TreeProgram(TreeNode):
         description str: optional description for this program.
 
     Methods:
-        eval(ClientSession): Evaluates the program by evaluating each statement in the body.
+        eval(ToolProvider): Evaluates the program by evaluating each statement in the body.
     """
 
     def __init__(
@@ -47,8 +46,8 @@ class TreeProgram(TreeNode):
         self.name = name
         self.description = description
 
-    async def eval(self, session: ClientSession) -> Any:
-        result = await asyncio.gather(*[node.eval(session) for node in self.body])
+    async def eval(self, provider: ToolProvider) -> Any:
+        result = await asyncio.gather(*[node.eval(provider) for node in self.body])
         return result[0] if len(result) == 1 else result
 
 
@@ -61,7 +60,7 @@ class TreeFunction(TreeNode):
         params (List[str]): The list of parameters of the function.
 
     Methods:
-        eval(ClientSession): Evaluates the function by evaluating each statement in the body.
+        eval(ToolProvider): Evaluates the function by calling the underlying tool with the provided parameters.
     """
 
     def __init__(self, name: str, params: List[TreeNode]) -> None:
@@ -69,39 +68,21 @@ class TreeFunction(TreeNode):
         self.name = name
         self.params = params
 
-    async def get_tool_definition(self, session) -> Dict[str, Any]:
-        response = await session.list_tools()
-        tools = response.tools
-
-        return next((tool for tool in tools if tool.name == self.name), None)
-
-    async def eval(self, session: ClientSession) -> Any:
-        tool = await self.get_tool_definition(session)
+    async def eval(self, provider: ToolProvider) -> Any:
+        tool = await provider.get_tool_definition(self.name)
 
         if not tool:
             raise ValueError(f"Tool {self.name} is not available")
 
-        tool_properties = tool.inputSchema["properties"].keys()
+        tool_properties = tool["properties"].keys()
 
         # evaluate each parameter in order
-        results = await asyncio.gather(*[param.eval(session) for param in self.params])
+        results = await asyncio.gather(*[param.eval(provider) for param in self.params])
         # create a dictionary of parameter names and values
         params = dict(zip(tool_properties, results))
         # invoke the underlying tool
-        output = await session.call_tool(self.name, params)
-        # check if the output is a list of strings
-        if isinstance(output.content, list) and len(output.content):
-            if output.content[0].text.startswith("Error"):
-                raise RuntimeError(
-                    f"Error calling tool {self.name}: {output.content[0].text}"
-                )
-            # return the result attempting to transform it into its appropriate type
-            content = (
-                output.content[0].text
-                if len(output.content) == 1
-                else "[" + ",".join([out.text for out in output.content]) + "]"
-            )
-            return json.loads(content)
+        output = await provider.call_tool(self.name, params)
+
         return output.content
 
 
@@ -113,7 +94,7 @@ class TreeValue(TreeNode):
         value (Any): The value of the node.
 
     Methods:
-        eval(ClientSession): Evaluates the value by returning the value.
+        eval(ToolProvider): Returns the value of the node.
     """
 
     def __init__(self, name: str, value: Any) -> None:
@@ -121,7 +102,7 @@ class TreeValue(TreeNode):
         self.name = name
         self.value = value
 
-    async def eval(self, session: ClientSession) -> Any:
+    async def eval(self, provider: ToolProvider) -> Any:
         return self.value
 
 
@@ -158,7 +139,7 @@ class AST:
         raise ValueError(f"unknown node type: {node_type}")
 
     @classmethod
-    async def eval(cls, ast: TreeNode, session: ClientSession) -> Any:
+    async def eval(cls, ast: TreeNode, provider: ToolProvider) -> Any:
         """
         Evaluates the given AST.
 
@@ -168,7 +149,7 @@ class AST:
         Returns:
             Any: The result of evaluating the AST.
         """
-        return await ast.eval(session)
+        return await ast.eval(provider)
 
     @classmethod
     def visit(cls, ast: TreeNode, op: Callable[[TreeNode], None]) -> None:
@@ -271,7 +252,7 @@ class AST:
         return representation
 
     @staticmethod
-    async def tool(ast: TreeNode, session: ClientSession) -> AnyFunction:
+    async def tool(ast: TreeNode, provider: ToolProvider) -> Callable[..., Any]:
         """
         Converts the given AST into a callable function that can be
         added as a tool to the MCP server.
@@ -315,9 +296,9 @@ class AST:
         ) -> Callable[[TreeNode], None]:
             async def _f(node: TreeNode):
                 if isinstance(node, TreeFunction):
-                    other_dfn = await node.get_tool_definition(session)
+                    other_dfn = await provider.get_tool_definition(node.name)
                     # let's get this function's parameters into the props stack
-                    props.append(other_dfn.inputSchema["properties"])
+                    props.append(other_dfn["properties"])
 
                 if isinstance(node, TreeValue):
                     # since this is a leaf node, we can add it to the parameters
@@ -381,7 +362,7 @@ class AST:
 
                 AST.visit(ast, inject(*bound_args.args, **bound_args.kwargs))
                 # finally, evaluate the AST
-                return await ast.eval(session)
+                return await ast.eval(provider)
             except Exception as e:
                 raise RuntimeError(f"Error executing {ast.name}(): {e}") from e
 
