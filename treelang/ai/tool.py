@@ -22,7 +22,7 @@ class ToolProvider(ABC):
         pass
 
     @abstractmethod
-    async def list_tools(self) -> List[Any]:
+    async def list_tools(self) -> List[Dict[str, Any]]:
         """Method to list all tools."""
         pass
 
@@ -53,6 +53,15 @@ class MCPToolProvider(ToolProvider):
             )
             return json.loads(content)
 
-    async def list_tools(self) -> List[Any]:
+    async def list_tools(self) -> List[Dict[str, Any]]:
         response = await self.session.list_tools()
-        return response.tools
+        tools = []
+        for tool in response.tools:
+            tools.append(
+                {
+                    "name": tool.name,
+                    "description": tool.description,
+                    "properties": tool.inputSchema["properties"],
+                }
+            )
+        return tools
