@@ -271,11 +271,11 @@ class OpenAIArborist(BaseArborist):
                 {
                     "type": "function",
                     "function": {
-                        "name": tool.name,
-                        "description": tool.description,
+                        "name": tool["name"],
+                        "description": tool["description"],
                         "parameters": {
                             "type": "object",
-                            "properties": tool.inputSchema["properties"],
+                            "properties": tool["properties"],
                         },
                     },
                 }

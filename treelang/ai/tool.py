@@ -51,7 +51,7 @@ class MCPToolProvider(ToolProvider):
                 if len(output.content) == 1
                 else "[" + ",".join([out.text for out in output.content]) + "]"
             )
-            return json.loads(content)
+            return ToolOutput(content=json.loads(content))
 
     async def list_tools(self) -> List[Dict[str, Any]]:
         response = await self.session.list_tools()
