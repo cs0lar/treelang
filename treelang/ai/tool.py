@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 import json
-from typing import Any, Dict, List
+from typing import Any, Callable, Dict, List
 
 from mcp import ClientSession
 from pydantic import BaseModel
@@ -11,10 +11,19 @@ class ToolOutput(BaseModel):
 
 
 class ToolProvider(ABC):
-    @abstractmethod
+
+    def __init__(self):
+        self.tools: Dict[str, Dict[str, Any]] = None
+
     async def get_tool_definition(self, name: str) -> Dict[str, Any]:
-        """Method to provide a tool."""
-        pass
+        """Method to provide the definition of a tool."""
+        if self.tools is None:
+            await self.list_tools()
+
+        if name not in self.tools:
+            raise ValueError(f"Tool '{name}' not found.")
+
+        return self.tools[name]
 
     @abstractmethod
     async def call_tool(self, name: str, arguments: Dict[str, Any]) -> ToolOutput:
@@ -29,13 +38,8 @@ class ToolProvider(ABC):
 
 class MCPToolProvider(ToolProvider):
     def __init__(self, session: ClientSession):
+        super().__init__()
         self.session = session
-
-    async def get_tool_definition(self, name: str) -> Dict[str, Any]:
-        response = await self.session.list_tools()
-        tools = response.tools
-
-        return next((tool.inputSchema for tool in tools if tool.name == name), None)
 
     async def call_tool(self, name: str, arguments: Dict[str, Any]) -> ToolOutput:
         output = await self.session.call_tool(name, arguments)
@@ -54,14 +58,53 @@ class MCPToolProvider(ToolProvider):
             return ToolOutput(content=json.loads(content))
 
     async def list_tools(self) -> List[Dict[str, Any]]:
-        response = await self.session.list_tools()
-        tools = []
-        for tool in response.tools:
-            tools.append(
-                {
-                    "name": tool.name,
-                    "description": tool.description,
-                    "properties": tool.inputSchema["properties"],
-                }
-            )
-        return tools
+        if self.tools is None:
+            response = await self.session.list_tools()
+            tools = []
+            for tool in response.tools:
+                tools.append(
+                    {
+                        "name": tool.name,
+                        "description": tool.description,
+                        "properties": tool.inputSchema["properties"],
+                    }
+                )
+            self.tools = {tool["name"]: tool for tool in tools}
+            return tools
+        else:
+            return self.tools.values()
+
+
+try:
+    from llama_index.tools import FunctionTool
+
+    class LlamIndexToolProvider(ToolProvider):
+        def __init__(self, fns: List[Callable[..., Any]]):
+            super().__init__()
+            self.fn_tools = [FunctionTool.from_defaults(fn=fn) for fn in fns]
+
+        async def call_tool(self, name: str, arguments: Dict[str, Any]) -> ToolOutput:
+            if name not in self.tools:
+                raise ValueError(f"Tool '{name}' not found.")
+            return self.tools[name].fn(**arguments)
+
+        async def list_tools(self) -> List[Dict[str, Any]]:
+            if self.tools is None:
+                tools = []
+                for fn in self.fn_tool:
+                    meta = fn.to_openai_tool()
+                    tools.append(
+                        {
+                            "name": meta["function"]["name"],
+                            "description": meta["function"]["description"],
+                            "properties": meta["function"]["parameters"],
+                        }
+                    )
+                self.tools = {tool["name"]: tool for tool in tools}
+                return tools    
+            else:
+                return self.tools.values()
+
+except ImportError:
+    # LlamaIndex is not available
+    pass
