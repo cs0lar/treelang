@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.4.0] - 2025-05-07
+
+### Added
+- `ToolProvider` abstract class allowing methods other than `MCP` to provide tools for an `Arborist`.
+- `MCPToolProvider` - the `MCP` implementation of a `ToolProvider`.
+- `LLamaIndexToolProvider` an example provider that uses `llama-index` to manage tools.
+
+### Changed
+- `Arborist` and `TreeNode`s now expect a `ToolProvider` instead of an `MCP` session.
+- All cookbooks, tests and `Evaluator` updated to use the `MCPToolProvider`.
+- `README.md` mentions the `ToolProvider` abstraction.
+- Removed the *release branch* section from `CONTRIBUTING.md`.
+
 ## [0.3.1] - 2025-04-26
 
 ### Added

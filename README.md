@@ -22,7 +22,7 @@
 ## Features
 
 - **Abstract Syntax Tree Representation**: `treelang` speaks Trees.
-- **MCP Client**: `treelang` is an [MCP client](https://modelcontextprotocol.io/introduction) out of the box. 
+- **MCP Client**: `treelang` is an [MCP client](https://modelcontextprotocol.io/introduction) out of the box but any other method of tool provision can be used via the `ToolProvider` abstraction.
 - **LLM Integration**: Use LLMs (e.g., OpenAI models) to generate ASTs.
 - **Tool Selection**: Dynamically select tools (functions) available in the system.
 - **Asynchronous Execution**: Fully asynchronous design for efficient computation.
