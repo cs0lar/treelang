@@ -1,10 +1,9 @@
 import json
 import os
-from typing import Any, Dict
+from typing import Any
 from enum import Enum
 from pydantic import BaseModel, ConfigDict
 from dotenv import load_dotenv
-from mcp import ClientSession
 from openai import OpenAI
 
 from treelang.ai.prompt import (
@@ -15,6 +14,7 @@ from treelang.ai.prompt import (
     TREE_DESCRIPTOR_USER_PROMPT,
 )
 from treelang.ai.selector import AllToolsSelector, BaseToolSelector
+from treelang.ai.provider import ToolProvider
 from treelang.trees.tree import AST, TreeNode, TreeProgram
 
 load_dotenv()
@@ -156,7 +156,7 @@ class BaseArborist:
         model (str): The name or identifier of the model being used.
         system_prompt (str): The system-level prompt used for guiding the AI's behavior.
         user_prompt_template (str): A template for generating user prompts.
-        session (ClientSession): An asynchronous MCP session for interacting with tools and resources.
+        provider (ToolProvider): A provider for accessing tools and their definitions.
         selector (BaseToolSelector): A tool selector instance for determining applicable tools.
             Defaults to an instance of `AllToolsSelector`.
 
@@ -180,13 +180,13 @@ class BaseArborist:
         model: str,
         system_prompt: str,
         user_prompt_template: str,
-        session: ClientSession,
+        provider: ToolProvider,
         selector: BaseToolSelector = AllToolsSelector(),
     ):
         self.model = model
         self.system_prompt = system_prompt
         self.user_prompt_template = user_prompt_template
-        self.session = session
+        self.provider = provider
         self.selector = selector
 
     def prune(self, tree: TreeNode) -> TreeNode:
@@ -196,7 +196,7 @@ class BaseArborist:
         raise NotImplementedError()
 
     async def walk(self, tree: TreeNode) -> Any:
-        return await AST.eval(tree, self.session)
+        return await AST.eval(tree, self.provider)
 
     async def eval(self, query: str, type: EvalType = EvalType.WALK) -> EvalResponse:
         raise NotImplementedError()
@@ -211,7 +211,7 @@ class OpenAIArborist(BaseArborist):
 
     Attributes:
         model (str): The name of the OpenAI model to use for generating responses.
-        session (ClientSession): An asynchronous MCP session for interacting with tools and resources.
+        provider (ToolProvider): A provider for accessing tools and their definitions.
         selector (BaseToolSelector): A tool selector instance to determine available tools
             for the evaluation process. Defaults to `AllToolsSelector`.
         openai (OpenAI): An instance of the OpenAI client initialized with the API key.
@@ -227,10 +227,10 @@ class OpenAIArborist(BaseArborist):
     def __init__(
         self,
         model: str,
-        session: ClientSession,
+        provider: ToolProvider,
         selector: BaseToolSelector = AllToolsSelector(),
     ):
-        super().__init__(model, ARBORIST_SYSTEM_PROMPT, "", session, selector)
+        super().__init__(model, ARBORIST_SYSTEM_PROMPT, "", provider, selector)
         self.openai = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
     def grow(self):
@@ -263,18 +263,18 @@ class OpenAIArborist(BaseArborist):
         if self.model != "o1":
             params["temperature"] = 0.0
 
-        available_tools = await self.selector.select(self.session)
+        available_tools = await self.selector.select(self.provider)
 
         if available_tools:
             params["tools"] = [
                 {
                     "type": "function",
                     "function": {
-                        "name": tool.name,
-                        "description": tool.description,
+                        "name": tool["name"],
+                        "description": tool["description"],
                         "parameters": {
                             "type": "object",
-                            "properties": tool.inputSchema["properties"],
+                            "properties": tool["properties"],
                         },
                     },
                 }

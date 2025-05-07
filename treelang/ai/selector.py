@@ -1,6 +1,6 @@
-from typing import List
-from mcp import ClientSession
-import mcp.types as types
+from typing import Any, List
+
+from treelang.ai.provider import ToolProvider
 
 
 class BaseToolSelector:
@@ -13,13 +13,13 @@ class BaseToolSelector:
 
     """
 
-    async def select(self, session: ClientSession, **kwargs) -> List[types.Tool]:
+    async def select(self, provider: ToolProvider, **kwargs) -> List[Any]:
         """
         It selects a subset of all the available tools registered on the MCP server
         corresponding to the given session.
 
         Args:
-            session: ClientSession object - an MCP session object containing information on the available tools.
+            provider: ToolProvider object - a tool provider containing information on the available tools.
 
         Returns:
             List of types.Tool objects - a list of selected tools.
@@ -32,6 +32,5 @@ class AllToolsSelector(BaseToolSelector):
     The most basic Selector which just returns all tools available in the system.
     """
 
-    async def select(self, session: ClientSession, **kwargs) -> List[types.Tool]:
-        response = await session.list_tools()
-        return response.tools
+    async def select(self, provider: ToolProvider, **kwargs) -> List[Any]:
+        return await provider.list_tools()

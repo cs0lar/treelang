@@ -39,11 +39,6 @@ We follow a structured **Git branching model** to maintain stability and enable 
 - **Hotfix branches** (`hotfix/{short-description}`): Used for urgent fixes in production (`main`).
   - Example: `hotfix/parser-crash`
 
-### 🔹 Release Branches
-
-- **Release branches** (`release/x.y.z`): Created when preparing for a stable release.
-  - Example: `release/1.0.0`
-
 ## 🔄 Workflow for Contributions
 
 1. **Create a new branch** from `dev`:
