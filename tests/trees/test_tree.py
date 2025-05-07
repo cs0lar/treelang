@@ -1,7 +1,7 @@
 import unittest
 import asyncio
 from unittest.mock import AsyncMock, Mock, patch
-from treelang.ai.tool import ToolOutput, ToolProvider
+from treelang.ai.provider import ToolOutput, ToolProvider
 import mcp.types as types
 from treelang.trees.tree import (
     AST,

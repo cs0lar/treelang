@@ -1,6 +1,6 @@
 from typing import Any, List
 
-from treelang.ai.tool import ToolProvider
+from treelang.ai.provider import ToolProvider
 
 
 class BaseToolSelector:

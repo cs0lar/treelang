@@ -10,6 +10,7 @@ from collections.abc import Callable
 from mcp.server.fastmcp import FastMCP
 from mcp.client.sse import sse_client
 from mcp import ClientSession
+from treelang.ai.provider import MCPToolProvider
 from treelang.ai.arborist import EvalType, OpenAIArborist
 from evaluation.data.nested import (
     tools as nested_T,
@@ -95,10 +96,10 @@ def is_match_nested(expected: Any, actual: Any) -> bool:
 
 
 class Evaluator:
-    def __init__(self, session):
+    def __init__(self, provider):
         self.arborist = OpenAIArborist(
             model="gpt-4o-2024-11-20",
-            session=session,
+            provider=provider,
         )
         self.num_tests = 0
         self.num_passed = 0
@@ -217,9 +218,10 @@ async def main():
     (read, write) = await stream_ctxt.__aenter__()
     session_ctxt = ClientSession(read, write)
     session = await session_ctxt.__aenter__()
+    provider = MCPToolProvider(session)
     await session.initialize()
     # run the evaluation
-    evaluator = Evaluator(session)
+    evaluator = Evaluator(provider)
     await evaluator.evaluate()
     evaluator.log_results()
 

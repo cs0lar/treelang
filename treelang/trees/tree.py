@@ -4,7 +4,7 @@ import random
 from typing import Any, List, Union, Dict
 from collections.abc import Callable
 
-from treelang.ai.tool import ToolProvider
+from treelang.ai.provider import ToolProvider
 
 
 class TreeNode:

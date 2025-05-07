@@ -1,10 +1,9 @@
 import json
 import os
-from typing import Any, Dict
+from typing import Any
 from enum import Enum
 from pydantic import BaseModel, ConfigDict
 from dotenv import load_dotenv
-from mcp import ClientSession
 from openai import OpenAI
 
 from treelang.ai.prompt import (
@@ -15,7 +14,7 @@ from treelang.ai.prompt import (
     TREE_DESCRIPTOR_USER_PROMPT,
 )
 from treelang.ai.selector import AllToolsSelector, BaseToolSelector
-from treelang.ai.tool import ToolProvider
+from treelang.ai.provider import ToolProvider
 from treelang.trees.tree import AST, TreeNode, TreeProgram
 
 load_dotenv()
