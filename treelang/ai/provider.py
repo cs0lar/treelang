@@ -47,7 +47,7 @@ class MCPToolProvider(ToolProvider):
         if isinstance(output.content, list) and len(output.content):
             if output.content[0].text.startswith("Error"):
                 raise RuntimeError(
-                    f"Error calling tool {self.name}: {output.content[0].text}"
+                    f"Error calling tool {name}: {output.content[0].text}"
                 )
             # return the result attempting to transform it into its appropriate type
             content = (
