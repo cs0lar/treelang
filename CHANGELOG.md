@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.4.1] - 2025-05-08
+
+### Fixed
+- Invalid reference to `self` in `MCPToolProvider`'s `call_too()` method. 
+
 ## [0.4.0] - 2025-05-07
 
 ### Added
