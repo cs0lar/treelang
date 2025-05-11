@@ -1,6 +1,6 @@
 [project]
 name = "treelang"
-version = "0.4.1"
+version = "0.5.0"
 description = "LLM function calling on steroids using Abstract Syntax Trees."
 authors = [
     {name = "csolar",email = "cristiano.solarino@brightminded.com"}

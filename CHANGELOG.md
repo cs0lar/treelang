@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.5.0] - 2025-05-11
+
+### Added
+- `TreeConditional` node for support of `if-then-else` conditionals in `treelang`.
+
+### Changed
+- Added conditionals support in `AST` parsing, evaluating, visiting and representing (`repr()`)
+- Added conditional node tests.
+- Added conditional example to `Evaluator`.
+- Added example of query with conditional in `calculator.ipynb` cookbook.
+- Added `greater_than` tool in `calculator.py`.
+
 ## [0.4.1] - 2025-05-08
 
 ### Fixed
