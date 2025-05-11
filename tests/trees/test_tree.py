@@ -5,6 +5,7 @@ from treelang.ai.provider import ToolOutput, ToolProvider
 import mcp.types as types
 from treelang.trees.tree import (
     AST,
+    TreeConditional,
     TreeNode,
     TreeProgram,
     TreeFunction,
@@ -78,6 +79,48 @@ class TestTreeValue(unittest.TestCase):
         self.assertEqual(result, 42)
 
 
+class TestTreeConditional(unittest.TestCase):
+    def test_tree_conditional_init(self):
+        condition = TreeValue("condition", True)
+        true_branch = TreeValue("true_branch", "True Result")
+        false_branch = TreeValue("false_branch", "False Result")
+        conditional = TreeConditional(condition, true_branch, false_branch)
+
+        self.assertEqual(conditional.type, "conditional")
+        self.assertEqual(conditional.condition, condition)
+        self.assertEqual(conditional.true_branch, true_branch)
+        self.assertEqual(conditional.false_branch, false_branch)
+
+    def test_tree_conditional_eval_true_branch(self):
+        condition = TreeValue("condition", True)
+        true_branch = TreeValue("true_branch", "True Result")
+        false_branch = TreeValue("false_branch", "False Result")
+        conditional = TreeConditional(condition, true_branch, false_branch)
+
+        provider = AsyncMock(spec=ToolProvider)
+        result = asyncio.run(conditional.eval(provider))
+        self.assertEqual(result, "True Result")
+
+    def test_tree_conditional_eval_false_branch(self):
+        condition = TreeValue("condition", False)
+        true_branch = TreeValue("true_branch", "True Result")
+        false_branch = TreeValue("false_branch", "False Result")
+        conditional = TreeConditional(condition, true_branch, false_branch)
+
+        provider = AsyncMock(spec=ToolProvider)
+        result = asyncio.run(conditional.eval(provider))
+        self.assertEqual(result, "False Result")
+
+    def test_tree_conditional_eval_no_false_branch(self):
+        condition = TreeValue("condition", False)
+        true_branch = TreeValue("true_branch", "True Result")
+        conditional = TreeConditional(condition, true_branch)
+
+        provider = AsyncMock(spec=ToolProvider)
+        result = asyncio.run(conditional.eval(provider))
+        self.assertIsNone(result)
+
+
 class TestAST(unittest.TestCase):
     def setUp(self):
         self.ast = [
@@ -113,6 +156,30 @@ class TestAST(unittest.TestCase):
         result = AST.parse(ast_dict)
         self.assertIsInstance(result, TreeFunction)
         self.assertEqual(result.name, "test_function")
+
+    def test_parse_conditional(self):
+        ast_dict = {
+            "type": "conditional",
+            "condition": {"type": "value", "name": "condition", "value": True},
+            "true_branch": {
+                "type": "value",
+                "name": "true_branch",
+                "value": "True Result",
+            },
+            "false_branch": {
+                "type": "value",
+                "name": "false_branch",
+                "value": "False Result",
+            },
+        }
+        result = AST.parse(ast_dict)
+        self.assertIsInstance(result, TreeConditional)
+        self.assertIsInstance(result.condition, TreeValue)
+        self.assertIsInstance(result.true_branch, TreeValue)
+        self.assertIsInstance(result.false_branch, TreeValue)
+        self.assertEqual(result.condition.value, True)
+        self.assertEqual(result.true_branch.value, "True Result")
+        self.assertEqual(result.false_branch.value, "False Result")
 
     def test_parse_value(self):
         ast_dict = {"type": "value", "name": "test_value", "value": 42}
@@ -179,11 +246,101 @@ class TestAST(unittest.TestCase):
             self.assertIsNotNone(result)
             self.assertEqual(int(result), (12 * 6) + 4)
 
+    def test_eval_with_conditional(self):
+        class MockToolProvider(ToolProvider):
+            async def call_tool(self, name, arguments):
+                if name == "isPositive":
+                    return ToolOutput(content=arguments["x"] > 0)
+                elif name == "print":
+                    return ToolOutput(content=f"Message: {arguments['message']}")
+                raise ValueError(f"Unknown tool: {name}")
+
+            async def list_tools():
+                return AsyncMock(
+                    tools=[
+                        {
+                            "name": "isPositive",
+                            "description": "Checks if a number is positive",
+                            "properties": {"x": {}},
+                        },
+                        {
+                            "name": "print",
+                            "description": "Prints a message",
+                            "properties": {"message": {}},
+                        },
+                    ]
+                )
+
+            async def get_tool_definition(self, name):
+                if name == "isPositive":
+                    return {
+                        "name": "isPositive",
+                        "description": "Checks if a number is positive",
+                        "properties": {"x": {}},
+                    }
+                elif name == "print":
+                    return {
+                        "name": "print",
+                        "description": "Prints a message",
+                        "properties": {"message": {}},
+                    }
+                else:
+                    raise ValueError(f"Tool {name} not found")
+
+        ast_dict = {
+            "type": "program",
+            "body": [
+                {
+                    "type": "conditional",
+                    "condition": {
+                        "type": "function",
+                        "name": "isPositive",
+                        "params": [{"type": "value", "name": "x", "value": -5}],
+                    },
+                    "true_branch": {
+                        "type": "function",
+                        "name": "print",
+                        "params": [
+                            {"type": "value", "name": "message", "value": "Positive"}
+                        ],
+                    },
+                    "false_branch": {
+                        "type": "function",
+                        "name": "print",
+                        "params": [
+                            {"type": "value", "name": "message", "value": "Negative"}
+                        ],
+                    },
+                }
+            ],
+        }
+
+        provider = MockToolProvider()
+        program = AST.parse(ast_dict)
+        result = asyncio.run(AST.eval(program, provider))
+        self.assertEqual(result, "Message: Negative")
+
     def test_visit(self):
         node = TreeNode("test")
         op = Mock()
         AST.visit(node, op)
         op.assert_called_once_with(node)
+
+    def test_visit_with_conditional(self):
+        condition = TreeValue("condition", True)
+        true_branch = TreeValue("true_branch", "True Result")
+        false_branch = TreeValue("false_branch", "False Result")
+        conditional = TreeConditional(condition, true_branch, false_branch)
+
+        op = Mock()
+        AST.visit(conditional, op)
+
+        # Assert that the visitor function was called for the conditional node and its children
+        op.assert_any_call(conditional)
+        op.assert_any_call(condition)
+        op.assert_any_call(true_branch)
+        op.assert_any_call(false_branch)
+        self.assertEqual(op.call_count, 4)  # Ensure all nodes were visited
 
     def test_repr(self):
         ast = TreeProgram(
@@ -194,6 +351,32 @@ class TestAST(unittest.TestCase):
         )
         result = AST.repr(ast)
         self.assertEqual(result, '{"foo_1": {}, "z": [10]}')
+
+    def test_repr_with_conditional(self):
+        ast = TreeProgram(
+            body=[
+                TreeConditional(
+                    condition=TreeFunction(
+                        name="isPositive", params=[TreeValue(name="x", value=-5)]
+                    ),
+                    true_branch=TreeFunction(
+                        name="print",
+                        params=[TreeValue(name="message", value="Positive")],
+                    ),
+                    false_branch=TreeFunction(
+                        name="print",
+                        params=[TreeValue(name="message", value="Negative")],
+                    ),
+                )
+            ]
+        )
+        result = AST.repr(ast)
+        expected = (
+            '{"conditional_1": {"isPositive_1": {"x": [-5]}, '
+            '"print_1": {"message": ["Positive"]}, '
+            '"print_2": {"message": ["Negative"]}}}'
+        )
+        self.assertEqual(result, expected)
 
 
 class TestToolMethod(unittest.IsolatedAsyncioTestCase):
