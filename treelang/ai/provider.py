@@ -79,9 +79,9 @@ try:
     """
     Example of a non-MCP tool provider using LlamaIndex for tools provision.
     In order to use this, you need to install LlamaIndex and have it available in your environment:
-    
+
     `pip install llama-index`
-    
+
     """
     from llama_index.tools import FunctionTool
 
@@ -108,7 +108,7 @@ try:
                         }
                     )
                 self.tools = {tool["name"]: tool for tool in tools}
-                return tools    
+                return tools
             else:
                 return self.tools.values()
 

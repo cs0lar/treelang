@@ -43,7 +43,7 @@ def get_annual_rainfall(city):
     pass
 
 
-def calculate_average(rainfall_data):
+def average(rainfall_data):
     """Calculate the average from a list of rainfall data."""
     pass
 
@@ -73,6 +73,11 @@ def get_author(book_title):
     pass
 
 
+def greater_than(value, threshold):
+    """Check if a value is greater than a given threshold."""
+    pass
+
+
 tools = [
     get_top_producer,
     get_capital_city,
@@ -83,12 +88,13 @@ tools = [
     get_exchange_rate,
     get_country_currency,
     get_annual_rainfall,
-    calculate_average,
+    average,
     get_country_by_national_animal,
     get_gdp,
     calculate_per_capita,
     count_books,
     get_author,
+    greater_than,
 ]
 
 questions = [
@@ -96,8 +102,9 @@ questions = [
     "How many books has the author of '1984' written?",
     "What's the population of the largest city in Canada?",
     "What's the current exchange rate from USD to the currency used in Japan?",
-    "What's the average annual rainfall in the capital city of the country that produces the most coffee in the world?",
     "What's the GDP per capita of the country whose national animal is the kangaroo?",
+    "If the GDP of Canada is negative, give me its GDP per capita otherwise return its GDP.",
+    "What's the average annual rainfall in the capital city of the country that produces the most coffee in the world?",
 ]
 
 
@@ -116,18 +123,31 @@ answers = [
         }
     },
     {
-        "calculate_average_1": {
-            "get_annual_rainfall_1": {
-                "get_capital_city_1": {"get_top_producer_1": {"product": ["coffee"]}}
-            }
-        }
-    },
-    {
         "calculate_per_capita_1": {
             "get_gdp_1": {"get_country_by_national_animal_1": {"animal": ["kangaroo"]}},
             "get_country_population_1": {
                 "get_country_by_national_animal_2": {"animal": ["kangaroo"]}
             },
+        }
+    },
+    {
+        "conditional_1": {
+            "greater_than_1": {
+                "get_gdp_1": {"country": ["Canada"]},
+                "threshold": ["0"],
+            },
+            "get_gdp_2": {"country": ["Canada"]},
+            "calculate_per_capita_1": {
+                "get_gdp_3": {"country": ["Canada"]},
+                "get_country_population_1": {"country": ["Canada"]},
+            },
+        }
+    },
+    {
+        "average_1": {
+            "get_annual_rainfall_1": {
+                "get_capital_city_1": {"get_top_producer_1": {"product": ["coffee"]}}
+            }
         }
     },
 ]

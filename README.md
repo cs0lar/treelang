@@ -8,7 +8,7 @@
 
 ## Why `treelang`
 
-- **Complex worflows/function nesting**: Primarily `treelang` was created as a practical way to support arbitrarily complex function composition, where the answer to a question may involve multiple steps each with its own multiple dependencies.
+- **Complex worflows**: Primarily `treelang` was created as a practical way to support arbitrarily complex function composition and conditionals, where the answer to a question may involve multiple steps each with its own multiple dependencies. 
 
 - **Cost-Saving and Green**: With `treelang` you avoid the typical function-calling loop whereby the LLM outputs a function call, your program evaluates it and returns the result back to the LLM for this cycle to repeat until the final result is computed. `treelang` generates the AST for the full solution using a single call to the underlying LLM!
 
