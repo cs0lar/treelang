@@ -1,6 +1,6 @@
 # Changelog
 
-## [0.5.0] - 2025-05-11
+## [0.5.0] - 2025-05-13
 
 ### Added
 - `TreeConditional` node for support of `if-then-else` conditionals in `treelang`.
