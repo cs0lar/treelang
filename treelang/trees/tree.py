@@ -106,6 +106,38 @@ class TreeValue(TreeNode):
         return self.value
 
 
+class TreeConditional(TreeNode):
+    """
+    Represents a conditional statement in the AST.
+
+    Attributes:
+        condition (TreeNode): The condition to evaluate.
+        true_branch (TreeNode): The branch to execute if the condition is true.
+        false_branch (TreeNode): The branch to execute if the condition is false.
+
+    Methods:
+        eval(ToolProvider): Evaluates the condition and executes the appropriate branch.
+    """
+
+    def __init__(
+        self, condition: TreeNode, true_branch: TreeNode, false_branch: TreeNode = None
+    ) -> None:
+        super().__init__("conditional")
+        self.condition = condition
+        self.true_branch = true_branch
+        self.false_branch = false_branch
+
+    async def eval(self, provider: ToolProvider) -> Any:
+        condition_result = await self.condition.eval(provider)
+
+        if condition_result:
+            return await self.true_branch.eval(provider)
+        elif self.false_branch:
+            return await self.false_branch.eval(provider)
+
+        return None
+
+
 class AST:
     """
     Represents an Abstract Syntax Tree (AST) for a very simple programming language.
@@ -135,6 +167,12 @@ class AST:
             return TreeFunction(ast["name"], cls.parse(ast["params"]))
         if node_type == "value":
             return TreeValue(ast["name"], ast["value"])
+        if node_type == "conditional":
+            return TreeConditional(
+                cls.parse(ast["condition"]),
+                cls.parse(ast["true_branch"]),
+                cls.parse(ast.get("false_branch")),
+            )
 
         raise ValueError(f"unknown node type: {node_type}")
 
@@ -171,6 +209,12 @@ class AST:
                     statement, op
                 )  # Recursively visit each statement in the program
 
+        if isinstance(ast, TreeConditional):
+            cls.visit(ast.condition, op)
+            cls.visit(ast.true_branch, op)  # Recursively visit the true branch
+            if ast.false_branch:
+                cls.visit(ast.false_branch, op)  # Recursively visit the false branch
+
         elif isinstance(ast, TreeFunction):
             for param in ast.params:
                 cls.visit(param, op)  # Recursively visit each parameter of the function
@@ -197,6 +241,12 @@ class AST:
                 await cls.avisit(
                     statement, op
                 )  # Recursively visit each statement in the program
+
+        if isinstance(ast, TreeConditional):
+            await cls.avisit(ast.condition, op)
+            await cls.avisit(ast.true_branch, op)
+            if ast.false_branch:
+                await cls.avisit(ast.false_branch, op)
 
         elif isinstance(ast, TreeFunction):
             for param in ast.params:
@@ -247,6 +297,21 @@ class AST:
                 if isinstance(value, float) and value.is_integer():
                     value = int(value)
                 representation = representation.replace("%s", f'"{name}": [{value}]', 1)
+            if isinstance(node, TreeConditional):
+                name = "conditional"
+
+                if name not in name_counts:
+                    name_counts[name] = 0
+
+                name_counts[name] += 1
+                num_operands = 3 if node.false_branch else 2
+                args = "{" + ", ".join(["%s"] * num_operands) + "}"
+
+                representation = representation.replace(
+                    "%s",
+                    f'"{name}_{name_counts[name]}": {args}',
+                    1,
+                )
 
         cls.visit(ast, _f)
         return representation
@@ -310,11 +375,17 @@ class AST:
                         props.pop()
 
                     properties = props[-1]
-
                     key = node.name
                     # be mindful of duplicate arguments names
                     if key in arg_names:
+                        # we add a random suffix to the key
                         key = key + f"_{random.randint(1, 1000)}"
+                        # rename the parameter in the properties dict
+                        properties = {
+                            key if k == node.name else k: v
+                            for k, v in properties.items()
+                        }
+                        node.name = key
                     arg_names.append(key)
                     param_objs.append(
                         Parameter(

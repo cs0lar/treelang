@@ -32,6 +32,11 @@ def power(a: float, b: float) -> float:
 
 
 @mcp.tool()
+def greater_than(a: float, b: float) -> bool:
+    return a > b
+
+
+@mcp.tool()
 def sqrt(a: float) -> float:
     a = float(a)
 

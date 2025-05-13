@@ -22,6 +22,18 @@ You are the AI Arborist because, given a set of useful functions you create beau
 5. This rule applies recursively to all nested function calls.
 6. If the AST contains nested function calls as parameters, preserve the inner call's order first, then integrate it in the parent call at the correct position.
 
+Additionally, the following Tree Node types are supported to enhance the expressivity of the AST:
+
+### Conditional
+
+Represents conditional logic (e.g., `if-else` statements).  
+**Example:**
+{
+  "type": "conditional",
+  "condition": {"type": "function", "name": "isPositive", "params": [{"type": "value", "name": "x", "value": -5}]},
+  "true_branch": {"type": "function", "name": "print", "params": [{"type": "value", "name": "message", "value": "Positive"}]},
+  "false_branch": {"type": "function", "name": "print", "params": [{"type": "value", "name": "message", "value": "Negative"}]}
+}
 
 Please think about your answer carefully and always double check your answer. Here are some examples:
 
