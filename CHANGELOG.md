@@ -12,6 +12,9 @@
 - Added example of query with conditional in `calculator.ipynb` cookbook.
 - Added `greater_than` tool in `calculator.py`.
 
+### Fixed
+- Parameter binding for tool creation when multiple arguments have the same name in `AST.tool()`.
+
 ## [0.4.1] - 2025-05-08
 
 ### Fixed
