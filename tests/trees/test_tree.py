@@ -425,6 +425,69 @@ class TestToolMethod(unittest.IsolatedAsyncioTestCase):
         self.assertIn("a", tool_function.__signature__.parameters)
         self.assertIn("b", tool_function.__signature__.parameters)
 
+    async def test_tool_with_conditional_creation(self):
+        provider = AsyncMock(spec=ToolProvider)
+
+        ast = TreeProgram(
+            body=[
+                TreeConditional(
+                    condition=TreeFunction(
+                        name="isPositive",
+                        params=[TreeValue(name="x", value=None)],
+                    ),
+                    true_branch=TreeFunction(
+                        name="print",
+                        params=[TreeValue(name="message", value="Positive")],
+                    ),
+                    false_branch=TreeFunction(
+                        name="print",
+                        params=[TreeValue(name="message", value="Negative")],
+                    ),
+                )
+            ],
+            name="is_positive_tool",
+            description="Checks if a number is positive",
+        )
+
+        provider.list_tools.return_value = [
+            {
+                "name": "isPositive",
+                "description": "Checks if a number is positive",
+                "properties": {"x": {"type": "integer"}},
+            },
+            {
+                "name": "print",
+                "description": "Prints a message",
+                "properties": {"message": {"type": "string"}},
+            },
+        ]
+
+        def mock_get_tool_definition(name):
+            if name == "isPositive":
+                return {
+                    "name": "isPositive",
+                    "description": "Checks if a number is positive",
+                    "properties": {"x": {"type": "integer"}},
+                }
+            elif name == "print":
+                return {
+                    "name": "print",
+                    "description": "Prints a message",
+                    "properties": {"message": {"type": "string"}},
+                }
+            else:
+                raise ValueError(f"Tool {name} not found")
+
+        provider.get_tool_definition.side_effect = mock_get_tool_definition
+
+        tool_function = await AST.tool(ast, provider)
+
+        self.assertEqual(tool_function.__name__, "is_positive_tool")
+        self.assertEqual(tool_function.__doc__, "Checks if a number is positive")
+        self.assertTrue(callable(tool_function))
+        self.assertIn("x", tool_function.__signature__.parameters)
+        self.assertIn("message", tool_function.__signature__.parameters)
+
     async def test_tool_execution(self):
         async def mock_call_tool(name, arguments):
             if name == "add":
@@ -460,6 +523,70 @@ class TestToolMethod(unittest.IsolatedAsyncioTestCase):
         tool_function = await AST.tool(self.ast, provider)
         result = await tool_function(a=5, b=10)
         self.assertEqual(result, 15)
+
+    async def test_tool_with_conditional_execution(self):
+        async def mock_call_tool(name, arguments):
+            if name == "isPositive":
+                return ToolOutput(content=arguments["x"] > 0)
+            elif name == "print":
+                return ToolOutput(content=f"Message: {arguments['message']}")
+            raise ValueError(f"Unknown tool: {name}")
+
+        provider = AsyncMock(spec=ToolProvider)
+        provider.list_tools.return_value = [
+            {
+                "name": "isPositive",
+                "description": "Checks if a number is positive",
+                "properties": {"x": {"type": "integer"}},
+            },
+            {
+                "name": "print",
+                "description": "Prints a message",
+                "properties": {"message": {"type": "string"}},
+            },
+        ]
+
+        provider.get_tool_definition.side_effect = lambda name: {
+            "name": name,
+            "description": f"{name} description",
+            "properties": (
+                {"x": {"type": "integer"}}
+                if name == "isPositive"
+                else {"message": {"type": "string"}}
+            ),
+        }
+
+        provider.call_tool = mock_call_tool
+
+        ast = TreeProgram(
+            body=[
+                TreeConditional(
+                    condition=TreeFunction(
+                        name="isPositive",
+                        params=[TreeValue(name="x", value=None)],
+                    ),
+                    true_branch=TreeFunction(
+                        name="print",
+                        params=[TreeValue(name="message", value="True")],
+                    ),
+                    false_branch=TreeFunction(
+                        name="print",
+                        params=[TreeValue(name="message", value="False")],
+                    ),
+                )
+            ],
+            name="is_positive_tool",
+            description="Checks if a number is positive",
+        )
+
+        tool_function = await AST.tool(ast, provider)
+        params = tool_function.__signature__.parameters.keys()
+        args = zip(params, [-5, "Pos", "Neg"])
+        result = await tool_function(**dict(args))
+        self.assertEqual(result, "Message: Neg")
+        args = zip(params, [5, "Positive", "Negative"])
+        result = await tool_function(**dict(args))
+        self.assertEqual(result, "Message: Positive")
 
     async def test_tool_missing_parameters(self):
         provider = AsyncMock(spec=ToolProvider)

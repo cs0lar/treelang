@@ -129,10 +129,12 @@ class TreeConditional(TreeNode):
 
     async def eval(self, provider: ToolProvider) -> Any:
         condition_result = await self.condition.eval(provider)
+
         if condition_result:
             return await self.true_branch.eval(provider)
         elif self.false_branch:
             return await self.false_branch.eval(provider)
+
         return None
 
 
@@ -373,11 +375,17 @@ class AST:
                         props.pop()
 
                     properties = props[-1]
-
                     key = node.name
                     # be mindful of duplicate arguments names
                     if key in arg_names:
+                        # we add a random suffix to the key
                         key = key + f"_{random.randint(1, 1000)}"
+                        # rename the parameter in the properties dict
+                        properties = {
+                            key if k == node.name else k: v
+                            for k, v in properties.items()
+                        }
+                        node.name = key
                     arg_names.append(key)
                     param_objs.append(
                         Parameter(

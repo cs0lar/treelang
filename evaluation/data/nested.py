@@ -104,7 +104,7 @@ questions = [
     "What's the current exchange rate from USD to the currency used in Japan?",
     "What's the GDP per capita of the country whose national animal is the kangaroo?",
     "If the GDP of Canada is negative, give me its GDP per capita otherwise return its GDP.",
-    "What's the average annual rainfall in the capital city of the country that produces the most coffee in the world?"
+    "What's the average annual rainfall in the capital city of the country that produces the most coffee in the world?",
 ]
 
 
@@ -132,7 +132,10 @@ answers = [
     },
     {
         "conditional_1": {
-            "greater_than_1": {"get_gdp_1": {"country": ["Canada"]}, "threshold": ["0"]},
+            "greater_than_1": {
+                "get_gdp_1": {"country": ["Canada"]},
+                "threshold": ["0"],
+            },
             "get_gdp_2": {"country": ["Canada"]},
             "calculate_per_capita_1": {
                 "get_gdp_3": {"country": ["Canada"]},
@@ -146,5 +149,5 @@ answers = [
                 "get_capital_city_1": {"get_top_producer_1": {"product": ["coffee"]}}
             }
         }
-    }
+    },
 ]
