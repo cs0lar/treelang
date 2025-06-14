@@ -5,6 +5,8 @@ from typing import Any, List, Union, Dict
 from collections.abc import Callable
 
 from treelang.ai.provider import ToolProvider
+import networkx as nx
+from networkx.drawing.nx_pydot import to_pydot
 
 
 class TreeNode:
@@ -138,6 +140,33 @@ class TreeConditional(TreeNode):
         return None
 
 
+class TreeLoop(TreeNode):
+    """
+    Represents a loop (`while`) statement in the AST.
+
+    Attributes:
+        condition (TreeNode): The condition to evaluate.
+        do (List[TreeNode]): The list of statements to execute while the condition is true.
+        maxiters (int): The maximum number of iterations (default is 10).
+    Methods:
+        eval(ToolProvider): Evaluates the loop by executing the body while the condition is true.
+    """
+
+    def __init__(
+        self, condition: TreeNode, do: List[TreeNode], maxiters: int = 10
+    ) -> None:
+        super().__init__("while")
+        self.condition = condition
+        self.do = do
+        self.maxiters = maxiters
+
+    async def eval(self, provider: ToolProvider) -> Any:
+        count = 0
+        while await self.condition.eval(provider) and count < self.maxiters:
+            await asyncio.gather(*[statement.eval(provider) for statement in self.do])
+            count += 1
+
+
 class AST:
     """
     Represents an Abstract Syntax Tree (AST) for a very simple programming language.
@@ -172,6 +201,12 @@ class AST:
                 cls.parse(ast["condition"]),
                 cls.parse(ast["true_branch"]),
                 cls.parse(ast.get("false_branch")),
+            )
+        if node_type == "while":
+            return TreeLoop(
+                cls.parse(ast["condition"]),
+                cls.parse(ast["do"]),
+                ast.get("maxiters", 100),
             )
 
         raise ValueError(f"unknown node type: {node_type}")
@@ -215,6 +250,11 @@ class AST:
             if ast.false_branch:
                 cls.visit(ast.false_branch, op)  # Recursively visit the false branch
 
+        if isinstance(ast, TreeLoop):
+            cls.visit(ast.condition, op)
+            for statement in ast.do:
+                cls.visit(statement, op)
+
         elif isinstance(ast, TreeFunction):
             for param in ast.params:
                 cls.visit(param, op)  # Recursively visit each parameter of the function
@@ -247,6 +287,11 @@ class AST:
             await cls.avisit(ast.true_branch, op)
             if ast.false_branch:
                 await cls.avisit(ast.false_branch, op)
+
+        if isinstance(ast, TreeLoop):
+            await cls.avisit(ast.condition, op)
+            for statement in ast.do:
+                await cls.avisit(statement, op)
 
         elif isinstance(ast, TreeFunction):
             for param in ast.params:
@@ -297,6 +342,15 @@ class AST:
                 if isinstance(value, float) and value.is_integer():
                     value = int(value)
                 representation = representation.replace("%s", f'"{name}": [{value}]', 1)
+            if isinstance(node, TreeLoop):
+                name = "while"
+                if name not in name_counts:
+                    name_counts[name] = 0
+                name_counts[name] += 1
+                args = '{%s, "do": [' + ", ".join(["{%s}"] * len(node.do)) + "]}"
+                representation = representation.replace(
+                    "%s", f'"{name}_{name_counts[name]}": {args}', 1
+                )
             if isinstance(node, TreeConditional):
                 name = "conditional"
 
@@ -317,20 +371,17 @@ class AST:
         return representation
 
     @staticmethod
-    async def tool(ast: TreeNode, provider: ToolProvider) -> Callable[..., Any]:
+    async def tool(ast: TreeProgram, provider: ToolProvider) -> Callable[..., Any]:
         """
         Converts the given AST into a callable function that can be
         added as a tool to the MCP server.
 
         Args:
-            ast (TreeNode): The AST to convert.
+            ast (TreeProgram): The AST to convert.
 
         Returns:
             AnyFunction: The callable function representation of the AST.
         """
-        if not isinstance(ast, TreeProgram):
-            raise ValueError("AST root must be a TreeProgram")
-
         tool_signature = None
 
         # map json types from tool definitions to python types
