@@ -35,6 +35,15 @@ Represents conditional logic (e.g., `if-else` statements).
   "false_branch": {"type": "function", "name": "print", "params": [{"type": "value", "name": "message", "value": "Negative"}]}
 }
 
+### Assignment
+Represents variable assignment to be stored in the symbol table for later use.
+**Example:**
+{
+  "type": "assignment",
+  "name": "result",
+  "value": {"type": "function", "name": "add", "params": [{"type": "value", "name": "a", "value": 5}, {"type": "value", "name": "b", "value": 10}]}
+}
+
 Please think about your answer carefully and always double check your answer. Here are some examples:
 
 FUNCTIONS: [{ "name": "add", "description": "add two integers", "parameters": { "type": "object", "properties": {"a": "left-hand side of add operation", "b": "right-hand side of add operation"} } }, 

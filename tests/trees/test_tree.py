@@ -5,6 +5,7 @@ from treelang.ai.provider import ToolOutput, ToolProvider
 import mcp.types as types
 from treelang.trees.tree import (
     AST,
+    TreeAssignment,
     TreeConditional,
     TreeNode,
     TreeProgram,
@@ -119,6 +120,61 @@ class TestTreeConditional(unittest.TestCase):
         provider = AsyncMock(spec=ToolProvider)
         result = asyncio.run(conditional.eval(provider))
         self.assertIsNone(result)
+
+
+class TestTreeAssignment(unittest.TestCase):
+    def test_tree_assignment_init(self):
+        value_node = TreeValue("x", 123)
+        assignment = TreeAssignment("my_var", value_node)
+        self.assertEqual(assignment.type, "assignment")
+        self.assertEqual(assignment.name, "my_var")
+        self.assertEqual(assignment.value, value_node)
+
+    def test_tree_assignment_eval_assigns_value(self):
+        value_node = TreeValue("x", 99)
+        assignment = TreeAssignment("foo", value_node)
+        provider = AsyncMock(spec=ToolProvider)
+        # Clear AST context before test
+        # AST.context should be None before evaluation
+        self.assertIsNone(AST.context)
+
+        # Test that 'foo' is in AST.context.symbols during evaluation
+        class ContextCheck:
+            def __init__(self):
+                self.checked = False
+
+            async def __call__(self, node, provider):
+                # Only check during assignment node evaluation
+                if isinstance(node, TreeAssignment):
+                    # 'foo' should be in context at this point
+                    self.checked = (
+                        "foo" in AST.context.symbols
+                        and AST.context.symbols["foo"] == 99
+                    )
+
+        context_check = ContextCheck()
+
+        # Patch TreeAssignment.eval to check context during evaluation
+        original_eval = TreeAssignment.eval
+
+        async def wrapped_eval(self, provider):
+            result = await original_eval(self, provider)
+            await context_check(self, provider)
+            return result
+
+        with patch.object(TreeAssignment, "eval", wrapped_eval):
+            asyncio.run(AST.eval(assignment, provider))
+            self.assertTrue(context_check.checked)
+        # AST.context should be None after evaluation
+        self.assertIsNone(AST.context)
+
+    def test_tree_assignment_eval_returns_value(self):
+        value_node = TreeValue("x", "bar")
+        assignment = TreeAssignment("baz", value_node)
+        provider = AsyncMock(spec=ToolProvider)
+        AST.context = None
+        result = asyncio.run(AST.eval(assignment, provider))
+        self.assertEqual(result, "bar")
 
 
 class TestAST(unittest.TestCase):

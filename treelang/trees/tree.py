@@ -1,10 +1,25 @@
 import asyncio
+from contextlib import contextmanager
+from dataclasses import dataclass, field
 from inspect import Signature, Parameter
 import random
 from typing import Any, List, Union, Dict
-from collections.abc import Callable
+from collections.abc import AsyncIterator, Callable
 
 from treelang.ai.provider import ToolProvider
+
+
+@dataclass
+class SymbolTable:
+    symbols: Dict[str, Any] = field(default_factory=dict)
+
+
+class EvaluationContext:
+    def __enter__(self):
+        AST.context = SymbolTable()
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        AST.context = None
 
 
 class TreeNode:
@@ -138,7 +153,33 @@ class TreeConditional(TreeNode):
         return None
 
 
+class TreeAssignment(TreeNode):
+    """
+    Represents an assignment statement in the AST. Assigments add
+    symbols to the symbol table, which can be used by other nodes in the AST.
+
+    Attributes:
+        name (str): The name of the variable to assign.
+        value (TreeNode): The value to assign to the variable.
+
+    Methods:
+        eval(ToolProvider): Evaluates the value and assigns it to the variable.
+    """
+
+    def __init__(self, name: str, value: TreeNode) -> None:
+        super().__init__("assignment")
+        self.name = name
+        self.value = value
+
+    async def eval(self, provider: ToolProvider) -> Any:
+        evaluated_value = await self.value.eval(provider)
+        AST.context.symbols[self.name] = evaluated_value
+        return evaluated_value
+
+
 class AST:
+    context: SymbolTable = None
+
     """
     Represents an Abstract Syntax Tree (AST) for a very simple programming language.
     """
@@ -167,6 +208,8 @@ class AST:
             return TreeFunction(ast["name"], cls.parse(ast["params"]))
         if node_type == "value":
             return TreeValue(ast["name"], ast["value"])
+        if node_type == "assignment":
+            return TreeAssignment(ast["name"], cls.parse(ast["value"]))
         if node_type == "conditional":
             return TreeConditional(
                 cls.parse(ast["condition"]),
@@ -187,7 +230,8 @@ class AST:
         Returns:
             Any: The result of evaluating the AST.
         """
-        return await ast.eval(provider)
+        with EvaluationContext():
+            return await ast.eval(provider)
 
     @classmethod
     def visit(cls, ast: TreeNode, op: Callable[[TreeNode], None]) -> None:
