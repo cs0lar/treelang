@@ -138,6 +138,33 @@ class TreeConditional(TreeNode):
         return None
 
 
+class TreeLambda(TreeNode):
+    """
+    Represents an anonymous (lambda) function.
+    Attributes:
+        params (List[str]): Parameter names.
+        body (TreeFunction): The function body.
+    """
+
+    def __init__(self, params: List[str], body: TreeFunction):
+        super().__init__("lambda")
+        self.params = params
+        self.body = body
+
+    async def eval(self, provider: ToolProvider):
+        # Returns a callable that can be invoked with arguments
+        async def func(*args):
+            context = dict(zip(self.params, args))
+            # update the body TreeFunction with the context
+            for param, value in context.items():
+                for p in self.body.params:
+                    if p.name == param:
+                        p.value = value
+            return await self.body.eval(provider)
+
+        return func
+
+
 class AST:
     """
     Represents an Abstract Syntax Tree (AST) for a very simple programming language.
