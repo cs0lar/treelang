@@ -200,6 +200,11 @@ class AST:
                 cls.parse(ast["true_branch"]),
                 cls.parse(ast.get("false_branch")),
             )
+        if node_type == "lambda":
+            return TreeLambda(
+                ast["params"],
+                TreeFunction(ast["body"]["name"], cls.parse(ast["body"]["params"])),
+            )
 
         raise ValueError(f"unknown node type: {node_type}")
 
@@ -242,6 +247,9 @@ class AST:
             if ast.false_branch:
                 cls.visit(ast.false_branch, op)  # Recursively visit the false branch
 
+        if isinstance(ast, TreeLambda):
+            cls.visit(ast.body, op)
+
         elif isinstance(ast, TreeFunction):
             for param in ast.params:
                 cls.visit(param, op)  # Recursively visit each parameter of the function
@@ -274,6 +282,9 @@ class AST:
             await cls.avisit(ast.true_branch, op)
             if ast.false_branch:
                 await cls.avisit(ast.false_branch, op)
+
+        if isinstance(ast, TreeLambda):
+            await cls.avisit(ast.body, op)
 
         elif isinstance(ast, TreeFunction):
             for param in ast.params:
@@ -339,9 +350,21 @@ class AST:
                     f'"{name}_{name_counts[name]}": {args}',
                     1,
                 )
+            if isinstance(node, TreeLambda):
+                name = "lambda"
+
+                if name not in name_counts:
+                    name_counts[name] = 0
+
+                name_counts[name] += 1
+                args = "{" + ", ".join(["%s"]) + "}"
+                representation = representation.replace(
+                    "%s", f'"{name}_{name_counts[name]}": {args}', 1
+                )
 
         cls.visit(ast, _f)
-        return representation
+
+        return representation.replace("None", "")
 
     @staticmethod
     async def tool(ast: TreeNode, provider: ToolProvider) -> Callable[..., Any]:

@@ -6,6 +6,7 @@ import mcp.types as types
 from treelang.trees.tree import (
     AST,
     TreeConditional,
+    TreeLambda,
     TreeNode,
     TreeProgram,
     TreeFunction,
@@ -121,6 +122,67 @@ class TestTreeConditional(unittest.TestCase):
         self.assertIsNone(result)
 
 
+class TestTreeLambda(unittest.IsolatedAsyncioTestCase):
+    async def test_tree_lambda_init(self):
+        params = ["x", "y"]
+        body = TreeFunction("add", [TreeValue("x", None), TreeValue("y", None)])
+        lam = TreeLambda(params, body)
+        self.assertEqual(lam.type, "lambda")
+        self.assertEqual(lam.params, params)
+        self.assertEqual(lam.body, body)
+
+    async def test_tree_lambda_eval_returns_callable(self):
+        params = ["x"]
+        body = TreeFunction("negate", [TreeValue("x", None)])
+        lam = TreeLambda(params, body)
+        provider = AsyncMock(spec=ToolProvider)
+        provider.get_tool_definition.return_value = {
+            "name": "negate",
+            "description": "Negates a number",
+            "properties": {"x": {"type": "integer"}},
+        }
+        provider.call_tool.return_value = ToolOutput(content=-5)
+        func = await lam.eval(provider)
+        self.assertTrue(callable(func))
+        result = await func(5)
+        self.assertEqual(result, -5)
+        provider.get_tool_definition.assert_called_once_with("negate")
+        provider.call_tool.assert_called_once_with("negate", {"x": 5})
+
+    async def test_tree_lambda_eval_multiple_params(self):
+        params = ["a", "b"]
+        body = TreeFunction("add", [TreeValue("a", None), TreeValue("b", None)])
+        lam = TreeLambda(params, body)
+        provider = AsyncMock(spec=ToolProvider)
+        provider.get_tool_definition.return_value = {
+            "name": "add",
+            "description": "Adds two numbers",
+            "properties": {"a": {"type": "integer"}, "b": {"type": "integer"}},
+        }
+        provider.call_tool.return_value = ToolOutput(content=7)
+        func = await lam.eval(provider)
+        result = await func(3, 4)
+        self.assertEqual(result, 7)
+        provider.get_tool_definition.assert_called_once_with("add")
+        provider.call_tool.assert_called_once_with("add", {"a": 3, "b": 4})
+
+    async def test_tree_lambda_eval_updates_body_params(self):
+        params = ["x"]
+        value_node = TreeValue("x", None)
+        body = TreeFunction("identity", [value_node])
+        lam = TreeLambda(params, body)
+        provider = AsyncMock(spec=ToolProvider)
+        provider.get_tool_definition.return_value = {
+            "name": "identity",
+            "description": "Returns the input",
+            "properties": {"x": {"type": "integer"}},
+        }
+        provider.call_tool.return_value = ToolOutput(content=123)
+        func = await lam.eval(provider)
+        await func(123)
+        self.assertEqual(value_node.value, 123)
+
+
 class TestAST(unittest.TestCase):
     def setUp(self):
         self.ast = [
@@ -180,6 +242,25 @@ class TestAST(unittest.TestCase):
         self.assertEqual(result.condition.value, True)
         self.assertEqual(result.true_branch.value, "True Result")
         self.assertEqual(result.false_branch.value, "False Result")
+
+    def test_parse_lambda(self):
+        ast_dict = {
+            "type": "lambda",
+            "params": ["x", "y"],
+            "body": {
+                "type": "function",
+                "name": "add",
+                "params": [
+                    {"type": "value", "name": "x", "value": None},
+                    {"type": "value", "name": "y", "value": None},
+                ],
+            },
+        }
+        result = AST.parse(ast_dict)
+        self.assertIsInstance(result, TreeLambda)
+        self.assertEqual(result.params, ["x", "y"])
+        self.assertIsInstance(result.body, TreeFunction)
+        self.assertEqual(result.body.name, "add")
 
     def test_parse_value(self):
         ast_dict = {"type": "value", "name": "test_value", "value": 42}
@@ -320,6 +401,56 @@ class TestAST(unittest.TestCase):
         result = asyncio.run(AST.eval(program, provider))
         self.assertEqual(result, "Message: Negative")
 
+    def test_eval_with_lambda(self):
+        class MockToolProvider(ToolProvider):
+            async def call_tool(self, name, arguments):
+                if name == "add":
+                    return ToolOutput(content=arguments["a"] + arguments["b"])
+                raise ValueError(f"Unknown tool: {name}")
+
+            async def list_tools(self):
+                return AsyncMock(
+                    tools=[
+                        {
+                            "name": "add",
+                            "description": "Adds two numbers",
+                            "properties": {"a": {}, "b": {}},
+                        }
+                    ]
+                )
+
+            async def get_tool_definition(self, name):
+                if name == "add":
+                    return {
+                        "name": "add",
+                        "description": "Adds two numbers",
+                        "properties": {"a": {}, "b": {}},
+                    }
+                else:
+                    raise ValueError(f"Tool {name} not found")
+
+        ast_dict = {
+            "type": "program",
+            "body": [
+                {
+                    "type": "lambda",
+                    "params": ["x", "y"],
+                    "body": {
+                        "type": "function",
+                        "name": "add",
+                        "params": [
+                            {"type": "value", "name": "x", "value": None},
+                            {"type": "value", "name": "y", "value": None},
+                        ],
+                    },
+                }
+            ],
+        }
+        provider = MockToolProvider()
+        program = AST.parse(ast_dict)
+        result = asyncio.run(AST.eval(program, provider))
+        self.assertTrue(callable(result))
+
     def test_visit(self):
         node = TreeNode("test")
         op = Mock()
@@ -341,6 +472,20 @@ class TestAST(unittest.TestCase):
         op.assert_any_call(true_branch)
         op.assert_any_call(false_branch)
         self.assertEqual(op.call_count, 4)  # Ensure all nodes were visited
+
+    def test_visit_with_lambda(self):
+        params = ["x", "y"]
+        body = TreeFunction("add", [TreeValue("x", None), TreeValue("y", None)])
+        lam = TreeLambda(params, body)
+
+        op = Mock()
+        AST.visit(lam, op)
+
+        # Assert that the visitor function was called for the lambda node and its children
+        op.assert_any_call(lam)
+        op.assert_any_call(body)
+        # the lambda node, the function node and two values should be visited
+        self.assertEqual(op.call_count, 4)
 
     def test_repr(self):
         ast = TreeProgram(
@@ -376,6 +521,25 @@ class TestAST(unittest.TestCase):
             '"print_1": {"message": ["Positive"]}, '
             '"print_2": {"message": ["Negative"]}}}'
         )
+        self.assertEqual(result, expected)
+
+    def test_repr_with_lambda(self):
+        ast = TreeProgram(
+            body=[
+                TreeLambda(
+                    params=["x", "y"],
+                    body=TreeFunction(
+                        name="add",
+                        params=[
+                            TreeValue(name="x", value=None),
+                            TreeValue(name="y", value=None),
+                        ],
+                    ),
+                )
+            ]
+        )
+        result = AST.repr(ast)
+        expected = '{"lambda_1": {"add_1": {"x": [], "y": []}}}'
         self.assertEqual(result, expected)
 
 

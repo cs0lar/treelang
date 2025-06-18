@@ -35,6 +35,15 @@ Represents conditional logic (e.g., `if-else` statements).
   "false_branch": {"type": "function", "name": "print", "params": [{"type": "value", "name": "message", "value": "Negative"}]}
 }
 
+### Lambda
+Represents a lambda function or anonymous function.
+**Example:**
+{
+  "type": "lambda",
+  "params": [{"type": "value", "name": "x", "value": 10}],
+  "body": {"type": "function", "name": "square", "params": [{"type": "value", "name": "x", "value": 10}]}
+}
+
 Please think about your answer carefully and always double check your answer. Here are some examples:
 
 FUNCTIONS: [{ "name": "add", "description": "add two integers", "parameters": { "type": "object", "properties": {"a": "left-hand side of add operation", "b": "right-hand side of add operation"} } }, 
