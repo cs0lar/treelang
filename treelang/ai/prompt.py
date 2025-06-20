@@ -36,12 +36,21 @@ Represents conditional logic (e.g., `if-else` statements).
 }
 
 ### Lambda
-Represents a lambda function or anonymous function.
+Represents a lambda function or anonymous function useful for functional patterns.
 **Example:**
 {
   "type": "lambda",
-  "params": [{"type": "value", "name": "x", "value": 10}],
+  "params": ["x"],
   "body": {"type": "function", "name": "square", "params": [{"type": "value", "name": "x", "value": 10}]}
+}
+
+### Map
+Represents a mapping operation, typically used for transforming collections and implementing functional loops.
+**Example:**
+{
+  "type": "map",
+  "function": {"type": "lambda", "params": ["x"], "body": {"type": "function", "name": "square", "params": [{"type": "value", "name": "x", "value": 0}]}},
+  "iterable": {"type": "value", "name": "numbers", "value": [1, 2, 3, 4, 5]}
 }
 
 Please think about your answer carefully and always double check your answer. Here are some examples:

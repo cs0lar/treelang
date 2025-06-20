@@ -165,6 +165,34 @@ class TreeLambda(TreeNode):
         return func
 
 
+class TreeMap(TreeNode):
+    """
+    Represents a map (dictionary) in the abstract syntax tree (AST).
+
+    Attributes:
+        function (TreeLambda): The function to apply to each item in the iterable.
+        items (Dict[str, Any]): The key-value pairs in the map.
+    """
+
+    def __init__(self, function: TreeLambda, iterable: TreeNode):
+        super().__init__("map")
+        self.function = function
+        self.iterable = iterable
+
+    async def eval(self, provider: ToolProvider) -> Any:
+        items = await self.iterable.eval(provider)
+
+        if not isinstance(items, list):
+            raise TypeError("Map expects an iterable (list) as input")
+
+        func = await self.function.eval(provider)
+
+        if not callable(func):
+            raise TypeError("Map function must be callable")
+
+        return [await func(item) for item in items]
+
+
 class AST:
     """
     Represents an Abstract Syntax Tree (AST) for a very simple programming language.
@@ -204,6 +232,17 @@ class AST:
             return TreeLambda(
                 ast["params"],
                 TreeFunction(ast["body"]["name"], cls.parse(ast["body"]["params"])),
+            )
+        if node_type == "map":
+            return TreeMap(
+                TreeLambda(
+                    ast["function"]["params"],
+                    TreeFunction(
+                        ast["function"]["body"]["name"],
+                        cls.parse(ast["function"]["body"]["params"]),
+                    ),
+                ),
+                cls.parse(ast["iterable"]),
             )
 
         raise ValueError(f"unknown node type: {node_type}")
@@ -250,6 +289,10 @@ class AST:
         if isinstance(ast, TreeLambda):
             cls.visit(ast.body, op)
 
+        if isinstance(ast, TreeMap):
+            cls.visit(ast.function, op)
+            cls.visit(ast.iterable, op)
+
         elif isinstance(ast, TreeFunction):
             for param in ast.params:
                 cls.visit(param, op)  # Recursively visit each parameter of the function
@@ -285,6 +328,10 @@ class AST:
 
         if isinstance(ast, TreeLambda):
             await cls.avisit(ast.body, op)
+
+        if isinstance(ast, TreeMap):
+            await cls.avisit(ast.function, op)
+            await cls.avisit(ast.iterable, op)
 
         elif isinstance(ast, TreeFunction):
             for param in ast.params:
@@ -358,6 +405,17 @@ class AST:
 
                 name_counts[name] += 1
                 args = "{" + ", ".join(["%s"]) + "}"
+                representation = representation.replace(
+                    "%s", f'"{name}_{name_counts[name]}": {args}', 1
+                )
+            if isinstance(node, TreeMap):
+                name = "map"
+
+                if name not in name_counts:
+                    name_counts[name] = 0
+
+                name_counts[name] += 1
+                args = "{" + ", ".join(["%s"] * 2) + "}"
                 representation = representation.replace(
                     "%s", f'"{name}_{name_counts[name]}": {args}', 1
                 )
