@@ -379,6 +379,8 @@ class AST:
                     value = f'"{value}"'
                 if type(value) is bool:
                     value = str(value).lower()
+                if type(value) is list:
+                    value = "[" + ", ".join([f'"{v}"' if isinstance(v, str) else str(v) for v in value]) + "]"
                 if isinstance(value, float) and value.is_integer():
                     value = int(value)
                 representation = representation.replace("%s", f'"{name}": [{value}]', 1)

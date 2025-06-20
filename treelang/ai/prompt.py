@@ -108,6 +108,36 @@ PROGRAM: { "type": "program", "body": [
     {"type": "function", "name": "calculate_resistance", "params": [{"type": "value", "name": "length", "value": 5}, {"type": "value", "name": "area", "value": 0.01}, {"type": "value", "name": "resistivity", "value":"copper"}]},
     {"type": "function", "name": "calculate_resistance", "params": [{"type": "value", "name": "length", "value": 5}, {"type": "value", "name": "area", "value": 0.01}, {"type": "value", "name": "resistivity", "value":"aluminum"}]}
 ]}
+
+# FUNCTIONS: [{ "name": "double", "description": "Doubles an integer", "parameters": { "type": "object", "properties": {"x": "the integer to double"} } }]
+
+# QUERY: "Double every number in the list [1, 2, 3, 4]"
+
+# PROGRAM:
+{
+    "type": "program",
+    "body": [
+        {
+            "type": "map",
+            "function": {
+                "type": "lambda",
+                "params": ["x"],
+                "body": {
+                    "type": "function",
+                    "name": "double",
+                    "params": [
+                        {"type": "value", "name": "x", "value": 0}
+                    ]
+                }
+            },
+            "iterable": {
+                "type": "value",
+                "name": "numbers",
+                "value": [1, 2, 3, 4]
+            }
+        }
+    ]
+}
 """
 
 EXPLAIN_EVALUATION_SYSTEM_PROMPT = """
