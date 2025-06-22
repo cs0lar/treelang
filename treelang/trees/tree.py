@@ -380,7 +380,13 @@ class AST:
                 if type(value) is bool:
                     value = str(value).lower()
                 if type(value) is list:
-                    value = "[" + ", ".join([f'"{v}"' if isinstance(v, str) else str(v) for v in value]) + "]"
+                    value = (
+                        "["
+                        + ", ".join(
+                            [f'"{v}"' if isinstance(v, str) else str(v) for v in value]
+                        )
+                        + "]"
+                    )
                 if isinstance(value, float) and value.is_integer():
                     value = int(value)
                 representation = representation.replace("%s", f'"{name}": [{value}]', 1)
@@ -470,6 +476,11 @@ class AST:
             arg_names: List[str],
         ) -> Callable[[TreeNode], None]:
             async def _f(node: TreeNode):
+                # for now we do not support higher order functions here
+                if any(isinstance(node, t) for t in [TreeLambda, TreeMap]):
+                    raise ValueError(
+                        "Higher order functions (lambdas, maps) are not yet supported in tool creation"
+                    )
                 if isinstance(node, TreeFunction):
                     other_dfn = await provider.get_tool_definition(node.name)
                     # let's get this function's parameters into the props stack
