@@ -13,6 +13,11 @@ def get_largest_city(country):
     pass
 
 
+def get_largest_city_by_ranking(country, ranking):
+    """Get the largest city in a given country by ranking."""
+    pass
+
+
 def get_city_population(city):
     """Get the population of a given city."""
     pass
@@ -83,6 +88,7 @@ tools = [
     get_capital_city,
     get_weather,
     get_largest_city,
+    get_largest_city_by_ranking,
     get_city_population,
     get_country_population,
     get_exchange_rate,
@@ -105,6 +111,7 @@ questions = [
     "What's the GDP per capita of the country whose national animal is the kangaroo?",
     "If the GDP of Canada is negative, give me its GDP per capita otherwise return its GDP.",
     "What's the average annual rainfall in the capital city of the country that produces the most coffee in the world?",
+    "What are the populations of the three largest cities in Australia?",
 ]
 
 
@@ -148,6 +155,19 @@ answers = [
             "get_annual_rainfall_1": {
                 "get_capital_city_1": {"get_top_producer_1": {"product": ["coffee"]}}
             }
+        }
+    },
+    {
+        "map_1": {
+            "lambda_1": {
+                "get_city_population_1": {
+                    "get_largest_city_by_ranking_1": {
+                        "country": ["Australia"],
+                        "ranking": [0],
+                    }
+                }
+            },
+            "rankings": [["1", "2", "3"]],
         }
     },
 ]
