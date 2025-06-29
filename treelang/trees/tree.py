@@ -154,12 +154,16 @@ class TreeLambda(TreeNode):
     async def eval(self, provider: ToolProvider):
         # Returns a callable that can be invoked with arguments
         async def func(*args):
-            context = dict(zip(self.params, args))
-            # update the body TreeFunction with the context
-            for param, value in context.items():
-                for p in self.body.params:
-                    if p.name == param:
-                        p.value = value
+            # update this TreeFunction's argument values with
+            # the provided arguments preserving the order. Note that
+            # the number of arguments maybe less than or equal to
+            # the number of parameters but not more.
+            for i, param in enumerate(self.body.params):
+                if i < len(args):
+                    param.value = args[i]
+                else:
+                    # if there are not enough arguments, we leave the parameter value as is
+                    break
             return await self.body.eval(provider)
 
         return func
@@ -186,9 +190,6 @@ class TreeMap(TreeNode):
             raise TypeError("Map expects an iterable (list) as input")
 
         func = await self.function.eval(provider)
-
-        if not callable(func):
-            raise TypeError("Map function must be callable")
 
         return [await func(item) for item in items]
 
