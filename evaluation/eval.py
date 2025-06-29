@@ -71,7 +71,7 @@ def is_match_nested(expected: Any, actual: Any) -> bool:
         bool: True if the expected and actual values match, False otherwise.
     """
     if type(expected) is list:
-        assert str(expected) == str(actual), f"{str(actual)} != {expected}"
+        assert str(expected) == str(actual), f"{str(actual)} != {str(expected)}"
     else:
         expected_keys = expected.keys()
 
@@ -83,8 +83,11 @@ def is_match_nested(expected: Any, actual: Any) -> bool:
 
             if type(expected_arguments) is list:
                 expected_arguments.sort()
-                expected_param_value = str([v for v in expected_arguments if v])
+                expected_param_value = str(
+                    [v for v in expected_arguments if v is not None]
+                )
                 actual_arguments.sort()
+
                 assert (
                     str(actual_arguments) == expected_param_value
                 ), f"{str(actual_arguments)} != {expected_param_value}"
