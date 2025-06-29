@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.6.0] - 2025-06-29
+
+### Added
+
+- Support for functional patters using `TreeLambda` and `TreeMap` nodes.
+
+### Changed
+- Added tests for higher order function nodes.
+- Added example of high order function to the `Evaluator`.
+- Updated `CONTRIBUTING.md` to include an *Evaluation* section.  
+- Added example of loop in `calculator.ipynb` cookbook.
+
 ## [0.5.0] - 2025-05-13
 
 ### Added

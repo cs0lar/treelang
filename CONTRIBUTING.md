@@ -77,6 +77,16 @@ Examples:
   poetry run python -m unittest discover tests
   ```
 
+## 🧪 Evaluation
+
+The `evaluation` directory contains code for tracking the quality and robustness of `treelang`.
+
+- Add more evaluation metrics. 
+- To run an evaluation use:
+  ```sh
+  poetry run python evaluation/eval.py
+  ```
+
 ## 📖 Documentation Contributions
 
 - Improve README, inline comments, or create guides in the `docs/` directory.
