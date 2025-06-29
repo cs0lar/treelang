@@ -35,6 +35,24 @@ Represents conditional logic (e.g., `if-else` statements).
   "false_branch": {"type": "function", "name": "print", "params": [{"type": "value", "name": "message", "value": "Negative"}]}
 }
 
+### Lambda
+Represents a lambda function or anonymous function useful for functional patterns.
+**Example:**
+{
+  "type": "lambda",
+  "params": ["x"],
+  "body": {"type": "function", "name": "square", "params": [{"type": "value", "name": "x", "value": 10}]}
+}
+
+### Map
+Represents a mapping operation, typically used for transforming collections and implementing functional loops.
+**Example:**
+{
+  "type": "map",
+  "function": {"type": "lambda", "params": ["x"], "body": {"type": "function", "name": "square", "params": [{"type": "value", "name": "x", "value": 0}]}},
+  "iterable": {"type": "value", "name": "numbers", "value": [1, 2, 3, 4, 5]}
+}
+
 Please think about your answer carefully and always double check your answer. Here are some examples:
 
 FUNCTIONS: [{ "name": "add", "description": "add two integers", "parameters": { "type": "object", "properties": {"a": "left-hand side of add operation", "b": "right-hand side of add operation"} } }, 
@@ -90,6 +108,36 @@ PROGRAM: { "type": "program", "body": [
     {"type": "function", "name": "calculate_resistance", "params": [{"type": "value", "name": "length", "value": 5}, {"type": "value", "name": "area", "value": 0.01}, {"type": "value", "name": "resistivity", "value":"copper"}]},
     {"type": "function", "name": "calculate_resistance", "params": [{"type": "value", "name": "length", "value": 5}, {"type": "value", "name": "area", "value": 0.01}, {"type": "value", "name": "resistivity", "value":"aluminum"}]}
 ]}
+
+# FUNCTIONS: [{ "name": "double", "description": "Doubles an integer", "parameters": { "type": "object", "properties": {"x": "the integer to double"} } }]
+
+# QUERY: "Double every number in the list [1, 2, 3, 4]"
+
+# PROGRAM:
+{
+    "type": "program",
+    "body": [
+        {
+            "type": "map",
+            "function": {
+                "type": "lambda",
+                "params": ["x"],
+                "body": {
+                    "type": "function",
+                    "name": "double",
+                    "params": [
+                        {"type": "value", "name": "x", "value": 0}
+                    ]
+                }
+            },
+            "iterable": {
+                "type": "value",
+                "name": "numbers",
+                "value": [1, 2, 3, 4]
+            }
+        }
+    ]
+}
 """
 
 EXPLAIN_EVALUATION_SYSTEM_PROMPT = """

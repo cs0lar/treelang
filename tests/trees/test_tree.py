@@ -6,6 +6,8 @@ import mcp.types as types
 from treelang.trees.tree import (
     AST,
     TreeConditional,
+    TreeLambda,
+    TreeMap,
     TreeNode,
     TreeProgram,
     TreeFunction,
@@ -121,6 +123,162 @@ class TestTreeConditional(unittest.TestCase):
         self.assertIsNone(result)
 
 
+class TestTreeLambda(unittest.IsolatedAsyncioTestCase):
+    async def test_tree_lambda_init(self):
+        params = ["x", "y"]
+        body = TreeFunction("add", [TreeValue("x", None), TreeValue("y", None)])
+        lam = TreeLambda(params, body)
+        self.assertEqual(lam.type, "lambda")
+        self.assertEqual(lam.params, params)
+        self.assertEqual(lam.body, body)
+
+    async def test_tree_lambda_eval_returns_callable(self):
+        params = ["x"]
+        body = TreeFunction("negate", [TreeValue("x", None)])
+        lam = TreeLambda(params, body)
+        provider = AsyncMock(spec=ToolProvider)
+        provider.get_tool_definition.return_value = {
+            "name": "negate",
+            "description": "Negates a number",
+            "properties": {"x": {"type": "integer"}},
+        }
+        provider.call_tool.return_value = ToolOutput(content=-5)
+        func = await lam.eval(provider)
+        self.assertTrue(callable(func))
+        result = await func(5)
+        self.assertEqual(result, -5)
+        provider.get_tool_definition.assert_called_once_with("negate")
+        provider.call_tool.assert_called_once_with("negate", {"x": 5})
+
+    async def test_tree_lambda_eval_multiple_params(self):
+        params = ["a", "b"]
+        body = TreeFunction("add", [TreeValue("a", None), TreeValue("b", None)])
+        lam = TreeLambda(params, body)
+        provider = AsyncMock(spec=ToolProvider)
+        provider.get_tool_definition.return_value = {
+            "name": "add",
+            "description": "Adds two numbers",
+            "properties": {"a": {"type": "integer"}, "b": {"type": "integer"}},
+        }
+        provider.call_tool.return_value = ToolOutput(content=7)
+        func = await lam.eval(provider)
+        result = await func(3, 4)
+        self.assertEqual(result, 7)
+        provider.get_tool_definition.assert_called_once_with("add")
+        provider.call_tool.assert_called_once_with("add", {"a": 3, "b": 4})
+
+    async def test_tree_lambda_eval_updates_body_params(self):
+        params = ["x"]
+        value_node = TreeValue("x", None)
+        body = TreeFunction("identity", [value_node])
+        lam = TreeLambda(params, body)
+        provider = AsyncMock(spec=ToolProvider)
+        provider.get_tool_definition.return_value = {
+            "name": "identity",
+            "description": "Returns the input",
+            "properties": {"x": {"type": "integer"}},
+        }
+        provider.call_tool.return_value = ToolOutput(content=123)
+        func = await lam.eval(provider)
+        await func(123)
+        self.assertEqual(value_node.value, 123)
+
+
+class TestTreeMap(unittest.IsolatedAsyncioTestCase):
+    async def test_tree_map_init(self):
+        function = TreeLambda(["x"], TreeFunction("identity", [TreeValue("x", None)]))
+        iterable = TreeValue("items", [[1], [2], [3]])
+        tree_map = TreeMap(function, iterable)
+        self.assertEqual(tree_map.type, "map")
+        self.assertEqual(tree_map.function, function)
+        self.assertEqual(tree_map.iterable, iterable)
+
+    async def test_tree_map_eval_applies_function(self):
+        # Lambda: x -> x * 2
+        class DummyProvider(ToolProvider):
+            async def get_tool_definition(self, name):
+                return {
+                    "name": "double",
+                    "description": "Doubles a number",
+                    "properties": {"x": {"type": "integer"}},
+                }
+
+            async def call_tool(self, name, arguments):
+                return ToolOutput(content=arguments["x"] * 2)
+
+            async def list_tools(self):
+                return AsyncMock(
+                    tools=[
+                        {
+                            "name": "double",
+                            "description": "Doubles a number",
+                            "properties": {"x": {"type": "integer"}},
+                        }
+                    ]
+                )
+
+        function = TreeLambda(["x"], TreeFunction("double", [TreeValue("x", None)]))
+        iterable = TreeValue("items", [1, 2, 3])
+        tree_map = TreeMap(function, iterable)
+        provider = DummyProvider()
+        result = await tree_map.eval(provider)
+        self.assertEqual(result, [2, 4, 6])
+
+    async def test_tree_map_eval_non_iterable_raises(self):
+        function = TreeLambda(["x"], TreeFunction("identity", [TreeValue("x", None)]))
+        iterable = TreeValue("items", 123)  # Not a list
+        tree_map = TreeMap(function, iterable)
+        provider = AsyncMock(spec=ToolProvider)
+        with self.assertRaises(TypeError):
+            await tree_map.eval(provider)
+
+    async def test_tree_map_eval_function_not_callable_raises(self):
+        class DummyProvider(ToolProvider):
+            async def get_tool_definition(self, name):
+                return {
+                    "name": "broken",
+                    "description": "Not a function",
+                    "properties": {"x": {"type": "integer"}},
+                }
+
+            async def call_tool(self, name, arguments):
+                return ToolOutput(content=None)
+
+            async def list_tools(self):
+                return AsyncMock(
+                    tools=[
+                        {
+                            "name": "broken",
+                            "description": "Not a function",
+                            "properties": {"x": {"type": "integer"}},
+                        }
+                    ]
+                )
+
+        # Patch TreeLambda.eval to return a non-callable
+        function = TreeLambda(["x"], TreeFunction("broken", [TreeValue("x", None)]))
+        function.eval = AsyncMock(return_value=42)
+        iterable = TreeValue("items", [[1]])
+        tree_map = TreeMap(function, iterable)
+        provider = DummyProvider()
+        with self.assertRaises(TypeError):
+            await tree_map.eval(provider)
+
+    async def test_tree_map_eval_empty_iterable(self):
+        function = TreeLambda(["x"], TreeFunction("identity", [TreeValue("x", None)]))
+        iterable = TreeValue("items", [])
+        tree_map = TreeMap(function, iterable)
+        provider = AsyncMock(spec=ToolProvider)
+
+        # Patch function.eval to return a dummy callable
+        async def dummy_func(x):
+            return x
+
+        function.eval = AsyncMock(return_value=dummy_func)
+        result = await tree_map.eval(provider)
+        self.assertEqual(result, [])
+
+
 class TestAST(unittest.TestCase):
     def setUp(self):
         self.ast = [
@@ -180,6 +338,44 @@ class TestAST(unittest.TestCase):
         self.assertEqual(result.condition.value, True)
         self.assertEqual(result.true_branch.value, "True Result")
         self.assertEqual(result.false_branch.value, "False Result")
+
+    def test_parse_lambda(self):
+        ast_dict = {
+            "type": "lambda",
+            "params": ["x", "y"],
+            "body": {
+                "type": "function",
+                "name": "add",
+                "params": [
+                    {"type": "value", "name": "x", "value": None},
+                    {"type": "value", "name": "y", "value": None},
+                ],
+            },
+        }
+        result = AST.parse(ast_dict)
+        self.assertIsInstance(result, TreeLambda)
+        self.assertEqual(result.params, ["x", "y"])
+        self.assertIsInstance(result.body, TreeFunction)
+        self.assertEqual(result.body.name, "add")
+
+    def test_parse_map(self):
+        ast_dict = {
+            "type": "map",
+            "function": {
+                "type": "lambda",
+                "params": ["x"],
+                "body": {
+                    "type": "function",
+                    "name": "square",
+                    "params": [{"type": "value", "name": "x", "value": 0}],
+                },
+            },
+            "iterable": {"type": "value", "name": "numbers", "value": [1, 2, 3]},
+        }
+        result = AST.parse(ast_dict)
+        self.assertIsInstance(result, TreeMap)
+        self.assertIsInstance(result.function, TreeLambda)
+        self.assertIsInstance(result.iterable, TreeValue)
 
     def test_parse_value(self):
         ast_dict = {"type": "value", "name": "test_value", "value": 42}
@@ -320,6 +516,111 @@ class TestAST(unittest.TestCase):
         result = asyncio.run(AST.eval(program, provider))
         self.assertEqual(result, "Message: Negative")
 
+    def test_eval_with_lambda(self):
+        class MockToolProvider(ToolProvider):
+            async def call_tool(self, name, arguments):
+                if name == "add":
+                    return ToolOutput(content=arguments["a"] + arguments["b"])
+                raise ValueError(f"Unknown tool: {name}")
+
+            async def list_tools(self):
+                return AsyncMock(
+                    tools=[
+                        {
+                            "name": "add",
+                            "description": "Adds two numbers",
+                            "properties": {"a": {}, "b": {}},
+                        }
+                    ]
+                )
+
+            async def get_tool_definition(self, name):
+                if name == "add":
+                    return {
+                        "name": "add",
+                        "description": "Adds two numbers",
+                        "properties": {"a": {}, "b": {}},
+                    }
+                else:
+                    raise ValueError(f"Tool {name} not found")
+
+        ast_dict = {
+            "type": "program",
+            "body": [
+                {
+                    "type": "lambda",
+                    "params": ["x", "y"],
+                    "body": {
+                        "type": "function",
+                        "name": "add",
+                        "params": [
+                            {"type": "value", "name": "x", "value": None},
+                            {"type": "value", "name": "y", "value": None},
+                        ],
+                    },
+                }
+            ],
+        }
+        provider = MockToolProvider()
+        program = AST.parse(ast_dict)
+        result = asyncio.run(AST.eval(program, provider))
+        self.assertTrue(callable(result))
+
+    def test_eval_with_map(self):
+        class MockToolProvider(ToolProvider):
+            async def call_tool(self, name, arguments):
+                if name == "double":
+                    return ToolOutput(content=arguments["x"] * 2)
+                raise ValueError(f"Unknown tool: {name}")
+
+            async def list_tools(self):
+                return AsyncMock(
+                    tools=[
+                        {
+                            "name": "double",
+                            "description": "Doubles a number",
+                            "properties": {"x": {}},
+                        }
+                    ]
+                )
+
+            async def get_tool_definition(self, name):
+                if name == "double":
+                    return {
+                        "name": "double",
+                        "description": "Doubles a number",
+                        "properties": {"x": {}},
+                    }
+                else:
+                    raise ValueError(f"Tool {name} not found")
+
+        ast_dict = {
+            "type": "program",
+            "body": [
+                {
+                    "type": "map",
+                    "function": {
+                        "type": "lambda",
+                        "params": ["x"],
+                        "body": {
+                            "type": "function",
+                            "name": "double",
+                            "params": [{"type": "value", "name": "x", "value": None}],
+                        },
+                    },
+                    "iterable": {
+                        "type": "value",
+                        "name": "numbers",
+                        "value": [1, 2, 3],
+                    },
+                }
+            ],
+        }
+        provider = MockToolProvider()
+        program = AST.parse(ast_dict)
+        result = asyncio.run(AST.eval(program, provider))
+        self.assertEqual(result, [2, 4, 6])
+
     def test_visit(self):
         node = TreeNode("test")
         op = Mock()
@@ -341,6 +642,34 @@ class TestAST(unittest.TestCase):
         op.assert_any_call(true_branch)
         op.assert_any_call(false_branch)
         self.assertEqual(op.call_count, 4)  # Ensure all nodes were visited
+
+    def test_visit_with_lambda(self):
+        params = ["x", "y"]
+        body = TreeFunction("add", [TreeValue("x", None), TreeValue("y", None)])
+        lam = TreeLambda(params, body)
+
+        op = Mock()
+        AST.visit(lam, op)
+
+        # Assert that the visitor function was called for the lambda node and its children
+        op.assert_any_call(lam)
+        op.assert_any_call(body)
+        # the lambda node, the function node and two values should be visited
+        self.assertEqual(op.call_count, 4)
+
+    def test_visit_with_map(self):
+        function = TreeLambda(["x"], TreeFunction("double", [TreeValue("x", None)]))
+        iterable = TreeValue("items", [1, 2, 3])
+        tree_map = TreeMap(function, iterable)
+
+        op = Mock()
+        AST.visit(tree_map, op)
+
+        # Assert that the visitor function was called for the map node and its children
+        op.assert_any_call(tree_map)
+        op.assert_any_call(function)
+        op.assert_any_call(iterable)
+        self.assertEqual(op.call_count, 5)
 
     def test_repr(self):
         ast = TreeProgram(
@@ -375,6 +704,45 @@ class TestAST(unittest.TestCase):
             '{"conditional_1": {"isPositive_1": {"x": [-5]}, '
             '"print_1": {"message": ["Positive"]}, '
             '"print_2": {"message": ["Negative"]}}}'
+        )
+        self.assertEqual(result, expected)
+
+    def test_repr_with_lambda(self):
+        ast = TreeProgram(
+            body=[
+                TreeLambda(
+                    params=["x", "y"],
+                    body=TreeFunction(
+                        name="add",
+                        params=[
+                            TreeValue(name="x", value=None),
+                            TreeValue(name="y", value=None),
+                        ],
+                    ),
+                )
+            ]
+        )
+        result = AST.repr(ast)
+        expected = '{"lambda_1": {"add_1": {"x": [], "y": []}}}'
+        self.assertEqual(result, expected)
+
+    def test_repr_with_map(self):
+        ast = TreeProgram(
+            body=[
+                TreeMap(
+                    function=TreeLambda(
+                        params=["x"],
+                        body=TreeFunction(
+                            name="double", params=[TreeValue(name="x", value=None)]
+                        ),
+                    ),
+                    iterable=TreeValue(name="items", value=[1, 2, 3]),
+                )
+            ]
+        )
+        result = AST.repr(ast)
+        expected = (
+            '{"map_1": {"lambda_1": {"double_1": {"x": []}}, "items": [[1, 2, 3]]}}'
         )
         self.assertEqual(result, expected)
 
