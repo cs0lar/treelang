@@ -171,11 +171,14 @@ class TreeLambda(TreeNode):
 
 class TreeMap(TreeNode):
     """
-    Represents a map (dictionary) in the abstract syntax tree (AST).
+    Represents a map operation in the abstract syntax tree (AST).
 
     Attributes:
         function (TreeLambda): The function to apply to each item in the iterable.
-        items (Dict[str, Any]): The key-value pairs in the map.
+        iterable (TreeNode): The iterable to map over. The iterable TreeNode should evaluate to a list.
+
+    Methods:
+        eval(ToolProvider): Applies the map function to each item in the iterable.
     """
 
     def __init__(self, function: TreeLambda, iterable: TreeNode):
@@ -192,6 +195,71 @@ class TreeMap(TreeNode):
         func = await self.function.eval(provider)
 
         return [await func(item) for item in items]
+
+
+class TreeFilter(TreeNode):
+    """
+    Represents a filter operation in the abstract syntax tree (AST).
+
+    Attributes:
+        function (TreeLambda): The function to apply to each item in the iterable. The function should return a boolean value.
+        iterable (TreeNode): The iterable to filter. The iterable TreeNode should evaluate to a list.
+
+    Methods:
+        eval(ToolProvider): Applies the filter function to each item in the iterable.
+    """
+
+    def __init__(self, function: TreeLambda, iterable: TreeNode):
+        super().__init__("filter")
+        self.function = function
+        self.iterable = iterable
+
+    async def eval(self, provider: ToolProvider) -> Any:
+        items = await self.iterable.eval(provider)
+
+        if not isinstance(items, list):
+            raise TypeError("Filter expects an iterable (list) as input")
+
+        func = await self.function.eval(provider)
+
+        return [item for item in items if await func(item)]
+
+
+class TreeReduce(TreeNode):
+    """
+    Represents a reduce operation in the abstract syntax tree (AST).
+
+    Attributes:
+        function (TreeLambda): The function to apply to each item in the iterable. The function should take two arguments,
+                               the accumulated value and the current item, and return a new accumulated value.
+        iterable (TreeNode): The iterable to reduce. The iterable TreeNode should evaluate to a list.
+
+    Methods:
+        eval(ToolProvider): Applies the reduce function to each item in the iterable.
+    """
+
+    def __init__(self, function: TreeLambda, iterable: TreeNode):
+        super().__init__("reduce")
+        self.function = function
+        self.iterable = iterable
+
+    async def eval(self, provider: ToolProvider) -> Any:
+        items = await self.iterable.eval(provider)
+
+        if not isinstance(items, list):
+            raise TypeError("Reduce expects an iterable (list) as input")
+
+        func = await self.function.eval(provider)
+
+        if not items:
+            return None
+
+        result = items[0]
+
+        for item in items[1:]:
+            result = await func(result, item)
+
+        return result
 
 
 class AST:
@@ -236,6 +304,34 @@ class AST:
             )
         if node_type == "map":
             return TreeMap(
+                TreeLambda(
+                    ast["function"]["params"],
+                    TreeFunction(
+                        ast["function"]["body"]["name"],
+                        cls.parse(ast["function"]["body"]["params"]),
+                    ),
+                ),
+                cls.parse(ast["iterable"]),
+            )
+        if node_type == "filter":
+            # if the body of the function is a conditional, we can
+            # we can extract the condition and use it directly
+            if ast["function"]["body"]["type"] == "conditional":
+                ast["function"]["body"] = ast["function"]["body"]["condition"]
+                return cls.parse(ast)
+
+            return TreeFilter(
+                TreeLambda(
+                    ast["function"]["params"],
+                    TreeFunction(
+                        ast["function"]["body"]["name"],
+                        cls.parse(ast["function"]["body"]["params"]),
+                    ),
+                ),
+                cls.parse(ast["iterable"]),
+            )
+        if node_type == "reduce":
+            return TreeReduce(
                 TreeLambda(
                     ast["function"]["params"],
                     TreeFunction(
@@ -290,7 +386,12 @@ class AST:
         if isinstance(ast, TreeLambda):
             cls.visit(ast.body, op)
 
-        if isinstance(ast, TreeMap):
+        if any(
+            [
+                isinstance(ast, node_type)
+                for node_type in [TreeMap, TreeFilter, TreeReduce]
+            ]
+        ):
             cls.visit(ast.function, op)
             cls.visit(ast.iterable, op)
 
@@ -330,7 +431,12 @@ class AST:
         if isinstance(ast, TreeLambda):
             await cls.avisit(ast.body, op)
 
-        if isinstance(ast, TreeMap):
+        if any(
+            [
+                isinstance(ast, node_type)
+                for node_type in [TreeMap, TreeFilter, TreeReduce]
+            ]
+        ):
             await cls.avisit(ast.function, op)
             await cls.avisit(ast.iterable, op)
 
@@ -419,6 +525,28 @@ class AST:
                 )
             if isinstance(node, TreeMap):
                 name = "map"
+
+                if name not in name_counts:
+                    name_counts[name] = 0
+
+                name_counts[name] += 1
+                args = "{" + ", ".join(["%s"] * 2) + "}"
+                representation = representation.replace(
+                    "%s", f'"{name}_{name_counts[name]}": {args}', 1
+                )
+            if isinstance(node, TreeFilter):
+                name = "filter"
+
+                if name not in name_counts:
+                    name_counts[name] = 0
+
+                name_counts[name] += 1
+                args = "{" + ", ".join(["%s"] * 2) + "}"
+                representation = representation.replace(
+                    "%s", f'"{name}_{name_counts[name]}": {args}', 1
+                )
+            if isinstance(node, TreeReduce):
+                name = "reduce"
 
                 if name not in name_counts:
                     name_counts[name] = 0

@@ -19,6 +19,7 @@ from evaluation.data.nested import (
 )
 from treelang.trees.tree import AST
 import threading
+import traceback
 
 mcp = FastMCP("evaluator", debug=False)
 
@@ -154,11 +155,11 @@ class Evaluator:
                 response = await self.arborist.eval(question, EvalType.TREE)
                 treestr = AST.repr(response.content)
                 actual = json.loads(treestr)
-
                 if test(expected, actual):
                     passed += 1
 
             except Exception as e:
+                traceback.print_exc()
                 logger.error(f"Error evaluating question {idx}: {e}")
 
         return tests, passed

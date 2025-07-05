@@ -6,11 +6,13 @@ import mcp.types as types
 from treelang.trees.tree import (
     AST,
     TreeConditional,
+    TreeFilter,
     TreeLambda,
     TreeMap,
     TreeNode,
     TreeProgram,
     TreeFunction,
+    TreeReduce,
     TreeValue,
 )
 
@@ -279,6 +281,154 @@ class TestTreeMap(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(result, [])
 
 
+class TestTreeFilter(unittest.IsolatedAsyncioTestCase):
+    async def test_tree_filter_init(self):
+        function = TreeLambda(["x"], TreeFunction("is_even", [TreeValue("x", None)]))
+        iterable = TreeValue("items", [1, 2, 3, 4])
+        tree_filter = TreeFilter(function, iterable)
+
+        self.assertEqual(tree_filter.type, "filter")
+        self.assertEqual(tree_filter.function, function)
+        self.assertEqual(tree_filter.iterable, iterable)
+
+    async def test_tree_filter_eval_filters_items(self):
+        class DummyProvider(ToolProvider):
+            async def get_tool_definition(self, name):
+                return {
+                    "name": "is_even",
+                    "description": "Checks if a number is even",
+                    "properties": {"x": {"type": "integer"}},
+                }
+
+            async def call_tool(self, name, arguments):
+                return ToolOutput(content=arguments["x"] % 2 == 0)
+
+            async def list_tools(self):
+                return AsyncMock(
+                    tools=[
+                        {
+                            "name": "is_even",
+                            "description": "Checks if a number is even",
+                            "properties": {"x": {"type": "integer"}},
+                        }
+                    ]
+                )
+
+        function = TreeLambda(["x"], TreeFunction("is_even", [TreeValue("x", None)]))
+        iterable = TreeValue("items", [1, 2, 3, 4, 5, 6])
+        tree_filter = TreeFilter(function, iterable)
+        provider = DummyProvider()
+        result = await tree_filter.eval(provider)
+        self.assertEqual(result, [2, 4, 6])
+
+    async def test_tree_filter_eval_non_iterable_raises(self):
+        function = TreeLambda(["x"], TreeFunction("is_even", [TreeValue("x", None)]))
+        iterable = TreeValue("items", 123)  # Not a list
+        tree_filter = TreeFilter(function, iterable)
+        provider = AsyncMock(spec=ToolProvider)
+        with self.assertRaises(TypeError):
+            await tree_filter.eval(provider)
+
+    async def test_tree_filter_eval_empty_iterable(self):
+        function = TreeLambda(["x"], TreeFunction("is_even", [TreeValue("x", None)]))
+        iterable = TreeValue("items", [])
+        tree_filter = TreeFilter(function, iterable)
+        provider = AsyncMock(spec=ToolProvider)
+
+        # Patch function.eval to return a dummy callable
+        async def dummy_func(x):
+            return True
+
+        function.eval = AsyncMock(return_value=dummy_func)
+        result = await tree_filter.eval(provider)
+        self.assertEqual(result, [])
+
+    async def test_tree_filter_eval_function_returns_false(self):
+        function = TreeLambda(
+            ["x"], TreeFunction("always_false", [TreeValue("x", None)])
+        )
+        iterable = TreeValue("items", [1, 2, 3])
+        tree_filter = TreeFilter(function, iterable)
+        provider = AsyncMock(spec=ToolProvider)
+
+        async def always_false(x):
+            return False
+
+        function.eval = AsyncMock(return_value=always_false)
+        result = await tree_filter.eval(provider)
+        self.assertEqual(result, [])
+
+
+class TestTreeReduce(unittest.IsolatedAsyncioTestCase):
+    async def test_tree_reduce_init(self):
+        function = TreeLambda(
+            ["acc", "item"],
+            TreeFunction("add", [TreeValue("acc", None), TreeValue("item", None)]),
+        )
+        iterable = TreeValue("items", [1, 2, 3])
+        tree_reduce = TreeReduce(function, iterable)
+
+        self.assertEqual(tree_reduce.type, "reduce")
+        self.assertEqual(tree_reduce.function, function)
+        self.assertEqual(tree_reduce.iterable, iterable)
+
+    async def test_tree_reduce_eval_empty_iterable(self):
+        function = TreeLambda(
+            ["acc", "item"],
+            TreeFunction("add", [TreeValue("acc", None), TreeValue("item", None)]),
+        )
+        iterable = TreeValue("items", [])
+        tree_reduce = TreeReduce(function, iterable)
+        provider = AsyncMock(spec=ToolProvider)
+
+        # Patch function.eval to return a dummy callable
+        async def dummy_func(acc, item):
+            return acc + item
+
+        function.eval = AsyncMock(return_value=dummy_func)
+        result = await tree_reduce.eval(provider)
+        self.assertIsNone(result)
+
+    async def test_tree_reduce_eval_applies_function(self):
+        class DummyProvider(ToolProvider):
+            async def get_tool_definition(self, name):
+                return {
+                    "name": "add",
+                    "description": "Adds two numbers",
+                    "properties": {
+                        "acc": {"type": "integer"},
+                        "item": {"type": "integer"},
+                    },
+                }
+
+            async def call_tool(self, name, arguments):
+                return ToolOutput(content=arguments["acc"] + arguments["item"])
+
+            async def list_tools(self):
+                return AsyncMock(
+                    tools=[
+                        {
+                            "name": "add",
+                            "description": "Adds two numbers",
+                            "properties": {
+                                "acc": {"type": "integer"},
+                                "item": {"type": "integer"},
+                            },
+                        }
+                    ]
+                )
+
+        function = TreeLambda(
+            ["acc", "item"],
+            TreeFunction("add", [TreeValue("acc", None), TreeValue("item", None)]),
+        )
+        iterable = TreeValue("items", [1, 2, 3])
+        tree_reduce = TreeReduce(function, iterable)
+        provider = DummyProvider()
+        result = await tree_reduce.eval(provider)
+        self.assertEqual(result, 6)  # (1 + 2) + 3
+
+
 class TestAST(unittest.TestCase):
     def setUp(self):
         self.ast = [
@@ -374,6 +524,47 @@ class TestAST(unittest.TestCase):
         }
         result = AST.parse(ast_dict)
         self.assertIsInstance(result, TreeMap)
+        self.assertIsInstance(result.function, TreeLambda)
+        self.assertIsInstance(result.iterable, TreeValue)
+
+    def test_parse_filter(self):
+        ast_dict = {
+            "type": "filter",
+            "function": {
+                "type": "lambda",
+                "params": ["x"],
+                "body": {
+                    "type": "function",
+                    "name": "is_even",
+                    "params": [{"type": "value", "name": "x", "value": 0}],
+                },
+            },
+            "iterable": {"type": "value", "name": "numbers", "value": [1, 2, 3, 4]},
+        }
+        result = AST.parse(ast_dict)
+        self.assertIsInstance(result, TreeFilter)
+        self.assertIsInstance(result.function, TreeLambda)
+        self.assertIsInstance(result.iterable, TreeValue)
+
+    def test_parse_reduce(self):
+        ast_dict = {
+            "type": "reduce",
+            "function": {
+                "type": "lambda",
+                "params": ["acc", "item"],
+                "body": {
+                    "type": "function",
+                    "name": "add",
+                    "params": [
+                        {"type": "value", "name": "acc", "value": 0},
+                        {"type": "value", "name": "item", "value": 0},
+                    ],
+                },
+            },
+            "iterable": {"type": "value", "name": "numbers", "value": [1, 2, 3]},
+        }
+        result = AST.parse(ast_dict)
+        self.assertIsInstance(result, TreeReduce)
         self.assertIsInstance(result.function, TreeLambda)
         self.assertIsInstance(result.iterable, TreeValue)
 
@@ -621,6 +812,119 @@ class TestAST(unittest.TestCase):
         result = asyncio.run(AST.eval(program, provider))
         self.assertEqual(result, [2, 4, 6])
 
+    def test_eval_with_filter(self):
+        class MockToolProvider(ToolProvider):
+            async def call_tool(self, name, arguments):
+                if name == "is_even":
+                    return ToolOutput(content=arguments["x"] % 2 == 0)
+                raise ValueError(f"Unknown tool: {name}")
+
+            async def list_tools(self):
+                return AsyncMock(
+                    tools=[
+                        {
+                            "name": "is_even",
+                            "description": "Checks if a number is even",
+                            "properties": {"x": {}},
+                        }
+                    ]
+                )
+
+            async def get_tool_definition(self, name):
+                if name == "is_even":
+                    return {
+                        "name": "is_even",
+                        "description": "Checks if a number is even",
+                        "properties": {"x": {}},
+                    }
+                else:
+                    raise ValueError(f"Tool {name} not found")
+
+        ast_dict = {
+            "type": "program",
+            "body": [
+                {
+                    "type": "filter",
+                    "function": {
+                        "type": "lambda",
+                        "params": ["x"],
+                        "body": {
+                            "type": "function",
+                            "name": "is_even",
+                            "params": [{"type": "value", "name": "x", "value": None}],
+                        },
+                    },
+                    "iterable": {
+                        "type": "value",
+                        "name": "numbers",
+                        "value": [1, 2, 3, 4],
+                    },
+                }
+            ],
+        }
+        provider = MockToolProvider()
+        program = AST.parse(ast_dict)
+        result = asyncio.run(AST.eval(program, provider))
+        self.assertEqual(result, [2, 4])
+
+    def test_eval_with_reduce(self):
+        class MockToolProvider(ToolProvider):
+            async def call_tool(self, name, arguments):
+                if name == "add":
+                    return ToolOutput(content=arguments["acc"] + arguments["item"])
+                raise ValueError(f"Unknown tool: {name}")
+
+            async def list_tools(self):
+                return AsyncMock(
+                    tools=[
+                        {
+                            "name": "add",
+                            "description": "Adds two numbers",
+                            "properties": {"acc": {}, "item": {}},
+                        }
+                    ]
+                )
+
+            async def get_tool_definition(self, name):
+                if name == "add":
+                    return {
+                        "name": "add",
+                        "description": "Adds two numbers",
+                        "properties": {"acc": {}, "item": {}},
+                    }
+                else:
+                    raise ValueError(f"Tool {name} not found")
+
+        ast_dict = {
+            "type": "program",
+            "body": [
+                {
+                    "type": "reduce",
+                    "function": {
+                        "type": "lambda",
+                        "params": ["acc", "item"],
+                        "body": {
+                            "type": "function",
+                            "name": "add",
+                            "params": [
+                                {"type": "value", "name": "acc", "value": None},
+                                {"type": "value", "name": "item", "value": None},
+                            ],
+                        },
+                    },
+                    "iterable": {
+                        "type": "value",
+                        "name": "numbers",
+                        "value": [1, 2, 3],
+                    },
+                }
+            ],
+        }
+        provider = MockToolProvider()
+        program = AST.parse(ast_dict)
+        result = asyncio.run(AST.eval(program, provider))
+        self.assertEqual(result, 6)
+
     def test_visit(self):
         node = TreeNode("test")
         op = Mock()
@@ -670,6 +974,37 @@ class TestAST(unittest.TestCase):
         op.assert_any_call(function)
         op.assert_any_call(iterable)
         self.assertEqual(op.call_count, 5)
+
+    def test_visit_with_filter(self):
+        function = TreeLambda(["x"], TreeFunction("is_even", [TreeValue("x", None)]))
+        iterable = TreeValue("items", [1, 2, 3, 4])
+        tree_filter = TreeFilter(function, iterable)
+
+        op = Mock()
+        AST.visit(tree_filter, op)
+
+        # Assert that the visitor function was called for the filter node and its children
+        op.assert_any_call(tree_filter)
+        op.assert_any_call(function)
+        op.assert_any_call(iterable)
+        self.assertEqual(op.call_count, 5)
+
+    def test_visit_with_reduce(self):
+        function = TreeLambda(
+            ["acc", "item"],
+            TreeFunction("add", [TreeValue("acc", None), TreeValue("item", None)]),
+        )
+        iterable = TreeValue("items", [1, 2, 3])
+        tree_reduce = TreeReduce(function, iterable)
+
+        op = Mock()
+        AST.visit(tree_reduce, op)
+
+        # Assert that the visitor function was called for the reduce node and its children
+        op.assert_any_call(tree_reduce)
+        op.assert_any_call(function)
+        op.assert_any_call(iterable)
+        self.assertEqual(op.call_count, 6)
 
     def test_repr(self):
         ast = TreeProgram(
@@ -744,6 +1079,46 @@ class TestAST(unittest.TestCase):
         expected = (
             '{"map_1": {"lambda_1": {"double_1": {"x": []}}, "items": [[1, 2, 3]]}}'
         )
+        self.assertEqual(result, expected)
+
+    def test_repr_with_filter(self):
+        ast = TreeProgram(
+            body=[
+                TreeFilter(
+                    function=TreeLambda(
+                        params=["x"],
+                        body=TreeFunction(
+                            name="is_even", params=[TreeValue(name="x", value=None)]
+                        ),
+                    ),
+                    iterable=TreeValue(name="items", value=[1, 2, 3, 4]),
+                )
+            ]
+        )
+        result = AST.repr(ast)
+        expected = '{"filter_1": {"lambda_1": {"is_even_1": {"x": []}}, "items": [[1, 2, 3, 4]]}}'
+        self.assertEqual(result, expected)
+
+    def test_repr_with_reduce(self):
+        ast = TreeProgram(
+            body=[
+                TreeReduce(
+                    function=TreeLambda(
+                        params=["acc", "item"],
+                        body=TreeFunction(
+                            name="add",
+                            params=[
+                                TreeValue(name="acc", value=None),
+                                TreeValue(name="item", value=None),
+                            ],
+                        ),
+                    ),
+                    iterable=TreeValue(name="items", value=[1, 2, 3]),
+                )
+            ]
+        )
+        result = AST.repr(ast)
+        expected = '{"reduce_1": {"lambda_1": {"add_1": {"acc": [], "item": []}}, "items": [[1, 2, 3]]}}'
         self.assertEqual(result, expected)
 
 

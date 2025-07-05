@@ -83,6 +83,16 @@ def greater_than(value, threshold):
     pass
 
 
+def get_all_cities_in_country(country):
+    """Get all cities in a given country."""
+    pass
+
+
+def add(x, y):
+    """Add two numbers."""
+    return x + y
+
+
 tools = [
     get_top_producer,
     get_capital_city,
@@ -101,6 +111,8 @@ tools = [
     count_books,
     get_author,
     greater_than,
+    get_all_cities_in_country,
+    add,
 ]
 
 questions = [
@@ -112,6 +124,8 @@ questions = [
     "If the GDP of Canada is negative, give me its GDP per capita otherwise return its GDP.",
     "What's the average annual rainfall in the capital city of the country that produces the most coffee in the world?",
     "What are the populations of the three largest cities in Australia?",
+    "What are the cities in Australia with rainfall greater than 1000mm?",
+    "What is the total population of all cities in Australia?",
 ]
 
 
@@ -168,6 +182,23 @@ answers = [
                 }
             },
             "rankings": [["1", "2", "3"]],
+        }
+    },
+    {
+        "filter_1": {
+            "lambda_1": {
+                "greater_than_1": {
+                    "get_annual_rainfall_1": {"city": [0]},
+                    "threshold": [1000],
+                }
+            },
+            "get_all_cities_in_country_1": {"country": ["Australia"]},
+        }
+    },
+    {
+        "reduce_1": {
+            "lambda_1": {"add_1": {"x": [0], "get_city_population_1": {"city": [""]}}},
+            "get_all_cities_in_country_1": {"country": ["Australia"]},
         }
     },
 ]
