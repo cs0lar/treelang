@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.7.0] - 2025-07-05
+
+### Added
+- Added `TreeFilter` and `TreeReduce`.
+
+### Changed
+
+- Updated `READMEmd`.
+- Added tests for `TreeFilter` and `TreeReduce`.
+- Updated the `ARBORIST_SYSTEM_PROMPT` prompt.
+- Updated the `Evaluator` with questions for the `filter` and `reduce` operations.
+
+### Fixed
+
+- Fixed the python docs for `TreeMap`.
+- Fixed `add()` definition in `calculator.py`.
+
 ## [0.6.0] - 2025-06-29
 
 ### Added
@@ -8,6 +25,7 @@
 
 ### Changed
 - Added tests for higher order function nodes.
+- Updated the `ARBORIST_SYSTEM_PROMPT` prompt.
 - Added example of high order function to the `Evaluator`.
 - Updated `CONTRIBUTING.md` to include an *Evaluation* section.  
 - Added example of loop in `calculator.ipynb` cookbook.

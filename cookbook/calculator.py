@@ -4,7 +4,7 @@ mcp = FastMCP("calculator", debug=False)
 
 
 @mcp.tool()
-def add(a: float, b: float) -> str:
+def add(a: float, b: float) -> float:
     return a + b
 
 
