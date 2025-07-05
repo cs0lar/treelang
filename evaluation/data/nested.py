@@ -90,7 +90,7 @@ def get_all_cities_in_country(country):
 
 def add(x, y):
     """Add two numbers."""
-    return x + y
+    pass
 
 
 tools = [
@@ -110,9 +110,9 @@ tools = [
     calculate_per_capita,
     count_books,
     get_author,
+    add,
     greater_than,
     get_all_cities_in_country,
-    add,
 ]
 
 questions = [
