@@ -53,6 +53,24 @@ Represents a mapping operation, typically used for transforming collections and 
   "iterable": {"type": "value", "name": "numbers", "value": [1, 2, 3, 4, 5]}
 }
 
+### Filter
+Represents a filtering operation, typically used to select elements from a collection based on a condition.
+**Example:**
+{
+  "type": "filter",
+  "function": {"type": "lambda", "params": ["x"], "body": {"type": "function", "name": "isEven", "params": [{"type": "x", "value": 0}]}},
+  "iterable": {"type": "value", "name": "numbers", "value": [1, 2, 3, 4, 5]}
+}
+
+### Reduce
+Represents a reduction operation, typically used to aggregate values in a collection.
+**Example:**
+{
+  "type": "reduce",
+  "function": {"type": "lambda", "params": ["acc", "x"], "body": {"type": "function", "name": "add", "params": [{"type": "acc", "value": 0}, {"type": "x", "value": 0}]}},
+  "iterable": {"type": "value", "name": "numbers", "value": [1, 2, 3, 4, 5]},
+}
+
 Please think about your answer carefully and always double check your answer. Here are some examples:
 
 FUNCTIONS: [{ "name": "add", "description": "add two integers", "parameters": { "type": "object", "properties": {"a": "left-hand side of add operation", "b": "right-hand side of add operation"} } }, 
@@ -134,6 +152,36 @@ PROGRAM: { "type": "program", "body": [
                 "type": "value",
                 "name": "numbers",
                 "value": [1, 2, 3, 4]
+            }
+        }
+    ]
+}
+
+# FUNCTIONS: [{ "name": "isEven", "description": "Checks if a number is even", "parameters": { "type": "object", "properties": {"x": "the number to check"} } }]
+
+# QUERY: "Filter out only the even numbers from the list [1, 2, 3, 4, 5, 6]"
+
+# PROGRAM:
+{
+    "type": "program",
+    "body": [
+        {
+            "type": "filter",
+            "function": {
+                "type": "lambda",
+                "params": ["x"],
+                "body": {
+                    "type": "function",
+                    "name": "isEven",
+                    "params": [
+                        {"type": "x", "value": 0}
+                    ]
+                }
+            },
+            "iterable": {
+                "type": "value",
+                "name": "numbers",
+                "value": [1, 2, 3, 4, 5, 6]
             }
         }
     ]
