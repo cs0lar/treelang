@@ -2,6 +2,10 @@
 
 ## [0.7.1] - 2025-07-13
 
+### Changed
+
+- Removed `vcrpy` dependency.
+
 ### Fixed
 
 - Instead of throwing an uncaught exception when the output of an MCP tool is not json loadable, we return the content as is in `MCPToolProvider`'s `call_tool()` method.

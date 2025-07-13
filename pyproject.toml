@@ -29,7 +29,6 @@ starlette = "^0.46.1"
 black = "^25.1.0"
 mcp = {extras = ["cli"], version = "^1.6.0"}
 ipykernel = "^6.29.5"
-vcrpy = "^7.0.0"
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
