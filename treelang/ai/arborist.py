@@ -236,6 +236,35 @@ class OpenAIArborist(BaseArborist):
     def grow(self):
         pass
 
+    def supports_temperature(self, model_name: str) -> bool:
+        """
+        Determines if the specified model supports the 'temperature' parameter.
+        Only chat completions models support temperature adjustment.
+
+        Args:
+            model_name (str): The name of the model to check.
+
+        Returns:
+            bool: True if the model supports temperature adjustment, False otherwise.
+
+        Supported models include those whose names start with:
+            - "gpt-4o"
+            - "gpt-4o-mini"
+            - "gpt-4.1"
+            - "gpt-4.1-mini"
+            - "o1"
+            - "o1-mini"
+        """
+        chat_models = [
+            "gpt-4o",
+            "gpt-4o-mini",
+            "gpt-4.1",
+            "gpt-4.1-mini",
+            "o1",
+            "o1-mini",
+        ]
+        return any(model_name.startswith(m) for m in chat_models)
+
     async def eval(self, query: str, type: EvalType = EvalType.WALK) -> EvalResponse:
         """
         Asynchronously evaluates a query using the OpenAI model and generates an AST.
@@ -260,7 +289,7 @@ class OpenAIArborist(BaseArborist):
             "response_format": {"type": "json_object"},
         }
 
-        if self.model != "o1":
+        if self.supports_temperature(self.model):
             params["temperature"] = 0.0
 
         available_tools = await self.selector.select(self.provider)

@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.7.2] - 2025-08-08
+
+### Fixed
+
+- Fixed the way in which the `OpenAIArborist` checks whether a model supports the `temperature` parameter.
+
 ## [0.7.1] - 2025-07-13
 
 ### Changed
@@ -17,7 +23,7 @@
 
 ### Changed
 
-- Updated `READMEmd`.
+- Updated `README.md`.
 - Added tests for `TreeFilter` and `TreeReduce`.
 - Updated the `ARBORIST_SYSTEM_PROMPT` prompt.
 - Updated the `Evaluator` with questions for the `filter` and `reduce` operations.
