@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.7.3] - 2025-09-13
+
+### Added
+
+- Added `query` parameter to `BaseToolSelector.select()`.
+- `OpenAIArborist` now passes the query to its `selector`.
+
 ## [0.7.2] - 2025-08-08
 
 ### Fixed

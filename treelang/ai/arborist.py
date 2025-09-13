@@ -292,7 +292,7 @@ class OpenAIArborist(BaseArborist):
         if self.supports_temperature(self.model):
             params["temperature"] = 0.0
 
-        available_tools = await self.selector.select(self.provider)
+        available_tools = await self.selector.select(self.provider, query)
 
         if available_tools:
             params["tools"] = [
