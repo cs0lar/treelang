@@ -4,7 +4,7 @@ from typing import Any
 from enum import Enum
 from pydantic import BaseModel, ConfigDict
 from dotenv import load_dotenv
-from openai import OpenAI
+from openai import AsyncOpenAI
 
 from treelang.ai.prompt import (
     ARBORIST_SYSTEM_PROMPT,
@@ -67,14 +67,14 @@ class EvalResponse(Model):
     content: TreeNode | Any
     jsontree: dict[str, Any] | None = None
 
-    def explain(self) -> str:
+    async def explain(self) -> str:
         """
         Generates an English explanation of the evaluation response.
 
         Returns:
             str: A string representation of the evaluation response.
         """
-        openai = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+        openai = AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
         if self.type == EvalType.TREE:
             raise ValueError("Cannot explain a tree response.")
@@ -93,13 +93,13 @@ class EvalResponse(Model):
             "messages": messages,
         }
 
-        completion = openai.chat.completions.create(**params)
+        completion = await openai.chat.completions.create(**params)
         message = completion.choices[0].message.model_dump(mode="json")
         content = message["content"]
 
         return content
 
-    def describe(self) -> TreeNode:
+    async def describe(self) -> TreeNode:
         """
         Generates a name and a description for the response tree.
         It uses an LLM to generate a description based on the tree's JSON representation.
@@ -111,7 +111,7 @@ class EvalResponse(Model):
         Returns:
             TreeNode: The tree with the name and description set.
         """
-        openai = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+        openai = AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
         if self.type == EvalType.WALK:
             raise ValueError("Only tree responses can be described.")
@@ -133,7 +133,7 @@ class EvalResponse(Model):
             "response_format": {"type": "json_object"},
         }
 
-        completion = openai.chat.completions.create(**params)
+        completion = await openai.chat.completions.create(**params)
         message = completion.choices[0].message.model_dump(mode="json")
         response = json.loads(message["content"])
 
@@ -231,7 +231,7 @@ class OpenAIArborist(BaseArborist):
         selector: BaseToolSelector = AllToolsSelector(),
     ):
         super().__init__(model, ARBORIST_SYSTEM_PROMPT, "", provider, selector)
-        self.openai = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+        self.openai = AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
     def grow(self):
         pass
@@ -310,7 +310,7 @@ class OpenAIArborist(BaseArborist):
                 for tool in available_tools
             ]
 
-        completion = self.openai.chat.completions.create(**params)
+        completion = await self.openai.chat.completions.create(**params)
         message = completion.choices[0].message.model_dump(mode="json")
         content = message["content"]
         jsontree = json.loads(content)

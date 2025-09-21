@@ -1,6 +1,6 @@
 [project]
 name = "treelang"
-version = "0.7.3"
+version = "0.7.4"
 description = "LLM function calling on steroids using Abstract Syntax Trees."
 authors = [
     {name = "csolar",email = "cristiano.solarino@brightminded.com"}
@@ -22,8 +22,6 @@ Issues = "https://github.com/cs0lar/treelang/issues"
 dotenv = "^0.9.9"
 mcp = "^1.5.0"
 openai = "^1.68.2"
-uvicorn = "^0.34.0"
-starlette = "^0.46.1"
 
 [tool.poetry.group.dev.dependencies]
 black = "^25.1.0"
