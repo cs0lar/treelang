@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.7.5] - 2025-09-21
+
+### Added
+
+- Added the `explain_stream` method to `EvalResponse` to support streamed response explanations.
+
+### Fixed
+
+- the `explain`, ``explain_stream` and `describe` methods now retrieve the LLM model to use from the environment.
+
 ## [0.7.4] - 2025-09-21
 
 ### Changed
