@@ -89,7 +89,7 @@ class EvalResponse(Model):
         ]
 
         params = {
-            "model": "gpt-4o-2024-11-20",
+            "model": os.getenv("OPENAI_MODEL", "gpt-4o-2024-11-20"),
             "messages": messages,
         }
 
@@ -98,6 +98,38 @@ class EvalResponse(Model):
         content = message["content"]
 
         return content
+
+    async def explain_stream(self):
+        """
+        Generates an English explanation of the evaluation response as a stream.
+
+        Yields:
+            str: A string representation of the evaluation response.
+        """
+        openai = AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+
+        if self.type == EvalType.TREE:
+            raise ValueError("Cannot explain a tree response.")
+
+        query = EXPLAIN_EVALUATION_USER_PROMPT.format(
+            question=self.query, data={"data": self.content}
+        )
+
+        messages = [
+            {"role": "system", "content": EXPLAIN_EVALUATION_SYSTEM_PROMPT},
+            {"role": "user", "content": query},
+        ]
+
+        params = {
+            "model": os.getenv("OPENAI_MODEL", "gpt-4o-2024-11-20"),
+            "messages": messages,
+            "stream": True,
+        }
+
+        async for chunk in await openai.chat.completions.create(**params):
+            for choice in chunk.choices:
+                if choice.delta and choice.delta.content:
+                    yield choice.delta.content.encode()
 
     async def describe(self) -> TreeNode:
         """
@@ -128,7 +160,7 @@ class EvalResponse(Model):
             {"role": "user", "content": query},
         ]
         params = {
-            "model": "gpt-4o-2024-11-20",
+            "model": os.getenv("OPENAI_MODEL", "gpt-4o-2024-11-20"),
             "messages": messages,
             "response_format": {"type": "json_object"},
         }
