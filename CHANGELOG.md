@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.7.4] - 2025-09-21
+
+### Changed
+
+- The `OpenAIArborist` now uses the asynchronous version of the OpenAI API.
+- Removed direct dependency on `starlette` and `uvicorn` from `pyproject.toml`.
+
 ## [0.7.3] - 2025-09-13
 
 ### Added
