@@ -351,7 +351,10 @@ class OpenAIArborist(BaseArborist):
 
         if type == EvalType.WALK:
             return EvalResponse(
-                query=query, type=EvalType.WALK, content=await self.walk(tree)
+                query=query,
+                type=EvalType.WALK,
+                content=await self.walk(tree),
+                jsontree=jsontree,
             )
         else:
             return EvalResponse(
