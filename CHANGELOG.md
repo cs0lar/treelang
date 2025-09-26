@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.7.6] - 2025-09-26
+
+### Changed
+
+- The `EvalResponse` object now specified a value for the `jsontree` property for both `WALK` and `TREE` modes.
+
+- The `calculator.ipynb` cookbook now uses `async.gather` to run the initial set of expressions asynchronously.
+
 ## [0.7.5] - 2025-09-21
 
 ### Added
