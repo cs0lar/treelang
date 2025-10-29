@@ -1,11 +1,13 @@
 import json
 import os
-from typing import Any
 from enum import Enum
-from pydantic import BaseModel, ConfigDict
+from typing import Any
+
 from dotenv import load_dotenv
 from openai import AsyncOpenAI
+from pydantic import BaseModel, ConfigDict
 
+from treelang.ai.memory import Memory
 from treelang.ai.prompt import (
     ARBORIST_SYSTEM_PROMPT,
     EXPLAIN_EVALUATION_SYSTEM_PROMPT,
@@ -13,8 +15,8 @@ from treelang.ai.prompt import (
     TREE_DESCRIPTOR_SYSTEM_PROMPT,
     TREE_DESCRIPTOR_USER_PROMPT,
 )
-from treelang.ai.selector import AllToolsSelector, BaseToolSelector
 from treelang.ai.provider import ToolProvider
+from treelang.ai.selector import AllToolsSelector, BaseToolSelector
 from treelang.trees.tree import AST, TreeNode, TreeProgram
 
 load_dotenv()
@@ -261,9 +263,11 @@ class OpenAIArborist(BaseArborist):
         model: str,
         provider: ToolProvider,
         selector: BaseToolSelector = AllToolsSelector(),
+        memory: Memory | None = None,
     ):
         super().__init__(model, ARBORIST_SYSTEM_PROMPT, "", provider, selector)
         self.openai = AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+        self.memory = memory
 
     def grow(self):
         pass
@@ -314,6 +318,13 @@ class OpenAIArborist(BaseArborist):
             {"role": "system", "content": self.system_prompt},
             {"role": "user", "content": query},
         ]
+
+        if self.memory:
+            history = self.memory.get()
+            for item in history[::-1]:
+                messages.insert(
+                    1, {"role": item.role, "content": item.content}
+                )  # insert after system prompt
 
         params = {
             "model": self.model,
