@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.8.1] - 2025-10-30
+
+### Changed
+
+- Converted `Memory` methods to be asynchronous.
+
 ## [0.8.0] - 2025-10-29
 
 ### Added

@@ -13,16 +13,16 @@ class Memory(ABC):
     """Abstract base class for memory implementations."""
 
     @abstractmethod
-    def add(self, messages: List[ChatMessage]) -> None:
-        """Add chat messages to the memory."""
+    async def add(self, messages: List[ChatMessage]) -> None:
+        """Asynchronously add chat messages to the memory."""
         pass
 
     @abstractmethod
-    def get(self) -> List[ChatMessage]:
-        """Retrieve items from memory based on a query."""
+    async def get(self) -> List[ChatMessage]:
+        """Asynchronously retrieve items from memory based on a query."""
         pass
 
     @abstractmethod
-    def clear(self) -> None:
-        """Clear all items from the memory."""
+    async def clear(self) -> None:
+        """Asynchronously clear all items from the memory."""
         pass

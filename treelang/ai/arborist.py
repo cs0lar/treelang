@@ -320,7 +320,7 @@ class OpenAIArborist(BaseArborist):
         ]
 
         if self.memory:
-            history = self.memory.get()
+            history = await self.memory.get()
             for item in history[::-1]:
                 messages.insert(
                     1, {"role": item.role, "content": item.content}
