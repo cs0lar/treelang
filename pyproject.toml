@@ -20,12 +20,12 @@ Issues = "https://github.com/cs0lar/treelang/issues"
 
 [tool.poetry.dependencies]
 dotenv = "^0.9.9"
-mcp = "^1.5.0"
+mcp = "^1.23.0"
 openai = "^1.68.2"
 
 [tool.poetry.group.dev.dependencies]
 black = "^25.1.0"
-mcp = {extras = ["cli"], version = "^1.6.0"}
+mcp = {extras = ["cli"], version = "^1.23.0"}
 ipykernel = "^6.29.5"
 
 [build-system]
