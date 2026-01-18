@@ -41,7 +41,7 @@ class AST:
         if isinstance(ast, List):
             return [cls.parse(node) for node in ast]
         try:
-            return ASTSchema.model_validate(ast)
+            return ASTSchema.model_validate(ast).root
         except Exception as e:
             raise ValueError(f"Failed to parse AST: {e}") from e
 

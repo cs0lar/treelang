@@ -5,8 +5,6 @@ from typing import Annotated, Any, Dict, List, Literal, Optional, Union
 from pydantic import BaseModel, ConfigDict, Field, RootModel, model_validator
 
 from treelang.ai.provider import ToolProvider
-from treelang.trees.schemas import CURRENT_SCHEMA_VERSION
-
 
 class TreeNode(BaseModel):
     """
@@ -23,7 +21,7 @@ class TreeNode(BaseModel):
 
     model_config = ConfigDict(
         extra="forbid",  # Forbid extra fields not defined in the model
-        frozen=True,  # Make the model immutable
+        frozen=False,  # Allow mutation of model instances
         validate_assignment=True,  # Validate fields on assignment
         populate_by_name=True,  # For alias support
     )
@@ -309,21 +307,6 @@ TreeLambda.model_rebuild()
 TreeMap.model_rebuild()
 TreeFilter.model_rebuild()
 TreeReduce.model_rebuild()
-
-
-class SchemaV1(BaseModel):
-    """
-    Canonical top-level object returned by Arborists.
-
-    {
-      "schema_version": "1.0",
-      "ast": { ...Node... }
-    }
-    """
-
-    model_config = ConfigDict(extra="forbid", strict=True)
-    schema_version: Literal["1.0"] = Field(default=CURRENT_SCHEMA_VERSION)
-    ast: Node
 
 
 class AST(RootModel[Node]):
