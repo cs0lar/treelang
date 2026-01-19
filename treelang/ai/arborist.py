@@ -56,8 +56,6 @@ class EvalResponse(Model):
         type (EvalType): The type of evaluation being performed.
         content (Any): The content of the evaluation response. This can be a TreeNode
         if type is TREE or Any if type is WALK depending on the evaluation.
-        jsontree (dict[str, Any] | None): The JSON representation of the tree if available.
-            This is used for tree responses to generate a description of the tree.
 
     Methods:
         explain() -> str:
@@ -67,7 +65,6 @@ class EvalResponse(Model):
     query: str
     type: EvalType
     content: TreeNode | Any
-    jsontree: dict[str, Any] | None = None
 
     async def explain(self) -> str:
         """
@@ -150,13 +147,14 @@ class EvalResponse(Model):
         if self.type == EvalType.WALK:
             raise ValueError("Only tree responses can be described.")
 
-        if not self.jsontree:
+        if not self.content:
             raise ValueError("No JSON representation of the tree available.")
 
         if not isinstance(self.content, TreeProgram):
             raise ValueError("Only TreeProgram instances can be described.")
 
-        query = TREE_DESCRIPTOR_USER_PROMPT.format(tree=json.dumps(self.jsontree))
+        jsontree = AST.repr(self.content)
+        query = TREE_DESCRIPTOR_USER_PROMPT.format(tree=json.dumps(jsontree))
         messages = [
             {"role": "system", "content": TREE_DESCRIPTOR_SYSTEM_PROMPT},
             {"role": "user", "content": query},
@@ -365,9 +363,6 @@ class OpenAIArborist(BaseArborist):
                 query=query,
                 type=EvalType.WALK,
                 content=await self.walk(tree),
-                jsontree=jsontree,
             )
         else:
-            return EvalResponse(
-                query=query, type=EvalType.TREE, content=tree, jsontree=jsontree
-            )
+            return EvalResponse(query=query, type=EvalType.TREE, content=tree)
