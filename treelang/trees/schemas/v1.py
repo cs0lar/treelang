@@ -6,15 +6,10 @@ from pydantic import BaseModel, ConfigDict, Field, RootModel, model_validator
 
 from treelang.ai.provider import ToolProvider
 
+
 class TreeNode(BaseModel):
     """
     Represents a node in the abstract syntax tree (AST).
-
-    Attributes:
-        type (str): The type of the AST node.
-
-    Methods:
-        eval(ToolProvider): Evaluates the node using the provided ToolProvider.
     """
 
     type: Literal["node"] = "node"
@@ -30,8 +25,7 @@ class TreeNode(BaseModel):
         raise NotImplementedError()
 
     def hash(self) -> str:
-        canonical_json = self.model_dump_json(
-            by_alias=True, exclude_unset=True)
+        canonical_json = self.model_dump_json(by_alias=True, exclude_unset=False)
         return sha256(canonical_json.encode("utf-8")).hexdigest()
 
 
@@ -43,12 +37,6 @@ type JsonValue = Union[JsonPrimitive, List["JsonValue"], Dict[str, "JsonValue"]]
 class TreeValue(TreeNode):
     """
     Represents a value in the abstract syntax tree (AST).
-
-    Attributes:
-        value (Any): The value of the node.
-
-    Methods:
-        eval(ToolProvider): Returns the value of the node.
     """
 
     type: Literal["value"] = "value"
@@ -62,13 +50,6 @@ class TreeValue(TreeNode):
 class TreeFunction(TreeNode):
     """
     Represents a function in the abstract syntax tree (AST).
-
-    Attributes:
-        name (str): The name of the function.
-        params (List[str]): The list of parameters of the function.
-
-    Methods:
-        eval(ToolProvider): Evaluates the function by calling the underlying tool with the provided parameters.
     """
 
     type: Literal["function"] = "function"
@@ -96,14 +77,6 @@ class TreeFunction(TreeNode):
 class TreeProgram(TreeNode):
     """
     Represents a program in the abstract syntax tree (AST).
-
-    Attributes:
-        body (List[TreeNode]): The list of statements in the program.
-        name str: optional name for this program.
-        description str: optional description for this program.
-
-    Methods:
-        eval(ToolProvider): Evaluates the program by evaluating each statement in the body.
     """
 
     type: Literal["program"] = "program"
@@ -119,14 +92,6 @@ class TreeProgram(TreeNode):
 class TreeConditional(TreeNode):
     """
     Represents a conditional statement in the AST.
-
-    Attributes:
-        condition (TreeNode): The condition to evaluate.
-        true_branch (TreeNode): The branch to execute if the condition is true.
-        false_branch (TreeNode): The branch to execute if the condition is false.
-
-    Methods:
-        eval(ToolProvider): Evaluates the condition and executes the appropriate branch.
     """
 
     type: Literal["conditional"] = "conditional"
@@ -146,14 +111,6 @@ class TreeConditional(TreeNode):
 
 
 class FunctionBodySpec(TreeNode):
-    """
-    This is the minimal shape your parser expects inside lambda.body
-    and map/filter/reduce.function.body:
-      {"name": "...", "params": [...]}
-    It may optionally include "type":"function" too (we'll allow via union).
-    :contentReference[oaicite:6]{index=6}
-    """
-
     name: str = Field(..., min_length=1)
     params: List["Node"] = Field(default_factory=list)
 
@@ -164,9 +121,6 @@ LambdaBody = Union[TreeFunction, FunctionBodySpec]
 class TreeLambda(TreeNode):
     """
     Represents an anonymous (lambda) function.
-    Attributes:
-        params (List[str]): Parameter names.
-        body (TreeFunction): The function body.
     """
 
     type: Literal["lambda"] = "lambda"
@@ -194,13 +148,6 @@ class TreeLambda(TreeNode):
 class TreeMap(TreeNode):
     """
     Represents a map operation in the abstract syntax tree (AST).
-
-    Attributes:
-        function (TreeLambda): The function to apply to each item in the iterable.
-        iterable (TreeNode): The iterable to map over. The iterable TreeNode should evaluate to a list.
-
-    Methods:
-        eval(ToolProvider): Applies the map function to each item in the iterable.
     """
 
     type: Literal["map"] = "map"
@@ -221,13 +168,6 @@ class TreeMap(TreeNode):
 class TreeFilter(TreeNode):
     """
     Represents a filter operation in the abstract syntax tree (AST).
-
-    Attributes:
-        function (TreeLambda): The function to apply to each item in the iterable. The function should return a boolean value.
-        iterable (TreeNode): The iterable to filter. The iterable TreeNode should evaluate to a list.
-
-    Methods:
-        eval(ToolProvider): Applies the filter function to each item in the iterable.
     """
 
     type: Literal["filter"] = "filter"
@@ -248,14 +188,6 @@ class TreeFilter(TreeNode):
 class TreeReduce(TreeNode):
     """
     Represents a reduce operation in the abstract syntax tree (AST).
-
-    Attributes:
-        function (TreeLambda): The function to apply to each item in the iterable. The function should take two arguments,
-                               the accumulated value and the current item, and return a new accumulated value.
-        iterable (TreeNode): The iterable to reduce. The iterable TreeNode should evaluate to a list.
-
-    Methods:
-        eval(ToolProvider): Applies the reduce function to each item in the iterable.
     """
 
     type: Literal["reduce"] = "reduce"
@@ -365,3 +297,126 @@ class AST(RootModel[Node]):
 
         walk(self.root)
         return self
+
+
+def ast_v1_examples() -> list[Dict[str, str]]:
+    """Provide example ASTs in canonical JSON format for use in few-shots prompts for LLMs."""
+    examples: list[Dict[str, str]] = []
+
+    example_1 = {
+        "q": "Can you calculate (12*6)+4?",
+        "a": AST(
+            root=TreeProgram(
+                body=[
+                    TreeFunction(
+                        name="add",
+                        params=[
+                            TreeFunction(
+                                name="multiply",
+                                params=[
+                                    TreeValue(name="a", value=12),
+                                    TreeValue(name="b", value=6),
+                                ],
+                            ),
+                            TreeValue(name="c", value=4),
+                        ],
+                    )
+                ],
+                name="Calculate (12*6)+4",
+                description="A simple arithmetic calculation using add and multiply functions.",
+            )
+        ).model_dump_json(by_alias=True, exclude_unset=False),
+    }
+    examples.append(example_1)
+    example_2 = {
+        "q": "Chart the distribution of a list of 100 random numbers between 1 and 10.",
+        "a": AST(
+            root=TreeProgram(
+                body=[
+                    TreeFunction(
+                        name="chart_distribution",
+                        params=[
+                            TreeFunction(
+                                name="generate_random_numbers",
+                                params=[
+                                    TreeValue(name="count", value=100),
+                                    TreeValue(name="min", value=1),
+                                    TreeValue(name="max", value=10),
+                                ],
+                            ),
+                            TreeValue(name="bins", value=10),
+                            TreeValue(name="title", value="Random Number Distribution"),
+                            TreeValue(name="xlabel", value="Number"),
+                            TreeValue(name="ylabel", value="Frequency"),
+                        ],
+                    )
+                ],
+                name="Chart Random Number Distribution",
+                description="Generates 100 random numbers between 1 and 10 and charts their distribution.",
+            )
+        ).model_dump_json(by_alias=True, exclude_unset=False),
+    }
+    examples.append(example_2)
+
+    example_3 = {
+        "q": "Calculate the resistance of a wire with a length of 5m and cross sectional area 0.01m\u00b2 with resistivity of copper and aluminum.",
+        "a": AST(
+            root=TreeProgram(
+                body=[
+                    TreeMap(
+                        function=TreeLambda(
+                            params=["material_resistivity"],
+                            body=TreeFunction(
+                                name="calculate_resistance",
+                                params=[
+                                    TreeValue(name="length", value=5),
+                                    TreeValue(name="area", value=0.01),
+                                    TreeValue(name="material_resistivity", value=0),
+                                ],
+                            ),
+                        ),
+                        iterable=TreeValue(
+                            name="resistivities",
+                            value={
+                                "copper": 1.68e-8,
+                                "aluminum": 2.82e-8,
+                            },
+                        ),
+                    )
+                ],
+                name="Calculate Wire Resistance for Different Materials",
+                description="Calculates the resistance of a wire made of copper and aluminum given length, area, and resistivity.",
+            )
+        ).model_dump_json(by_alias=True, exclude_unset=False),
+    }
+    examples.append(example_3)
+
+    example_4 = {
+        "q": "Filter out even numbers from a list of numbers from 1 to 10.",
+        "a": AST(
+            root=TreeProgram(
+                body=[
+                    TreeFilter(
+                        function=TreeLambda(
+                            params=["num"],
+                            body=TreeFunction(
+                                name="is_odd",
+                                params=[
+                                    TreeValue(name="num", value=0),
+                                ],
+                            ),
+                        ),
+                        iterable=TreeValue(
+                            name="numbers",
+                            value=list(range(1, 11)),
+                        ),
+                    )
+                ],
+                name="Filter Odd Numbers",
+                description="Filters out even numbers from a list of numbers from 1 to 10.",
+            )
+        ).model_dump_json(by_alias=True, exclude_unset=False),
+    }
+    examples.append(example_4)
+
+    return examples

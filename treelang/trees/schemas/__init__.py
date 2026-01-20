@@ -1,22 +1,23 @@
-from typing import Literal
+import json
+from typing import Dict, Literal
+
 from pydantic import BaseModel, ConfigDict, Field
 
-from treelang.trees.schemas.v1 import Node
-
+from treelang.trees.schemas.v1 import AST, Node, ast_v1_examples
 
 CURRENT_SCHEMA_VERSION = "1.0"
 
 
 class SchemaV1(BaseModel):
-    """
-    Canonical top-level object returned by Arborists.
-
-    {
-      "schema_version": "1.0",
-      "ast": { ...Node... }
-    }
-    """
-
     model_config = ConfigDict(extra="forbid", strict=True)
     schema_version: Literal["1.0"] = Field(default=CURRENT_SCHEMA_VERSION)
     ast: Node
+
+
+def ast_json_schema() -> dict:
+    schema = AST.model_json_schema()
+    return json.dumps(schema, indent=2, ensure_ascii=False)
+
+
+def ast_examples() -> list[Dict[str, str]]:
+    return ast_v1_examples()
