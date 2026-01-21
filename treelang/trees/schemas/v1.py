@@ -1,4 +1,5 @@
 import asyncio
+import json
 from hashlib import sha256
 from typing import Annotated, Any, Dict, List, Literal, Optional, Union
 
@@ -213,9 +214,6 @@ class TreeReduce(TreeNode):
         return result
 
 
-# -----------------------
-# Discriminated union for Node
-# -----------------------
 type Node = Annotated[
     Union[
         TreeNode,  # base type for testing
@@ -299,9 +297,9 @@ class AST(RootModel[Node]):
         return self
 
 
-def ast_v1_examples() -> list[Dict[str, str]]:
+def ast_v1_examples() -> list[str]:
     """Provide example ASTs in canonical JSON format for use in few-shots prompts for LLMs."""
-    examples: list[Dict[str, str]] = []
+    examples: list[str] = []
 
     example_1 = {
         "q": "Can you calculate (12*6)+4?",
@@ -417,6 +415,36 @@ def ast_v1_examples() -> list[Dict[str, str]]:
             )
         ).model_dump_json(by_alias=True, exclude_unset=False),
     }
+
     examples.append(example_4)
+
+    example_5 = {
+        "q": "Sum all numbers in the list [1, 2, 3, 4, 5].",
+        "a": AST(
+            root=TreeProgram(
+                body=[
+                    TreeReduce(
+                        function=TreeLambda(
+                            params=["acc", "x"],
+                            body=TreeFunction(
+                                name="add",
+                                params=[
+                                    TreeValue(name="a", value=0),
+                                    TreeValue(name="b", value=0),
+                                ],
+                            ),
+                        ),
+                        iterable=TreeValue(
+                            name="numbers",
+                            value=[1, 2, 3, 4, 5],
+                        ),
+                    )
+                ],
+                name="Sum List",
+                description="Sums all numbers in the list [1, 2, 3, 4, 5] using reduce.",
+            )
+        ).model_dump_json(by_alias=True, exclude_unset=False),
+    }
+    examples.append(example_5)
 
     return examples

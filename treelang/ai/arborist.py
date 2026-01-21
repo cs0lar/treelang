@@ -17,6 +17,7 @@ from treelang.ai.prompt import (
 )
 from treelang.ai.provider import ToolProvider
 from treelang.ai.selector import AllToolsSelector, BaseToolSelector
+from treelang.trees.schemas import ast_examples, ast_json_schema
 from treelang.trees.tree import AST, TreeNode, TreeProgram
 
 load_dotenv()
@@ -263,7 +264,15 @@ class OpenAIArborist(BaseArborist):
         selector: BaseToolSelector = AllToolsSelector(),
         memory: Memory | None = None,
     ):
-        super().__init__(model, ARBORIST_SYSTEM_PROMPT, "", provider, selector)
+        super().__init__(
+            model,
+            ARBORIST_SYSTEM_PROMPT.format(
+                schema=ast_json_schema(), examples=ast_examples()
+            ),
+            "",
+            provider,
+            selector,
+        )
         self.openai = AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY"))
         self.memory = memory
 
