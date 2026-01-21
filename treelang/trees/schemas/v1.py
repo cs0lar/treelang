@@ -1,5 +1,4 @@
 import asyncio
-import json
 from hashlib import sha256
 from typing import Annotated, Any, Dict, List, Literal, Optional, Union
 
@@ -419,7 +418,7 @@ def ast_v1_examples() -> list[str]:
     examples.append(example_4)
 
     example_5 = {
-        "q": "Sum all numbers in the list [1, 2, 3, 4, 5].",
+        "q": "Sum all numbers in a randomly generated list of integers.",
         "a": AST(
             root=TreeProgram(
                 body=[
@@ -429,19 +428,23 @@ def ast_v1_examples() -> list[str]:
                             body=TreeFunction(
                                 name="add",
                                 params=[
-                                    TreeValue(name="a", value=0),
-                                    TreeValue(name="b", value=0),
+                                    TreeValue(name="acc", value=0),
+                                    TreeValue(name="x", value=0),
                                 ],
                             ),
                         ),
-                        iterable=TreeValue(
-                            name="numbers",
-                            value=[1, 2, 3, 4, 5],
+                        iterable=TreeFunction(
+                            name="generate_random_integers",
+                            params=[
+                                TreeValue(name="count", value=20),
+                                TreeValue(name="min", value=1),
+                                TreeValue(name="max", value=100),
+                            ],
                         ),
                     )
                 ],
                 name="Sum List",
-                description="Sums all numbers in the list [1, 2, 3, 4, 5] using reduce.",
+                description="Sums all numbers in a randomly generated list of integers using reduce.",
             )
         ).model_dump_json(by_alias=True, exclude_unset=False),
     }
