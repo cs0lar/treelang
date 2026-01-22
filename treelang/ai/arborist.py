@@ -221,6 +221,7 @@ class BaseArborist:
         self.user_prompt_template = user_prompt_template
         self.provider = provider
         self.selector = selector
+        print(self.system_prompt)
 
     def prune(self, tree: TreeNode) -> TreeNode:
         return tree

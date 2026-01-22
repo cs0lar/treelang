@@ -37,25 +37,25 @@ class Evaluator:
         [mcp.add_tool(tool) for tool in tool_list]
 
         for i, row in enumerate(rows):
-            question = row["q"]
-            must_include = row.get("must_include", [])
-            must_use = row.get("must_use", [])
-            response = await self.arborist.eval(question, EvalType.TREE)
-            actual = AST.repr(response.content)
-            ok = True
-            for needle in must_include:
-                if needle.lower() not in actual.lower():
-                    logger.warning(f"Missing required content '{needle}' in response.")
-                    ok = False
-            for needle in must_use:
-                if needle.lower() not in actual.lower():
-                    logger.warning(
-                        f"Missing required tool usage '{needle}' in response."
-                    )
-                    ok = False
-            logger.info(f"\n#{i} Q: {question}\nOK={ok}\n{actual}\n")
-            passed += 1 if ok else 0
-
+            try:
+                question = row["q"]
+                answer = row.get("a", "")
+                must_use = row.get("must_use", [])
+                response = await self.arborist.eval(question, EvalType.WALK)
+                actual = response.content
+                ok = (answer == actual)
+                
+                for needle in must_use:
+                    if needle.lower() not in actual.lower():
+                        logger.warning(
+                            f"Missing required tool usage '{needle}' in response."
+                        )
+                        ok = False
+                logger.info(f"\n#{i} Q: {question}\nA: {answer}\nOK={ok}\n{actual}\n")
+                passed += 1 if ok else 0
+            except Exception as e:
+                logger.error(f"Error evaluating question #{i}: {e}")
+                continue
         return passed, len(rows)
 
 

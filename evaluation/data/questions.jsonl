@@ -1,10 +1,10 @@
-{"q":"What's the weather like in the capital of France?","must_include":["get_weather","get_capital_city","country","France"],"must_use":[]}
-{"q":"How many books has the author of '1984' written?","must_include":["count_books","get_author","1984","book_title"],"must_use":[]}
-{"q":"What's the population of the largest city in Canada?","must_include":["get_city_population","get_largest_city","country","Canada"],"must_use":[]}
-{"q":"What's the current exchange rate from USD to the currency used in Japan?","must_include":["get_exchange_rate","from_currency","USD","get_country_currency","country","Japan"],"must_use":[]}
-{"q":"What's the GDP per capita of the country whose national animal is the kangaroo?","must_include":["calculate_per_capita","get_gdp","get_country_by_national_animal","animal","kangaroo","get_country_population"],"must_use":[]}
-{"q":"If the GDP of Canada is negative, give me its GDP per capita otherwise return its GDP.","must_include":["greater_than","get_gdp","country","Canada","calculate_per_capita","get_country_population"],"must_use":["conditional"]}
-{"q":"What's the average annual rainfall in the capital city of the country that produces the most coffee in the world?","must_include":["average","get_annual_rainfall","get_capital_city","get_top_producer","product","coffee"],"must_use":[]}
-{"q":"What are the populations of the three largest cities in Australia?","must_include":["get_city_population","get_largest_city_by_ranking","ranking","country","Australia","rankings"],"must_use":["map","lambda"]}
-{"q":"What are the cities in Australia with rainfall greater than 1000mm?","must_include":["greater_than","get_annual_rainfall","threshold","get_all_cities_in_country","country","Australia"],"must_use":["filter","lambda"]}
-{"q":"What is the total population of all cities in Australia?","must_include":["add","x","get_city_population","city","get_all_cities_in_country","country","Australia"],"must_use":["reduce","lambda"]}
+{"q":"What's the weather like in the capital of France?","a":"Sunny, 25°C","must_use":[]}
+{"q":"How many books has the author of '1984' written?","a":9,"must_use":[]}
+{"q":"What's the population of the largest city in Brazil?","a":12330000,"must_use":[]}
+{"q":"What's the current exchange rate from USD to the currency used in Japan?","a":110.0,"must_use":[]}
+{"q":"What's the GDP per capita of the country whose national animal is the kangaroo?","a":54210.98,"must_use":[]}
+{"q":"If the GDP of Brazil is negative, give me its GDP per capita otherwise return its GDP.","a":1839.76,"must_use":["conditional"]}
+{"q":"What's the average annual rainfall in the capital city of the country that produces the most coffee in the world?","a":1.43,"must_use":[]}
+{"q":"What are the populations of the three largest cities in Australia?","a":[5312000,5078000,2514000],"must_use":["map","lambda"]}
+{"q":"What are the cities in Australia with average rainfall less than 1mm?","a":["Sidney", "Melbourne"],"must_use":["filter","lambda"]}
+{"q":"What is the total population of all cities in Australia?","a":12904000,"must_use":["reduce","lambda"]}

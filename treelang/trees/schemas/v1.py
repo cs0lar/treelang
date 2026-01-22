@@ -54,7 +54,7 @@ class TreeFunction(TreeNode):
 
     type: Literal["function"] = "function"
     name: str = Field(..., min_length=1)
-    params: List["Node"] = Field(default_factory=list)
+    params: List["Node"]
 
     async def eval(self, provider: ToolProvider) -> Any:
         tool = await provider.get_tool_definition(self.name)
@@ -80,7 +80,7 @@ class TreeProgram(TreeNode):
     """
 
     type: Literal["program"] = "program"
-    body: List["Node"] = Field(default_factory=list)
+    body: List["Node"]
     name: Optional[str] = None
     description: Optional[str] = None
 
@@ -112,7 +112,7 @@ class TreeConditional(TreeNode):
 
 class FunctionBodySpec(TreeNode):
     name: str = Field(..., min_length=1)
-    params: List["Node"] = Field(default_factory=list)
+    params: List["Node"]
 
 
 LambdaBody = Union[TreeFunction, FunctionBodySpec]
@@ -124,7 +124,7 @@ class TreeLambda(TreeNode):
     """
 
     type: Literal["lambda"] = "lambda"
-    params: List[str] = Field(default_factory=list)
+    params: List[str]
     body: LambdaBody
 
     async def eval(self, provider: ToolProvider):
@@ -368,7 +368,7 @@ def ast_v1_examples() -> list[str]:
                                 params=[
                                     TreeValue(name="length", value=5),
                                     TreeValue(name="area", value=0.01),
-                                    TreeValue(name="material_resistivity", value=0),
+                                    TreeValue(name="material_resistivity", value=None),
                                 ],
                             ),
                         ),
