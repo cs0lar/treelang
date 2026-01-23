@@ -41,7 +41,6 @@ class Evaluator:
                 answer = row.get("a", "")
                 must_use = row.get("must_use", [])
                 response = await self.arborist.eval(question, EvalType.WALK)
-                print(response)
                 actual = response.content
                 ok = answer == actual
 
@@ -51,7 +50,7 @@ class Evaluator:
                             f"Missing required tool usage '{needle}' in response."
                         )
                         ok = False
-                logger.info(f"\n#{i} Q: {question}\nA: {answer}\nOK={ok}\n{actual}\n")
+                logger.info(f"\n#{i+1} Q: {question}\nA: {answer}\nOK={ok}\n{actual}\n")
                 passed += 1 if ok else 0
             except Exception as e:
                 logger.error(f"Error evaluating question #{i}: {e}")
