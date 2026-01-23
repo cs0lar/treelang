@@ -57,6 +57,7 @@ class EvalResponse(Model):
         type (EvalType): The type of evaluation being performed.
         content (Any): The content of the evaluation response. This can be a TreeNode
         if type is TREE or Any if type is WALK depending on the evaluation.
+        jsontree (dict[str, Any] | None): The JSON representation of the tree if available.
 
     Methods:
         explain() -> str:
@@ -66,6 +67,7 @@ class EvalResponse(Model):
     query: str
     type: EvalType
     content: TreeNode | Any
+    jsontree: dict[str, Any] | None = None
 
     async def explain(self) -> str:
         """
@@ -221,7 +223,6 @@ class BaseArborist:
         self.user_prompt_template = user_prompt_template
         self.provider = provider
         self.selector = selector
-        print(self.system_prompt)
 
     def prune(self, tree: TreeNode) -> TreeNode:
         return tree
@@ -365,6 +366,7 @@ class OpenAIArborist(BaseArborist):
         message = completion.choices[0].message.model_dump(mode="json")
         content = message["content"]
         jsontree = json.loads(content)
+        print("Generated JSON Tree:", json.dumps(jsontree, indent=2))
         tree = AST.parse(jsontree)
         tree = self.prune(tree)
 
@@ -373,6 +375,9 @@ class OpenAIArborist(BaseArborist):
                 query=query,
                 type=EvalType.WALK,
                 content=await self.walk(tree),
+                jsontree=jsontree,
             )
         else:
-            return EvalResponse(query=query, type=EvalType.TREE, content=tree)
+            return EvalResponse(
+                query=query, type=EvalType.TREE, content=tree, jsontree=jsontree
+            )

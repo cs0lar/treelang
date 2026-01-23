@@ -1,12 +1,13 @@
 def get_capital_city(country):
+    country_lower = country.lower()
     """Get the capital city of a given country."""
-    if country == "France":
+    if country_lower == "france":
         return "Paris"
-    elif country == "Japan":
+    elif country_lower == "japan":
         return "Tokyo"
-    elif country == "Brazil":
+    elif country_lower == "brazil":
         return "Brasília"
-    elif country == "Australia":
+    elif country_lower == "australia":
         return "Canberra"
     else:
         return "Unknown"
@@ -14,13 +15,14 @@ def get_capital_city(country):
 
 def get_weather(city):
     """Get the current weather for a given city."""
-    if city == "Paris":
+    city_lower = city.lower()
+    if city_lower == "paris":
         return "Sunny, 25°C"
-    elif city == "Tokyo":
+    elif city_lower == "tokyo":
         return "Cloudy, 22°C"
-    elif city == "Brasília":
+    elif city_lower == "brasília":
         return "Rainy, 28°C"
-    elif city == "Canberra":
+    elif city_lower == "canberra":
         return "Windy, 20°C"
     else:
         return "Data not available"
@@ -28,13 +30,14 @@ def get_weather(city):
 
 def get_largest_city(country):
     """Get the largest city in a given country."""
-    if country == "France":
+    country_lower = country.lower()
+    if country_lower == "france":
         return "Paris"
-    elif country == "Japan":
+    elif country_lower == "japan":
         return "Tokyo"
-    elif country == "Brazil":
+    elif country_lower == "brazil":
         return "São Paulo"
-    elif country == "Australia":
+    elif country_lower == "australia":
         return "Sydney"
     else:
         return "Unknown"
@@ -42,13 +45,15 @@ def get_largest_city(country):
 
 def get_largest_city_by_ranking(country, ranking):
     """Get the largest city in a given country by ranking."""
-    if country == "France":
+    country_lower = country.lower()
+    ranking = int(ranking)
+    if country_lower == "france":
         cities = ["Paris", "Marseille", "Lyon"]
-    elif country == "Japan":
+    elif country_lower == "japan":
         cities = ["Tokyo", "Yokohama", "Osaka"]
-    elif country == "Brazil":
+    elif country_lower == "brazil":
         cities = ["São Paulo", "Rio de Janeiro", "Salvador"]
-    elif country == "Australia":
+    elif country_lower == "australia":
         cities = ["Sydney", "Melbourne", "Brisbane"]
     else:
         return "Unknown"
@@ -61,17 +66,18 @@ def get_largest_city_by_ranking(country, ranking):
 
 def get_city_population(city):
     """Get the population of a given city."""
-    if city == "Paris":
+    city_lower = city.lower()
+    if city_lower == "paris":
         return 2148000
-    elif city == "Tokyo":
+    elif city_lower == "tokyo":
         return 13960000
-    elif city == "São Paulo":
+    elif city_lower == "são paulo":
         return 12330000
-    elif city == "Sydney":
+    elif city_lower == "sydney":
         return 5312000
-    elif city == "Brisbane":
+    elif city_lower == "brisbane":
         return 2514000
-    elif city == "Melbourne":
+    elif city_lower == "melbourne":
         return 5078000
     else:
         return "Data not available"
@@ -79,13 +85,14 @@ def get_city_population(city):
 
 def get_country_population(country):
     """Get the population of a given country."""
-    if country == "France":
+    country_lower = country.lower()
+    if country_lower == "france":
         return 67000000
-    elif country == "Japan":
+    elif country_lower == "japan":
         return 125800000
-    elif country == "Brazil":
+    elif country_lower == "brazil":
         return 211000000
-    elif country == "Australia":
+    elif country_lower == "australia":
         return 25690000
     else:
         return "Data not available"
@@ -93,13 +100,15 @@ def get_country_population(country):
 
 def get_exchange_rate(from_currency, to_currency):
     """Get the exchange rate between two currencies."""
-    if from_currency == "USD" and to_currency == "EUR":
+    from_currency_upper = from_currency.upper()
+    to_currency_upper = to_currency.upper()
+    if from_currency_upper == "USD" and to_currency_upper == "EUR":
         return 0.85
-    elif from_currency == "USD" and to_currency == "JPY":
+    elif from_currency_upper == "USD" and to_currency_upper == "JPY":
         return 110.0
-    elif from_currency == "USD" and to_currency == "BRL":
+    elif from_currency_upper == "USD" and to_currency_upper == "BRL":
         return 5.2
-    elif from_currency == "USD" and to_currency == "AUD":
+    elif from_currency_upper == "USD" and to_currency_upper == "AUD":
         return 1.4
     else:
         return "Exchange rate not available"
@@ -107,13 +116,14 @@ def get_exchange_rate(from_currency, to_currency):
 
 def get_country_currency(country):
     """Get the currency used in a given country."""
-    if country == "France":
+    country_lower = country.lower()
+    if country_lower == "france":
         return "EUR"
-    elif country == "Japan":
+    elif country_lower == "japan":
         return "JPY"
-    elif country == "Brazil":
+    elif country_lower == "brazil":
         return "BRL"
-    elif country == "Australia":
+    elif country_lower == "australia":
         return "AUD"
     else:
         return "Unknown"
@@ -121,13 +131,14 @@ def get_country_currency(country):
 
 def get_top_producer(product):
     """Get the top producer of a given product."""
-    if product == "coffee":
+    product_lower = product.lower()
+    if product_lower == "coffee":
         return "Brazil"
-    elif product == "cars":
+    elif product_lower == "cars":
         return "China"
-    elif product == "electronics":
+    elif product_lower == "electronics":
         return "USA"
-    elif product == "wheat":
+    elif product_lower == "wheat":
         return "Russia"
     else:
         return "Unknown"
@@ -135,17 +146,18 @@ def get_top_producer(product):
 
 def get_annual_rainfall(city):
     """Get the list of rainfall measurements covering the past year for a given city."""
-    if city == "Brasilia":
+    city_lower = city.lower()
+    if city_lower == "brasília":
         return [1.2, 1.5, 1.3, 1.4, 1.6, 1.5, 1.3, 1.4, 1.5, 1.6, 1.4, 1.5]
-    elif city == "Tokyo":
+    elif city_lower == "tokyo":
         return [0.8, 0.9, 1.0, 0.7, 0.6, 0.8, 0.9, 1.0, 0.7, 0.6, 0.8, 0.9]
-    elif city == "Paris":
+    elif city_lower == "paris":
         return [0.5, 0.6, 0.7, 0.5, 0.4, 0.6, 0.7, 0.5, 0.4, 0.6, 0.7, 0.5]
-    elif city == "Sydney":
+    elif city_lower == "sydney":
         return [0.9, 1.0, 1.1, 0.9, 0.8, 1.0, 1.1, 0.9, 0.8, 1.0, 1.1, 0.9]
-    elif city == "Melbourne":
+    elif city_lower == "melbourne":
         return [0.7, 0.8, 0.9, 0.7, 0.6, 0.8, 0.9, 0.7, 0.6, 0.8, 0.9, 0.7]
-    elif city == "Brisbane":
+    elif city_lower == "brisbane":
         return [1.0, 1.1, 1.2, 1.0, 0.9, 1.1, 1.2, 1.0, 0.9, 1.1, 1.2, 1.0]
     else:
         return []
@@ -160,7 +172,8 @@ def average(rainfall_data):
 
 def get_country_by_national_animal(animal):
     """Get the country associated with a given national animal."""
-    if animal == "Kangaroo":
+    animal_lower = animal.lower()
+    if animal_lower == "kangaroo":
         return "Australia"
     else:
         return "Unknown"
@@ -168,13 +181,14 @@ def get_country_by_national_animal(animal):
 
 def get_gdp(country):
     """Get the GDP of a given country."""
-    if country == "France":
+    country_lower = country.lower()
+    if country_lower == "france":
         return 2715.52  # in billion USD
-    elif country == "Japan":
+    elif country_lower == "japan":
         return 5154.48  # in billion USD
-    elif country == "Brazil":
+    elif country_lower == "brazil":
         return 1839.76  # in billion USD
-    elif country == "Australia":
+    elif country_lower == "australia":
         return 1392.68  # in billion USD
     else:
         return "Data not available"
@@ -182,6 +196,9 @@ def get_gdp(country):
 
 def calculate_per_capita(total, population):
     """Calculate the per capita value given total and population."""
+    total = float(total)
+    population = float(population)
+
     if population == 0:
         return 0
     return round((total * 1000000000) / population, 2)
@@ -189,7 +206,8 @@ def calculate_per_capita(total, population):
 
 def count_books(author):
     """Count the number of books written by a given author."""
-    if author == "George Orwell":
+    author_lower = author.lower()
+    if author_lower == "george orwell":
         return 9
     else:
         return 0
@@ -197,11 +215,12 @@ def count_books(author):
 
 def get_author(book_title):
     """Get the author of a given book title."""
-    if book_title == "1984":
+    booktitle_lower = book_title.lower()
+    if booktitle_lower == "1984":
         return "George Orwell"
-    elif book_title == "Brave New World":
+    elif booktitle_lower == "brave new world":
         return "Aldous Huxley"
-    elif book_title == "Fahrenheit 451":
+    elif booktitle_lower == "fahrenheit 451":
         return "Ray Bradbury"
     else:
         return "Unknown"
@@ -209,18 +228,21 @@ def get_author(book_title):
 
 def greater_than(value, threshold):
     """Check if a value is greater than a given threshold."""
+    value = float(value)
+    threshold = float(threshold)
     return value > threshold
 
 
 def get_all_cities_in_country(country):
     """Get all cities in a given country."""
-    if country == "France":
+    country_lower = country.lower()
+    if country_lower == "france":
         return ["Paris", "Marseille", "Lyon", "Toulouse", "Nice"]
-    elif country == "Japan":
+    elif country_lower == "japan":
         return ["Tokyo", "Yokohama", "Osaka", "Nagoya", "Sapporo"]
-    elif country == "Brazil":
+    elif country_lower == "brazil":
         return ["São Paulo", "Rio de Janeiro", "Salvador", "Brasília", "Fortaleza"]
-    elif country == "Australia":
+    elif country_lower == "australia":
         return ["Sydney", "Melbourne", "Brisbane"]
     else:
         return []
@@ -228,7 +250,7 @@ def get_all_cities_in_country(country):
 
 def add(x, y):
     """Add two numbers."""
-    return x + y
+    return float(x) + float(y)
 
 
 tools = [

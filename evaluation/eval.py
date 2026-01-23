@@ -13,7 +13,6 @@ from mcp.server.fastmcp import FastMCP
 from evaluation.data.tools import tools as tool_list
 from treelang.ai.arborist import EvalType, OpenAIArborist
 from treelang.ai.provider import MCPToolProvider
-from treelang.trees.tree import AST
 
 logger = logging.getLogger(__name__)
 mcp = FastMCP("evaluator", debug=False)
@@ -42,11 +41,12 @@ class Evaluator:
                 answer = row.get("a", "")
                 must_use = row.get("must_use", [])
                 response = await self.arborist.eval(question, EvalType.WALK)
+                print(response)
                 actual = response.content
-                ok = (answer == actual)
-                
+                ok = answer == actual
+
                 for needle in must_use:
-                    if needle.lower() not in actual.lower():
+                    if needle.lower() not in json.dumps(response.jsontree).lower():
                         logger.warning(
                             f"Missing required tool usage '{needle}' in response."
                         )
