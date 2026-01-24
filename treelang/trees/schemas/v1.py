@@ -110,14 +110,6 @@ class TreeConditional(TreeNode):
         return None
 
 
-class FunctionBodySpec(TreeNode):
-    name: str = Field(..., min_length=1)
-    params: List["Node"]
-
-
-LambdaBody = Union[TreeFunction, FunctionBodySpec]
-
-
 class TreeLambda(TreeNode):
     """
     Represents an anonymous (lambda) function.
@@ -125,21 +117,37 @@ class TreeLambda(TreeNode):
 
     type: Literal["lambda"] = "lambda"
     params: List[str]
-    body: LambdaBody
+    body: TreeFunction
 
     async def eval(self, provider: ToolProvider):
         # Returns a callable that can be invoked with arguments
-        async def func(*args):
-            # update this TreeFunction's argument values with
-            # the provided arguments preserving the order. Note that
-            # the number of arguments maybe less than or equal to
-            # the number of parameters but not more.
-            for i, param in enumerate(self.body.params):
-                if i < len(args):
-                    param.value = args[i]
-                else:
-                    # if there are not enough arguments, we leave the parameter value as is
-                    break
+        async def func(**kwargs):
+            # Recursively replace TreeValue values with those in kwargs
+            def replace_values(node):
+                if isinstance(node, TreeValue) and node.name in kwargs:
+                    node.value = kwargs[node.name]
+                elif hasattr(node, "params"):
+                    for param in node.params:
+                        replace_values(param)
+                elif hasattr(node, "body"):
+                    if isinstance(node.body, list):
+                        for item in node.body:
+                            replace_values(item)
+                    else:
+                        replace_values(node.body)
+                elif hasattr(node, "condition"):
+                    replace_values(node.condition)
+                elif hasattr(node, "true_branch"):
+                    replace_values(node.true_branch)
+                elif hasattr(node, "false_branch") and node.false_branch is not None:
+                    replace_values(node.false_branch)
+                elif hasattr(node, "function"):
+                    replace_values(node.function)
+                elif hasattr(node, "iterable"):
+                    replace_values(node.iterable)
+
+            replace_values(self.body)
+
             return await self.body.eval(provider)
 
         return func
@@ -161,8 +169,9 @@ class TreeMap(TreeNode):
             raise TypeError("Map expects an iterable (list) as input")
 
         func = await self.function.eval(provider)
+        kwarg = self.function.params[0]
 
-        return [await func(item) for item in items]
+        return [await func(**{kwarg: item}) for item in items]
 
 
 class TreeFilter(TreeNode):
@@ -181,8 +190,9 @@ class TreeFilter(TreeNode):
             raise TypeError("Filter expects an iterable (list) as input")
 
         func = await self.function.eval(provider)
+        kwarg = self.function.params[0]
 
-        return [item for item in items if await func(item)]
+        return [item for item in items if await func(**{kwarg: item})]
 
 
 class TreeReduce(TreeNode):
@@ -373,7 +383,7 @@ def ast_v1_examples() -> list[str]:
                             ),
                         ),
                         iterable=TreeValue(
-                            name="resistivities",
+                            name="material_resistivities",
                             value={
                                 "copper": 1.68e-8,
                                 "aluminum": 2.82e-8,

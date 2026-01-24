@@ -34,8 +34,7 @@ class TestTreeNode(unittest.TestCase):
 class TestTreeProgram(unittest.TestCase):
     def test_tree_program_init(self):
         body = [TreeNode()]
-        program = TreeProgram(
-            body=body, name="test_program", description="description")
+        program = TreeProgram(body=body, name="test_program", description="description")
         self.assertEqual(program.type, "program")
         self.assertEqual(program.body, body)
         self.assertEqual(program.name, "test_program")
@@ -44,8 +43,7 @@ class TestTreeProgram(unittest.TestCase):
     def test_tree_program_eval(self):
         body = [TreeValue(name="x", value="result")]
         provider = AsyncMock(spec=ToolProvider)
-        program = TreeProgram(
-            body=body, name="test_program", description="description")
+        program = TreeProgram(body=body, name="test_program", description="description")
         result = asyncio.run(program.eval(provider))
         self.assertEqual(result, "result")
 
@@ -70,8 +68,7 @@ class TestTreeFunction(unittest.TestCase):
         result = asyncio.run(function.eval(provider))
         self.assertIsNotNone(result)
         provider.get_tool_definition.assert_called_once_with("test_function")
-        provider.call_tool.assert_called_once_with(
-            "test_function", {"param": 42})
+        provider.call_tool.assert_called_once_with("test_function", {"param": 42})
 
 
 class TestTreeValue(unittest.TestCase):
@@ -129,8 +126,7 @@ class TestTreeConditional(unittest.TestCase):
     def test_tree_conditional_eval_no_false_branch(self):
         condition = TreeValue(name="condition", value=False)
         true_branch = TreeValue(name="true_branch", value="True Result")
-        conditional = TreeConditional(
-            condition=condition, true_branch=true_branch)
+        conditional = TreeConditional(condition=condition, true_branch=true_branch)
         provider = AsyncMock(spec=ToolProvider)
         result = asyncio.run(conditional.eval(provider))
         self.assertIsNone(result)
@@ -141,8 +137,7 @@ class TestTreeLambda(unittest.IsolatedAsyncioTestCase):
         params = ["x", "y"]
         body = TreeFunction(
             name="add",
-            params=[TreeValue(name="x", value=None),
-                    TreeValue(name="y", value=None)],
+            params=[TreeValue(name="x", value=None), TreeValue(name="y", value=None)],
         )
         lam = TreeLambda(params=params, body=body)
         self.assertEqual(lam.type, "lambda")
@@ -151,8 +146,7 @@ class TestTreeLambda(unittest.IsolatedAsyncioTestCase):
 
     async def test_tree_lambda_eval_returns_callable(self):
         params = ["x"]
-        body = TreeFunction(name="negate", params=[
-                            TreeValue(name="x", value=None)])
+        body = TreeFunction(name="negate", params=[TreeValue(name="x", value=None)])
         lam = TreeLambda(params=params, body=body)
         provider = AsyncMock(spec=ToolProvider)
         provider.get_tool_definition.return_value = {
@@ -163,7 +157,7 @@ class TestTreeLambda(unittest.IsolatedAsyncioTestCase):
         provider.call_tool.return_value = ToolOutput(content=-5)
         func = await lam.eval(provider)
         self.assertTrue(callable(func))
-        result = await func(5)
+        result = await func(x=5)
         self.assertEqual(result, -5)
         provider.get_tool_definition.assert_called_once_with("negate")
         provider.call_tool.assert_called_once_with("negate", {"x": 5})
@@ -172,8 +166,7 @@ class TestTreeLambda(unittest.IsolatedAsyncioTestCase):
         params = ["a", "b"]
         body = TreeFunction(
             name="add",
-            params=[TreeValue(name="a", value=None),
-                    TreeValue(name="b", value=None)],
+            params=[TreeValue(name="a", value=None), TreeValue(name="b", value=None)],
         )
         lam = TreeLambda(params=params, body=body)
         provider = AsyncMock(spec=ToolProvider)
@@ -184,7 +177,7 @@ class TestTreeLambda(unittest.IsolatedAsyncioTestCase):
         }
         provider.call_tool.return_value = ToolOutput(content=7)
         func = await lam.eval(provider)
-        result = await func(3, 4)
+        result = await func(a=3, b=4)
         self.assertEqual(result, 7)
         provider.get_tool_definition.assert_called_once_with("add")
         provider.call_tool.assert_called_once_with("add", {"a": 3, "b": 4})
@@ -202,7 +195,7 @@ class TestTreeLambda(unittest.IsolatedAsyncioTestCase):
         }
         provider.call_tool.return_value = ToolOutput(content=123)
         func = await lam.eval(provider)
-        await func(123)
+        await func(x=123)
         self.assertEqual(value_node.value, 123)
 
 
@@ -252,8 +245,7 @@ class TestTreeMap(unittest.IsolatedAsyncioTestCase):
 
         function = TreeLambda(
             params=["x"],
-            body=TreeFunction(name="double", params=[
-                              TreeValue(name="x", value=None)]),
+            body=TreeFunction(name="double", params=[TreeValue(name="x", value=None)]),
         )
         iterable = TreeValue(name="items", value=[1, 2, 3])
         tree_map = TreeMap(function=function, iterable=iterable)
@@ -301,8 +293,7 @@ class TestTreeMap(unittest.IsolatedAsyncioTestCase):
         TreeLambda.eval = AsyncMock(return_value=42)
         function = TreeLambda(
             params=["x"],
-            body=TreeFunction(name="broken", params=[
-                              TreeValue(name="x", value=None)]),
+            body=TreeFunction(name="broken", params=[TreeValue(name="x", value=None)]),
         )
         iterable = TreeValue(name="items", value=[[1]])
         tree_map = TreeMap(function=function, iterable=iterable)
@@ -340,8 +331,7 @@ class TestTreeFilter(unittest.IsolatedAsyncioTestCase):
     async def test_tree_filter_init(self):
         function = TreeLambda(
             params=["x"],
-            body=TreeFunction(name="is_even", params=[
-                              TreeValue(name="x", value=None)]),
+            body=TreeFunction(name="is_even", params=[TreeValue(name="x", value=None)]),
         )
         iterable = TreeValue(name="items", value=[1, 2, 3, 4])
         tree_filter = TreeFilter(function=function, iterable=iterable)
@@ -375,8 +365,7 @@ class TestTreeFilter(unittest.IsolatedAsyncioTestCase):
 
         function = TreeLambda(
             params=["x"],
-            body=TreeFunction(name="is_even", params=[
-                              TreeValue(name="x", value=None)]),
+            body=TreeFunction(name="is_even", params=[TreeValue(name="x", value=None)]),
         )
         iterable = TreeValue(name="items", value=[1, 2, 3, 4, 5, 6])
         tree_filter = TreeFilter(function=function, iterable=iterable)
@@ -387,8 +376,7 @@ class TestTreeFilter(unittest.IsolatedAsyncioTestCase):
     async def test_tree_filter_eval_non_iterable_raises(self):
         function = TreeLambda(
             params=["x"],
-            body=TreeFunction(name="is_even", params=[
-                              TreeValue(name="x", value=None)]),
+            body=TreeFunction(name="is_even", params=[TreeValue(name="x", value=None)]),
         )
         iterable = TreeValue(name="items", value=123)  # Not a list
         tree_filter = TreeFilter(function=function, iterable=iterable)
@@ -399,8 +387,7 @@ class TestTreeFilter(unittest.IsolatedAsyncioTestCase):
     async def test_tree_filter_eval_empty_iterable(self):
         function = TreeLambda(
             params=["x"],
-            body=TreeFunction(name="is_even", params=[
-                              TreeValue(name="x", value=None)]),
+            body=TreeFunction(name="is_even", params=[TreeValue(name="x", value=None)]),
         )
         iterable = TreeValue(name="items", value=[])
         tree_filter = TreeFilter(function=function, iterable=iterable)
@@ -1050,8 +1037,7 @@ class TestAST(unittest.TestCase):
         params = ["x", "y"]
         body = TreeFunction(
             name="add",
-            params=[TreeValue(name="x", value=None),
-                    TreeValue(name="y", value=None)],
+            params=[TreeValue(name="x", value=None), TreeValue(name="y", value=None)],
         )
         lam = TreeLambda(params=params, body=body)
 
@@ -1067,8 +1053,7 @@ class TestAST(unittest.TestCase):
     def test_visit_with_map(self):
         function = TreeLambda(
             params=["x"],
-            body=TreeFunction(name="double", params=[
-                              TreeValue(name="x", value=None)]),
+            body=TreeFunction(name="double", params=[TreeValue(name="x", value=None)]),
         )
         iterable = TreeValue(name="items", value=[1, 2, 3])
         tree_map = TreeMap(function=function, iterable=iterable)
@@ -1085,8 +1070,7 @@ class TestAST(unittest.TestCase):
     def test_visit_with_filter(self):
         function = TreeLambda(
             params=["x"],
-            body=TreeFunction(name="is_even", params=[
-                              TreeValue(name="x", value=None)]),
+            body=TreeFunction(name="is_even", params=[TreeValue(name="x", value=None)]),
         )
         iterable = TreeValue(name="items", value=[1, 2, 3, 4])
         tree_filter = TreeFilter(function=function, iterable=iterable)
@@ -1227,8 +1211,7 @@ class TestToolMethod(unittest.IsolatedAsyncioTestCase):
         tool_function = await AST.tool(ast, provider)
 
         self.assertEqual(tool_function.__name__, "is_positive_tool")
-        self.assertEqual(tool_function.__doc__,
-                         "Checks if a number is positive")
+        self.assertEqual(tool_function.__doc__, "Checks if a number is positive")
         self.assertTrue(callable(tool_function))
         self.assertIn("x", tool_function.__signature__.parameters)
         self.assertIn("message", tool_function.__signature__.parameters)
