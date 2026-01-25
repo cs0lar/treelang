@@ -81,6 +81,7 @@ class TreeProgram(TreeNode):
 
     type: Literal["program"] = "program"
     body: List["Node"]
+    mode: Literal["single", "parallel"]
     name: Optional[str] = None
     description: Optional[str] = None
 
@@ -206,7 +207,7 @@ class TreeReduce(TreeNode):
 
     async def eval(self, provider: ToolProvider) -> Any:
         items = await self.iterable.eval(provider)
-
+        print("Reduce iterable items:", items)
         if not isinstance(items, list):
             raise TypeError("Reduce expects an iterable (list) as input")
 
@@ -218,14 +219,14 @@ class TreeReduce(TreeNode):
         result = items[0]
 
         for item in items[1:]:
-            result = await func(result, item)
+            args = zip(self.function.params, [result, item])
+            result = await func(**dict(args))
 
         return result
 
 
 type Node = Annotated[
     Union[
-        TreeNode,  # base type for testing
         TreeProgram,
         TreeFunction,
         TreeValue,
@@ -248,7 +249,7 @@ TreeFilter.model_rebuild()
 TreeReduce.model_rebuild()
 
 
-class AST(RootModel[Node]):
+class AST(RootModel[TreeProgram]):
     """
     Root wrapper for top level node validation.
     """
@@ -329,6 +330,7 @@ def ast_v1_examples() -> list[str]:
                         ],
                     )
                 ],
+                mode="single",
                 name="Calculate (12*6)+4",
                 description="A simple arithmetic calculation using add and multiply functions.",
             )
@@ -360,6 +362,7 @@ def ast_v1_examples() -> list[str]:
                 ],
                 name="Chart Random Number Distribution",
                 description="Generates 100 random numbers between 1 and 10 and charts their distribution.",
+                mode="single",
             )
         ).model_dump_json(by_alias=True, exclude_unset=False),
     }
@@ -391,6 +394,7 @@ def ast_v1_examples() -> list[str]:
                         ),
                     )
                 ],
+                mode="single",
                 name="Calculate Wire Resistance for Different Materials",
                 description="Calculates the resistance of a wire made of copper and aluminum given length, area, and resistivity.",
             )
@@ -419,6 +423,7 @@ def ast_v1_examples() -> list[str]:
                         ),
                     )
                 ],
+                mode="single",
                 name="Filter Odd Numbers",
                 description="Filters out even numbers from a list of numbers from 1 to 10.",
             )
@@ -453,6 +458,7 @@ def ast_v1_examples() -> list[str]:
                         ),
                     )
                 ],
+                mode="single",
                 name="Sum List",
                 description="Sums all numbers in a randomly generated list of integers using reduce.",
             )

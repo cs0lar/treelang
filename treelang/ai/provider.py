@@ -50,10 +50,18 @@ class MCPToolProvider(ToolProvider):
                     f"Error calling tool {name}: {output.content[0].text}"
                 )
             # return the result attempting to transform it into its appropriate type
+            def cast(text: str) -> Any:
+                for cast_fn in (int, float, lambda x: x.lower() == "true", str):
+                    try:
+                        return cast_fn(text)
+                    except ValueError:
+                        continue
+                return text
+
             content = (
                 output.content[0].text
                 if len(output.content) == 1
-                else "[" + ",".join([out.text for out in output.content]) + "]"
+                else [cast(item.text) for item in output.content]
             )
             try:
                 return ToolOutput(content=json.loads(content))
