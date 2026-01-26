@@ -1,5 +1,5 @@
-from abc import ABC, abstractmethod
 import json
+from abc import ABC, abstractmethod
 from typing import Any, Callable, Dict, List
 
 from mcp import ClientSession
@@ -11,7 +11,6 @@ class ToolOutput(BaseModel):
 
 
 class ToolProvider(ABC):
-
     def __init__(self):
         self.tools: Dict[str, Dict[str, Any]] = None
 
@@ -50,6 +49,7 @@ class MCPToolProvider(ToolProvider):
                     f"Error calling tool {name}: {output.content[0].text}"
                 )
             # return the result attempting to transform it into its appropriate type
+
             def cast(text: str) -> Any:
                 for cast_fn in (int, float, lambda x: x.lower() == "true", str):
                     try:
@@ -64,7 +64,8 @@ class MCPToolProvider(ToolProvider):
                 else [cast(item.text) for item in output.content]
             )
             try:
-                return ToolOutput(content=json.loads(content))
+                content = content if isinstance(content, list) else json.loads(content)
+                return ToolOutput(content=content)
             except json.JSONDecodeError:
                 return ToolOutput(content=content)
 

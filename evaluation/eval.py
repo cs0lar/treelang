@@ -4,6 +4,7 @@ import logging
 import os
 import signal
 import threading
+import traceback
 from pathlib import Path
 
 from mcp import ClientSession
@@ -56,6 +57,7 @@ class Evaluator:
                 passed += 1 if ok else 0
             except Exception as e:
                 logger.error(f"Error evaluating question #{i}: {e}")
+                traceback.print_exc()
                 continue
         return passed, len(rows)
 

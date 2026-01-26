@@ -33,8 +33,10 @@ class TestTreeNode(unittest.TestCase):
 
 class TestTreeProgram(unittest.TestCase):
     def test_tree_program_init(self):
-        body = [TreeNode()]
-        program = TreeProgram(body=body, name="test_program", description="description")
+        body = [TreeValue(name="x", value=10)]
+        program = TreeProgram(
+            body=body, name="test_program", description="description", mode="single"
+        )
         self.assertEqual(program.type, "program")
         self.assertEqual(program.body, body)
         self.assertEqual(program.name, "test_program")
@@ -43,14 +45,16 @@ class TestTreeProgram(unittest.TestCase):
     def test_tree_program_eval(self):
         body = [TreeValue(name="x", value="result")]
         provider = AsyncMock(spec=ToolProvider)
-        program = TreeProgram(body=body, name="test_program", description="description")
+        program = TreeProgram(
+            body=body, name="test_program", description="description", mode="single"
+        )
         result = asyncio.run(program.eval(provider))
         self.assertEqual(result, "result")
 
 
 class TestTreeFunction(unittest.TestCase):
     def test_tree_function_init(self):
-        params = [TreeNode()]
+        params = [TreeValue(name="param", value=42)]
         function = TreeFunction(name="test_function", params=params)
         self.assertEqual(function.type, "function")
         self.assertEqual(function.name, "test_function")
@@ -518,6 +522,7 @@ class TestAST(unittest.TestCase):
         self.ast = [
             {
                 "type": "program",
+                "mode": "single",
                 "body": [
                     {
                         "type": "function",
@@ -539,123 +544,186 @@ class TestAST(unittest.TestCase):
         ]
 
     def test_parse_program(self):
-        ast_dict = {"type": "program", "body": []}
+        ast_dict = {"type": "program", "body": [], "mode": "single"}
         result = AST.parse(ast_dict)
         self.assertIsInstance(result, TreeProgram)
 
     def test_parse_function(self):
-        ast_dict = {"type": "function", "name": "test_function", "params": []}
+        ast_dict = {
+            "type": "program",
+            "mode": "single",
+            "body": [
+                {
+                    "type": "function",
+                    "name": "test_function",
+                    "params": [],
+                }
+            ],
+        }
         result = AST.parse(ast_dict)
-        self.assertIsInstance(result, TreeFunction)
-        self.assertEqual(result.name, "test_function")
+        self.assertIsInstance(result.body[0], TreeFunction)
+        self.assertEqual(result.body[0].name, "test_function")
 
     def test_parse_conditional(self):
         ast_dict = {
-            "type": "conditional",
-            "condition": {"type": "value", "name": "condition", "value": True},
-            "true_branch": {
-                "type": "value",
-                "name": "true_branch",
-                "value": "True Result",
-            },
-            "false_branch": {
-                "type": "value",
-                "name": "false_branch",
-                "value": "False Result",
-            },
+            "type": "program",
+            "mode": "single",
+            "body": [
+                {
+                    "type": "conditional",
+                    "condition": {"type": "value", "name": "condition", "value": True},
+                    "true_branch": {
+                        "type": "value",
+                        "name": "true_branch",
+                        "value": "True Result",
+                    },
+                    "false_branch": {
+                        "type": "value",
+                        "name": "false_branch",
+                        "value": "False Result",
+                    },
+                }
+            ],
         }
         result = AST.parse(ast_dict)
-        self.assertIsInstance(result, TreeConditional)
-        self.assertIsInstance(result.condition, TreeValue)
-        self.assertIsInstance(result.true_branch, TreeValue)
-        self.assertIsInstance(result.false_branch, TreeValue)
-        self.assertEqual(result.condition.value, True)
-        self.assertEqual(result.true_branch.value, "True Result")
-        self.assertEqual(result.false_branch.value, "False Result")
+        self.assertIsInstance(result, TreeProgram)
+        conditional_node = result.body[0]
+        self.assertIsInstance(conditional_node, TreeConditional)
+        self.assertIsInstance(conditional_node.condition, TreeValue)
+        self.assertIsInstance(conditional_node.true_branch, TreeValue)
+        self.assertIsInstance(conditional_node.false_branch, TreeValue)
+        self.assertEqual(conditional_node.condition.value, True)
+        self.assertEqual(conditional_node.true_branch.value, "True Result")
+        self.assertEqual(conditional_node.false_branch.value, "False Result")
 
     def test_parse_lambda(self):
         ast_dict = {
-            "type": "lambda",
-            "params": ["x", "y"],
-            "body": {
-                "type": "function",
-                "name": "add",
-                "params": [
-                    {"type": "value", "name": "x", "value": None},
-                    {"type": "value", "name": "y", "value": None},
-                ],
-            },
+            "type": "program",
+            "mode": "single",
+            "body": [
+                {
+                    "type": "lambda",
+                    "params": ["x", "y"],
+                    "body": {
+                        "type": "function",
+                        "name": "add",
+                        "params": [
+                            {"type": "value", "name": "x", "value": None},
+                            {"type": "value", "name": "y", "value": None},
+                        ],
+                    },
+                }
+            ],
         }
         result = AST.parse(ast_dict)
-        self.assertIsInstance(result, TreeLambda)
-        self.assertEqual(result.params, ["x", "y"])
-        self.assertIsInstance(result.body, TreeFunction)
-        self.assertEqual(result.body.name, "add")
+        lambda_node = result.body[0]
+        self.assertIsInstance(lambda_node, TreeLambda)
+        self.assertEqual(lambda_node.params, ["x", "y"])
+        self.assertIsInstance(lambda_node.body, TreeFunction)
+        self.assertEqual(lambda_node.body.name, "add")
 
     def test_parse_map(self):
         ast_dict = {
-            "type": "map",
-            "function": {
-                "type": "lambda",
-                "params": ["x"],
-                "body": {
-                    "type": "function",
-                    "name": "square",
-                    "params": [{"type": "value", "name": "x", "value": 0}],
-                },
-            },
-            "iterable": {"type": "value", "name": "numbers", "value": [1, 2, 3]},
+            "type": "program",
+            "mode": "single",
+            "body": [
+                {
+                    "type": "map",
+                    "function": {
+                        "type": "lambda",
+                        "params": ["x"],
+                        "body": {
+                            "type": "function",
+                            "name": "square",
+                            "params": [{"type": "value", "name": "x", "value": 0}],
+                        },
+                    },
+                    "iterable": {
+                        "type": "value",
+                        "name": "numbers",
+                        "value": [1, 2, 3],
+                    },
+                }
+            ],
         }
         result = AST.parse(ast_dict)
-        self.assertIsInstance(result, TreeMap)
-        self.assertIsInstance(result.function, TreeLambda)
-        self.assertIsInstance(result.iterable, TreeValue)
+        map_node = result.body[0]
+        self.assertIsInstance(map_node, TreeMap)
+        self.assertIsInstance(map_node.function, TreeLambda)
+        self.assertIsInstance(map_node.iterable, TreeValue)
 
     def test_parse_filter(self):
         ast_dict = {
-            "type": "filter",
-            "function": {
-                "type": "lambda",
-                "params": ["x"],
-                "body": {
-                    "type": "function",
-                    "name": "is_even",
-                    "params": [{"type": "value", "name": "x", "value": 0}],
-                },
-            },
-            "iterable": {"type": "value", "name": "numbers", "value": [1, 2, 3, 4]},
+            "type": "program",
+            "mode": "single",
+            "body": [
+                {
+                    "type": "filter",
+                    "function": {
+                        "type": "lambda",
+                        "params": ["x"],
+                        "body": {
+                            "type": "function",
+                            "name": "is_even",
+                            "params": [{"type": "value", "name": "x", "value": 0}],
+                        },
+                    },
+                    "iterable": {
+                        "type": "value",
+                        "name": "numbers",
+                        "value": [1, 2, 3, 4],
+                    },
+                }
+            ],
         }
         result = AST.parse(ast_dict)
-        self.assertIsInstance(result, TreeFilter)
-        self.assertIsInstance(result.function, TreeLambda)
-        self.assertIsInstance(result.iterable, TreeValue)
+        filter_node = result.body[0]
+        self.assertIsInstance(filter_node, TreeFilter)
+        self.assertIsInstance(filter_node.function, TreeLambda)
+        self.assertIsInstance(filter_node.iterable, TreeValue)
 
     def test_parse_reduce(self):
         ast_dict = {
-            "type": "reduce",
-            "function": {
-                "type": "lambda",
-                "params": ["acc", "item"],
-                "body": {
-                    "type": "function",
-                    "name": "add",
-                    "params": [
-                        {"type": "value", "name": "acc", "value": 0},
-                        {"type": "value", "name": "item", "value": 0},
-                    ],
-                },
-            },
-            "iterable": {"type": "value", "name": "numbers", "value": [1, 2, 3]},
+            "type": "program",
+            "mode": "single",
+            "body": [
+                {
+                    "type": "reduce",
+                    "function": {
+                        "type": "lambda",
+                        "params": ["acc", "item"],
+                        "body": {
+                            "type": "function",
+                            "name": "add",
+                            "params": [
+                                {"type": "value", "name": "acc", "value": 0},
+                                {"type": "value", "name": "item", "value": 0},
+                            ],
+                        },
+                    },
+                    "iterable": {
+                        "type": "value",
+                        "name": "numbers",
+                        "value": [1, 2, 3],
+                    },
+                }
+            ],
         }
         result = AST.parse(ast_dict)
-        self.assertIsInstance(result, TreeReduce)
-        self.assertIsInstance(result.function, TreeLambda)
-        self.assertIsInstance(result.iterable, TreeValue)
+        reduce_node = result.body[0]
+        self.assertIsInstance(reduce_node, TreeReduce)
+        self.assertIsInstance(reduce_node.function, TreeLambda)
+        self.assertIsInstance(reduce_node.iterable, TreeValue)
 
     def test_parse_value(self):
-        ast_dict = {"type": "value", "name": "test_value", "value": 42}
+        ast_dict = {
+            "type": "program",
+            "mode": "single",
+            "body": [{"type": "value", "name": "test_value", "value": 42}],
+        }
         result = AST.parse(ast_dict)
-        self.assertIsInstance(result, TreeValue)
+        value_node = result.body[0]
+        self.assertIsInstance(value_node, TreeValue)
 
     def test_parse_unknown(self):
         ast_dict = {"type": "unknown"}
@@ -760,6 +828,7 @@ class TestAST(unittest.TestCase):
 
         ast_dict = {
             "type": "program",
+            "mode": "single",
             "body": [
                 {
                     "type": "conditional",
@@ -821,6 +890,7 @@ class TestAST(unittest.TestCase):
 
         ast_dict = {
             "type": "program",
+            "mode": "single",
             "body": [
                 {
                     "type": "lambda",
@@ -871,6 +941,7 @@ class TestAST(unittest.TestCase):
 
         ast_dict = {
             "type": "program",
+            "mode": "single",
             "body": [
                 {
                     "type": "map",
@@ -926,6 +997,7 @@ class TestAST(unittest.TestCase):
 
         ast_dict = {
             "type": "program",
+            "mode": "single",
             "body": [
                 {
                     "type": "filter",
@@ -981,6 +1053,7 @@ class TestAST(unittest.TestCase):
 
         ast_dict = {
             "type": "program",
+            "mode": "single",
             "body": [
                 {
                     "type": "reduce",
@@ -1119,6 +1192,7 @@ class TestToolMethod(unittest.IsolatedAsyncioTestCase):
                     ],
                 )
             ],
+            mode="single",
             name="add_tool",
             description="Adds two numbers",
         )
@@ -1173,6 +1247,7 @@ class TestToolMethod(unittest.IsolatedAsyncioTestCase):
                     ),
                 )
             ],
+            mode="single",
             name="is_positive_tool",
             description="Checks if a number is positive",
         )
@@ -1303,6 +1378,7 @@ class TestToolMethod(unittest.IsolatedAsyncioTestCase):
                     ),
                 )
             ],
+            mode="single",
             name="is_positive_tool",
             description="Checks if a number is positive",
         )

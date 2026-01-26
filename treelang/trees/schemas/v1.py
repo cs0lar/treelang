@@ -207,7 +207,7 @@ class TreeReduce(TreeNode):
 
     async def eval(self, provider: ToolProvider) -> Any:
         items = await self.iterable.eval(provider)
-        print("Reduce iterable items:", items)
+
         if not isinstance(items, list):
             raise TypeError("Reduce expects an iterable (list) as input")
 

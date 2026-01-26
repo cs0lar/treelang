@@ -367,7 +367,6 @@ class OpenAIArborist(BaseArborist):
         message = completion.choices[0].message.model_dump(mode="json")
         content = message["content"]
         jsontree = json.loads(content)
-        print("Generated JSONTREE:", jsontree)
         tree = AST.parse(jsontree)
         tree = self.prune(tree)
 
