@@ -22,7 +22,7 @@ mcp = FastMCP("evaluator", debug=False)
 class Evaluator:
     def __init__(self, provider: MCPToolProvider):
         self.arborist = OpenAIArborist(
-            model="gpt-4o-2024-11-20",
+            model="gpt-4.1",
             provider=provider,
         )
 

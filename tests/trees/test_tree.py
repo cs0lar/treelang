@@ -505,7 +505,7 @@ class TestTreeReduce(unittest.IsolatedAsyncioTestCase):
             body=TreeFunction(
                 name="add",
                 params=[
-                    TreeValue(name="acc", value=None),
+                    TreeValue(name="acc", value=0),
                     TreeValue(name="item", value=None),
                 ],
             ),
@@ -1064,7 +1064,7 @@ class TestAST(unittest.TestCase):
                             "type": "function",
                             "name": "add",
                             "params": [
-                                {"type": "value", "name": "acc", "value": None},
+                                {"type": "value", "name": "acc", "value": 0},
                                 {"type": "value", "name": "item", "value": None},
                             ],
                         },

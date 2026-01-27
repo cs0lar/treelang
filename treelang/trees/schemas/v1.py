@@ -57,6 +57,10 @@ class TreeFunction(TreeNode):
     params: List["Node"]
 
     async def eval(self, provider: ToolProvider) -> Any:
+        # strip "functions." prefix if present
+        if self.name.startswith("functions."):
+            self.name = self.name[len("functions.") :]
+
         tool = await provider.get_tool_definition(self.name)
 
         if not tool:
@@ -214,13 +218,19 @@ class TreeReduce(TreeNode):
         if not items:
             return None
 
-        result = items[0]
+        # find the initial accumulator value
+        accum_name = self.function.params[0]
+        accum = next(
+            param
+            for param in self.function.body.params
+            if getattr(param, "name", None) == accum_name
+        ).value
 
-        for item in items[1:]:
-            args = zip(self.function.params, [result, item])
-            result = await func(**dict(args))
+        for item in items:
+            args = zip(self.function.params, [accum, item])
+            accum = await func(**dict(args))
 
-        return result
+        return accum
 
 
 type Node = Annotated[
