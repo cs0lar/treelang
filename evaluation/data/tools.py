@@ -45,7 +45,6 @@ def get_largest_city(country):
 
 def get_largest_city_by_ranking(country, ranking):
     """Get the largest city in a given country by ranking."""
-    print(country, ranking)
     country_lower = country.lower()
     ranking = int(ranking)
     if country_lower == "france":
@@ -234,6 +233,13 @@ def greater_than(value, threshold):
     return value > threshold
 
 
+def less_than(value, threshold):
+    """Check if a value is less than a given threshold."""
+    value = float(value)
+    threshold = float(threshold)
+    return value < threshold
+
+
 def get_all_cities_in_country(country):
     """Get all cities in a given country."""
     country_lower = country.lower()
@@ -273,6 +279,7 @@ tools = [
     get_author,
     add,
     greater_than,
+    less_than,
     get_all_cities_in_country,
 ]
 

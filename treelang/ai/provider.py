@@ -1,3 +1,4 @@
+import ast
 import json
 from abc import ABC, abstractmethod
 from typing import Any, Callable, Dict, List
@@ -50,13 +51,24 @@ class MCPToolProvider(ToolProvider):
                 )
             # return the result attempting to transform it into its appropriate type
 
-            def cast(text: str) -> Any:
-                for cast_fn in (int, float, lambda x: x.lower() == "true", str):
-                    try:
-                        return cast_fn(text)
-                    except ValueError:
-                        continue
-                return text
+            def cast(value: str):
+                if not isinstance(value, str):
+                    return value
+
+                text = value.strip()
+
+                lowered = text.lower()
+                if lowered == "true":
+                    return True
+                if lowered == "false":
+                    return False
+                if lowered == "null":
+                    return None
+
+                try:
+                    return ast.literal_eval(text)
+                except (ValueError, SyntaxError):
+                    return value
 
             content = (
                 output.content[0].text

@@ -70,7 +70,6 @@ class TreeFunction(TreeNode):
         params = dict(zip(tool_properties, results))
         # invoke the underlying tool
         output = await provider.call_tool(self.name, params)
-
         return output.content
 
 
@@ -186,7 +185,6 @@ class TreeFilter(TreeNode):
 
     async def eval(self, provider: ToolProvider) -> Any:
         items = await self.iterable.eval(provider)
-
         if not isinstance(items, list):
             raise TypeError("Filter expects an iterable (list) as input")
 
