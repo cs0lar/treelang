@@ -1,29 +1,31 @@
-import unittest
 import asyncio
+import unittest
 from unittest.mock import AsyncMock, Mock, patch
-from treelang.ai.provider import ToolOutput, ToolProvider
+
 import mcp.types as types
-from treelang.trees.tree import (
-    AST,
+
+from treelang.ai.provider import ToolOutput, ToolProvider
+from treelang.trees.schemas.v1 import (
     TreeConditional,
     TreeFilter,
+    TreeFunction,
     TreeLambda,
     TreeMap,
     TreeNode,
     TreeProgram,
-    TreeFunction,
     TreeReduce,
     TreeValue,
 )
+from treelang.trees.tree import AST
 
 
 class TestTreeNode(unittest.TestCase):
     def test_tree_node_init(self):
-        node = TreeNode("test")
-        self.assertEqual(node.type, "test")
+        node = TreeNode()
+        self.assertEqual(node.type, "node")
 
     def test_tree_node_eval(self):
-        node = TreeNode("test")
+        node = TreeNode()
         provider = AsyncMock(spec=ToolProvider)
         with self.assertRaises(NotImplementedError):
             asyncio.run(node.eval(provider))
@@ -31,38 +33,42 @@ class TestTreeNode(unittest.TestCase):
 
 class TestTreeProgram(unittest.TestCase):
     def test_tree_program_init(self):
-        body = [TreeNode("test")]
-        program = TreeProgram(body, "test_program", "description")
+        body = [TreeValue(name="x", value=10)]
+        program = TreeProgram(
+            body=body, name="test_program", description="description", mode="single"
+        )
         self.assertEqual(program.type, "program")
         self.assertEqual(program.body, body)
         self.assertEqual(program.name, "test_program")
         self.assertEqual(program.description, "description")
 
     def test_tree_program_eval(self):
-        body = [TreeValue("x", "result")]
+        body = [TreeValue(name="x", value="result")]
         provider = AsyncMock(spec=ToolProvider)
-        program = TreeProgram(body, "test_program")
+        program = TreeProgram(
+            body=body, name="test_program", description="description", mode="single"
+        )
         result = asyncio.run(program.eval(provider))
         self.assertEqual(result, "result")
 
 
 class TestTreeFunction(unittest.TestCase):
     def test_tree_function_init(self):
-        params = [TreeNode("param")]
-        function = TreeFunction("test_function", params)
+        params = [TreeValue(name="param", value=42)]
+        function = TreeFunction(name="test_function", params=params)
         self.assertEqual(function.type, "function")
         self.assertEqual(function.name, "test_function")
         self.assertEqual(function.params, params)
 
     def test_tree_function_eval(self):
-        params = [TreeValue("param", 42)]
+        params = [TreeValue(name="param", value=42)]
         provider = AsyncMock(spec=ToolProvider)
         provider.get_tool_definition.return_value = {
             "name": "test_function",
             "description": "test_description",
             "properties": {"param": {}},
         }
-        function = TreeFunction("test_function", params)
+        function = TreeFunction(name="test_function", params=params)
         result = asyncio.run(function.eval(provider))
         self.assertIsNotNone(result)
         provider.get_tool_definition.assert_called_once_with("test_function")
@@ -71,13 +77,13 @@ class TestTreeFunction(unittest.TestCase):
 
 class TestTreeValue(unittest.TestCase):
     def test_tree_value_init(self):
-        value = TreeValue("test_value", 42)
+        value = TreeValue(name="test_value", value=42)
         self.assertEqual(value.type, "value")
         self.assertEqual(value.name, "test_value")
         self.assertEqual(value.value, 42)
 
     def test_tree_value_eval(self):
-        value = TreeValue("test_value", 42)
+        value = TreeValue(name="test_value", value=42)
         provider = AsyncMock(spec=ToolProvider)
         result = asyncio.run(value.eval(provider))
         self.assertEqual(result, 42)
@@ -85,10 +91,12 @@ class TestTreeValue(unittest.TestCase):
 
 class TestTreeConditional(unittest.TestCase):
     def test_tree_conditional_init(self):
-        condition = TreeValue("condition", True)
-        true_branch = TreeValue("true_branch", "True Result")
-        false_branch = TreeValue("false_branch", "False Result")
-        conditional = TreeConditional(condition, true_branch, false_branch)
+        condition = TreeValue(name="condition", value=True)
+        true_branch = TreeValue(name="true_branch", value="True Result")
+        false_branch = TreeValue(name="false_branch", value="False Result")
+        conditional = TreeConditional(
+            condition=condition, true_branch=true_branch, false_branch=false_branch
+        )
 
         self.assertEqual(conditional.type, "conditional")
         self.assertEqual(conditional.condition, condition)
@@ -96,30 +104,33 @@ class TestTreeConditional(unittest.TestCase):
         self.assertEqual(conditional.false_branch, false_branch)
 
     def test_tree_conditional_eval_true_branch(self):
-        condition = TreeValue("condition", True)
-        true_branch = TreeValue("true_branch", "True Result")
-        false_branch = TreeValue("false_branch", "False Result")
-        conditional = TreeConditional(condition, true_branch, false_branch)
+        condition = TreeValue(name="condition", value=True)
+        true_branch = TreeValue(name="true_branch", value="True Result")
+        false_branch = TreeValue(name="false_branch", value="False Result")
+        conditional = TreeConditional(
+            condition=condition, true_branch=true_branch, false_branch=false_branch
+        )
 
         provider = AsyncMock(spec=ToolProvider)
         result = asyncio.run(conditional.eval(provider))
         self.assertEqual(result, "True Result")
 
     def test_tree_conditional_eval_false_branch(self):
-        condition = TreeValue("condition", False)
-        true_branch = TreeValue("true_branch", "True Result")
-        false_branch = TreeValue("false_branch", "False Result")
-        conditional = TreeConditional(condition, true_branch, false_branch)
+        condition = TreeValue(name="condition", value=False)
+        true_branch = TreeValue(name="true_branch", value="True Result")
+        false_branch = TreeValue(name="false_branch", value="False Result")
+        conditional = TreeConditional(
+            condition=condition, true_branch=true_branch, false_branch=false_branch
+        )
 
         provider = AsyncMock(spec=ToolProvider)
         result = asyncio.run(conditional.eval(provider))
         self.assertEqual(result, "False Result")
 
     def test_tree_conditional_eval_no_false_branch(self):
-        condition = TreeValue("condition", False)
-        true_branch = TreeValue("true_branch", "True Result")
-        conditional = TreeConditional(condition, true_branch)
-
+        condition = TreeValue(name="condition", value=False)
+        true_branch = TreeValue(name="true_branch", value="True Result")
+        conditional = TreeConditional(condition=condition, true_branch=true_branch)
         provider = AsyncMock(spec=ToolProvider)
         result = asyncio.run(conditional.eval(provider))
         self.assertIsNone(result)
@@ -128,16 +139,19 @@ class TestTreeConditional(unittest.TestCase):
 class TestTreeLambda(unittest.IsolatedAsyncioTestCase):
     async def test_tree_lambda_init(self):
         params = ["x", "y"]
-        body = TreeFunction("add", [TreeValue("x", None), TreeValue("y", None)])
-        lam = TreeLambda(params, body)
+        body = TreeFunction(
+            name="add",
+            params=[TreeValue(name="x", value=None), TreeValue(name="y", value=None)],
+        )
+        lam = TreeLambda(params=params, body=body)
         self.assertEqual(lam.type, "lambda")
         self.assertEqual(lam.params, params)
         self.assertEqual(lam.body, body)
 
     async def test_tree_lambda_eval_returns_callable(self):
         params = ["x"]
-        body = TreeFunction("negate", [TreeValue("x", None)])
-        lam = TreeLambda(params, body)
+        body = TreeFunction(name="negate", params=[TreeValue(name="x", value=None)])
+        lam = TreeLambda(params=params, body=body)
         provider = AsyncMock(spec=ToolProvider)
         provider.get_tool_definition.return_value = {
             "name": "negate",
@@ -147,15 +161,18 @@ class TestTreeLambda(unittest.IsolatedAsyncioTestCase):
         provider.call_tool.return_value = ToolOutput(content=-5)
         func = await lam.eval(provider)
         self.assertTrue(callable(func))
-        result = await func(5)
+        result = await func(x=5)
         self.assertEqual(result, -5)
         provider.get_tool_definition.assert_called_once_with("negate")
         provider.call_tool.assert_called_once_with("negate", {"x": 5})
 
     async def test_tree_lambda_eval_multiple_params(self):
         params = ["a", "b"]
-        body = TreeFunction("add", [TreeValue("a", None), TreeValue("b", None)])
-        lam = TreeLambda(params, body)
+        body = TreeFunction(
+            name="add",
+            params=[TreeValue(name="a", value=None), TreeValue(name="b", value=None)],
+        )
+        lam = TreeLambda(params=params, body=body)
         provider = AsyncMock(spec=ToolProvider)
         provider.get_tool_definition.return_value = {
             "name": "add",
@@ -164,16 +181,16 @@ class TestTreeLambda(unittest.IsolatedAsyncioTestCase):
         }
         provider.call_tool.return_value = ToolOutput(content=7)
         func = await lam.eval(provider)
-        result = await func(3, 4)
+        result = await func(a=3, b=4)
         self.assertEqual(result, 7)
         provider.get_tool_definition.assert_called_once_with("add")
         provider.call_tool.assert_called_once_with("add", {"a": 3, "b": 4})
 
     async def test_tree_lambda_eval_updates_body_params(self):
         params = ["x"]
-        value_node = TreeValue("x", None)
-        body = TreeFunction("identity", [value_node])
-        lam = TreeLambda(params, body)
+        value_node = TreeValue(name="x", value=None)
+        body = TreeFunction(name="identity", params=[value_node])
+        lam = TreeLambda(params=params, body=body)
         provider = AsyncMock(spec=ToolProvider)
         provider.get_tool_definition.return_value = {
             "name": "identity",
@@ -182,15 +199,26 @@ class TestTreeLambda(unittest.IsolatedAsyncioTestCase):
         }
         provider.call_tool.return_value = ToolOutput(content=123)
         func = await lam.eval(provider)
-        await func(123)
+        await func(x=123)
         self.assertEqual(value_node.value, 123)
 
 
 class TestTreeMap(unittest.IsolatedAsyncioTestCase):
+    def setUp(self):
+        self._original_eval = TreeLambda.eval
+
+    def tearDown(self):
+        TreeLambda.eval = self._original_eval
+
     async def test_tree_map_init(self):
-        function = TreeLambda(["x"], TreeFunction("identity", [TreeValue("x", None)]))
-        iterable = TreeValue("items", [[1], [2], [3]])
-        tree_map = TreeMap(function, iterable)
+        function = TreeLambda(
+            params=["x"],
+            body=TreeFunction(
+                name="identity", params=[TreeValue(name="x", value=None)]
+            ),
+        )
+        iterable = TreeValue(name="items", value=[[1], [2], [3]])
+        tree_map = TreeMap(function=function, iterable=iterable)
         self.assertEqual(tree_map.type, "map")
         self.assertEqual(tree_map.function, function)
         self.assertEqual(tree_map.iterable, iterable)
@@ -219,17 +247,25 @@ class TestTreeMap(unittest.IsolatedAsyncioTestCase):
                     ]
                 )
 
-        function = TreeLambda(["x"], TreeFunction("double", [TreeValue("x", None)]))
-        iterable = TreeValue("items", [1, 2, 3])
-        tree_map = TreeMap(function, iterable)
+        function = TreeLambda(
+            params=["x"],
+            body=TreeFunction(name="double", params=[TreeValue(name="x", value=None)]),
+        )
+        iterable = TreeValue(name="items", value=[1, 2, 3])
+        tree_map = TreeMap(function=function, iterable=iterable)
         provider = DummyProvider()
         result = await tree_map.eval(provider)
         self.assertEqual(result, [2, 4, 6])
 
     async def test_tree_map_eval_non_iterable_raises(self):
-        function = TreeLambda(["x"], TreeFunction("identity", [TreeValue("x", None)]))
-        iterable = TreeValue("items", 123)  # Not a list
-        tree_map = TreeMap(function, iterable)
+        function = TreeLambda(
+            params=["x"],
+            body=TreeFunction(
+                name="identity", params=[TreeValue(name="x", value=None)]
+            ),
+        )
+        iterable = TreeValue(name="items", value=123)  # Not a list
+        tree_map = TreeMap(function=function, iterable=iterable)
         provider = AsyncMock(spec=ToolProvider)
         with self.assertRaises(TypeError):
             await tree_map.eval(provider)
@@ -258,34 +294,51 @@ class TestTreeMap(unittest.IsolatedAsyncioTestCase):
                 )
 
         # Patch TreeLambda.eval to return a non-callable
-        function = TreeLambda(["x"], TreeFunction("broken", [TreeValue("x", None)]))
-        function.eval = AsyncMock(return_value=42)
-        iterable = TreeValue("items", [[1]])
-        tree_map = TreeMap(function, iterable)
+        TreeLambda.eval = AsyncMock(return_value=42)
+        function = TreeLambda(
+            params=["x"],
+            body=TreeFunction(name="broken", params=[TreeValue(name="x", value=None)]),
+        )
+        iterable = TreeValue(name="items", value=[[1]])
+        tree_map = TreeMap(function=function, iterable=iterable)
         provider = DummyProvider()
         with self.assertRaises(TypeError):
             await tree_map.eval(provider)
 
     async def test_tree_map_eval_empty_iterable(self):
-        function = TreeLambda(["x"], TreeFunction("identity", [TreeValue("x", None)]))
-        iterable = TreeValue("items", [])
-        tree_map = TreeMap(function, iterable)
+        function = TreeLambda(
+            params=["x"],
+            body=TreeFunction(
+                name="identity", params=[TreeValue(name="x", value=None)]
+            ),
+        )
+        iterable = TreeValue(name="items", value=[])
+        tree_map = TreeMap(function=function, iterable=iterable)
         provider = AsyncMock(spec=ToolProvider)
 
         # Patch function.eval to return a dummy callable
         async def dummy_func(x):
             return x
 
-        function.eval = AsyncMock(return_value=dummy_func)
+        TreeLambda.eval = AsyncMock(return_value=dummy_func)
         result = await tree_map.eval(provider)
         self.assertEqual(result, [])
 
 
 class TestTreeFilter(unittest.IsolatedAsyncioTestCase):
+    def setUp(self):
+        self._original_eval = TreeLambda.eval
+
+    def tearDown(self):
+        TreeLambda.eval = self._original_eval
+
     async def test_tree_filter_init(self):
-        function = TreeLambda(["x"], TreeFunction("is_even", [TreeValue("x", None)]))
-        iterable = TreeValue("items", [1, 2, 3, 4])
-        tree_filter = TreeFilter(function, iterable)
+        function = TreeLambda(
+            params=["x"],
+            body=TreeFunction(name="is_even", params=[TreeValue(name="x", value=None)]),
+        )
+        iterable = TreeValue(name="items", value=[1, 2, 3, 4])
+        tree_filter = TreeFilter(function=function, iterable=iterable)
 
         self.assertEqual(tree_filter.type, "filter")
         self.assertEqual(tree_filter.function, function)
@@ -314,78 +367,107 @@ class TestTreeFilter(unittest.IsolatedAsyncioTestCase):
                     ]
                 )
 
-        function = TreeLambda(["x"], TreeFunction("is_even", [TreeValue("x", None)]))
-        iterable = TreeValue("items", [1, 2, 3, 4, 5, 6])
-        tree_filter = TreeFilter(function, iterable)
+        function = TreeLambda(
+            params=["x"],
+            body=TreeFunction(name="is_even", params=[TreeValue(name="x", value=None)]),
+        )
+        iterable = TreeValue(name="items", value=[1, 2, 3, 4, 5, 6])
+        tree_filter = TreeFilter(function=function, iterable=iterable)
         provider = DummyProvider()
         result = await tree_filter.eval(provider)
         self.assertEqual(result, [2, 4, 6])
 
     async def test_tree_filter_eval_non_iterable_raises(self):
-        function = TreeLambda(["x"], TreeFunction("is_even", [TreeValue("x", None)]))
-        iterable = TreeValue("items", 123)  # Not a list
-        tree_filter = TreeFilter(function, iterable)
+        function = TreeLambda(
+            params=["x"],
+            body=TreeFunction(name="is_even", params=[TreeValue(name="x", value=None)]),
+        )
+        iterable = TreeValue(name="items", value=123)  # Not a list
+        tree_filter = TreeFilter(function=function, iterable=iterable)
         provider = AsyncMock(spec=ToolProvider)
         with self.assertRaises(TypeError):
             await tree_filter.eval(provider)
 
     async def test_tree_filter_eval_empty_iterable(self):
-        function = TreeLambda(["x"], TreeFunction("is_even", [TreeValue("x", None)]))
-        iterable = TreeValue("items", [])
-        tree_filter = TreeFilter(function, iterable)
+        function = TreeLambda(
+            params=["x"],
+            body=TreeFunction(name="is_even", params=[TreeValue(name="x", value=None)]),
+        )
+        iterable = TreeValue(name="items", value=[])
+        tree_filter = TreeFilter(function=function, iterable=iterable)
         provider = AsyncMock(spec=ToolProvider)
 
         # Patch function.eval to return a dummy callable
         async def dummy_func(x):
             return True
 
-        function.eval = AsyncMock(return_value=dummy_func)
+        TreeLambda.eval = AsyncMock(return_value=dummy_func)
         result = await tree_filter.eval(provider)
         self.assertEqual(result, [])
 
     async def test_tree_filter_eval_function_returns_false(self):
         function = TreeLambda(
-            ["x"], TreeFunction("always_false", [TreeValue("x", None)])
+            params=["x"],
+            body=TreeFunction(
+                name="always_false", params=[TreeValue(name="x", value=None)]
+            ),
         )
-        iterable = TreeValue("items", [1, 2, 3])
-        tree_filter = TreeFilter(function, iterable)
+        iterable = TreeValue(name="items", value=[1, 2, 3])
+        tree_filter = TreeFilter(function=function, iterable=iterable)
         provider = AsyncMock(spec=ToolProvider)
 
         async def always_false(x):
             return False
 
-        function.eval = AsyncMock(return_value=always_false)
+        TreeLambda.eval = AsyncMock(return_value=always_false)
         result = await tree_filter.eval(provider)
         self.assertEqual(result, [])
 
 
 class TestTreeReduce(unittest.IsolatedAsyncioTestCase):
+    def setUp(self):
+        self._original_eval = TreeLambda.eval
+
+    def tearDown(self):
+        TreeLambda.eval = self._original_eval
+
     async def test_tree_reduce_init(self):
         function = TreeLambda(
-            ["acc", "item"],
-            TreeFunction("add", [TreeValue("acc", None), TreeValue("item", None)]),
+            params=["acc", "item"],
+            body=TreeFunction(
+                name="add",
+                params=[
+                    TreeValue(name="acc", value=None),
+                    TreeValue(name="item", value=None),
+                ],
+            ),
         )
-        iterable = TreeValue("items", [1, 2, 3])
-        tree_reduce = TreeReduce(function, iterable)
-
+        iterable = TreeValue(name="items", value=[1, 2, 3])
+        tree_reduce = TreeReduce(function=function, iterable=iterable)
         self.assertEqual(tree_reduce.type, "reduce")
         self.assertEqual(tree_reduce.function, function)
         self.assertEqual(tree_reduce.iterable, iterable)
 
     async def test_tree_reduce_eval_empty_iterable(self):
         function = TreeLambda(
-            ["acc", "item"],
-            TreeFunction("add", [TreeValue("acc", None), TreeValue("item", None)]),
+            params=["acc", "item"],
+            body=TreeFunction(
+                name="add",
+                params=[
+                    TreeValue(name="acc", value=None),
+                    TreeValue(name="item", value=None),
+                ],
+            ),
         )
-        iterable = TreeValue("items", [])
-        tree_reduce = TreeReduce(function, iterable)
+        iterable = TreeValue(name="items", value=[])
+        tree_reduce = TreeReduce(function=function, iterable=iterable)
         provider = AsyncMock(spec=ToolProvider)
 
         # Patch function.eval to return a dummy callable
         async def dummy_func(acc, item):
             return acc + item
 
-        function.eval = AsyncMock(return_value=dummy_func)
+        TreeLambda.eval = AsyncMock(return_value=dummy_func)
         result = await tree_reduce.eval(provider)
         self.assertIsNone(result)
 
@@ -419,11 +501,17 @@ class TestTreeReduce(unittest.IsolatedAsyncioTestCase):
                 )
 
         function = TreeLambda(
-            ["acc", "item"],
-            TreeFunction("add", [TreeValue("acc", None), TreeValue("item", None)]),
+            params=["acc", "item"],
+            body=TreeFunction(
+                name="add",
+                params=[
+                    TreeValue(name="acc", value=0),
+                    TreeValue(name="item", value=None),
+                ],
+            ),
         )
-        iterable = TreeValue("items", [1, 2, 3])
-        tree_reduce = TreeReduce(function, iterable)
+        iterable = TreeValue(name="items", value=[1, 2, 3])
+        tree_reduce = TreeReduce(function=function, iterable=iterable)
         provider = DummyProvider()
         result = await tree_reduce.eval(provider)
         self.assertEqual(result, 6)  # (1 + 2) + 3
@@ -434,6 +522,7 @@ class TestAST(unittest.TestCase):
         self.ast = [
             {
                 "type": "program",
+                "mode": "single",
                 "body": [
                     {
                         "type": "function",
@@ -455,123 +544,186 @@ class TestAST(unittest.TestCase):
         ]
 
     def test_parse_program(self):
-        ast_dict = {"type": "program", "body": []}
+        ast_dict = {"type": "program", "body": [], "mode": "single"}
         result = AST.parse(ast_dict)
         self.assertIsInstance(result, TreeProgram)
 
     def test_parse_function(self):
-        ast_dict = {"type": "function", "name": "test_function", "params": []}
+        ast_dict = {
+            "type": "program",
+            "mode": "single",
+            "body": [
+                {
+                    "type": "function",
+                    "name": "test_function",
+                    "params": [],
+                }
+            ],
+        }
         result = AST.parse(ast_dict)
-        self.assertIsInstance(result, TreeFunction)
-        self.assertEqual(result.name, "test_function")
+        self.assertIsInstance(result.body[0], TreeFunction)
+        self.assertEqual(result.body[0].name, "test_function")
 
     def test_parse_conditional(self):
         ast_dict = {
-            "type": "conditional",
-            "condition": {"type": "value", "name": "condition", "value": True},
-            "true_branch": {
-                "type": "value",
-                "name": "true_branch",
-                "value": "True Result",
-            },
-            "false_branch": {
-                "type": "value",
-                "name": "false_branch",
-                "value": "False Result",
-            },
+            "type": "program",
+            "mode": "single",
+            "body": [
+                {
+                    "type": "conditional",
+                    "condition": {"type": "value", "name": "condition", "value": True},
+                    "true_branch": {
+                        "type": "value",
+                        "name": "true_branch",
+                        "value": "True Result",
+                    },
+                    "false_branch": {
+                        "type": "value",
+                        "name": "false_branch",
+                        "value": "False Result",
+                    },
+                }
+            ],
         }
         result = AST.parse(ast_dict)
-        self.assertIsInstance(result, TreeConditional)
-        self.assertIsInstance(result.condition, TreeValue)
-        self.assertIsInstance(result.true_branch, TreeValue)
-        self.assertIsInstance(result.false_branch, TreeValue)
-        self.assertEqual(result.condition.value, True)
-        self.assertEqual(result.true_branch.value, "True Result")
-        self.assertEqual(result.false_branch.value, "False Result")
+        self.assertIsInstance(result, TreeProgram)
+        conditional_node = result.body[0]
+        self.assertIsInstance(conditional_node, TreeConditional)
+        self.assertIsInstance(conditional_node.condition, TreeValue)
+        self.assertIsInstance(conditional_node.true_branch, TreeValue)
+        self.assertIsInstance(conditional_node.false_branch, TreeValue)
+        self.assertEqual(conditional_node.condition.value, True)
+        self.assertEqual(conditional_node.true_branch.value, "True Result")
+        self.assertEqual(conditional_node.false_branch.value, "False Result")
 
     def test_parse_lambda(self):
         ast_dict = {
-            "type": "lambda",
-            "params": ["x", "y"],
-            "body": {
-                "type": "function",
-                "name": "add",
-                "params": [
-                    {"type": "value", "name": "x", "value": None},
-                    {"type": "value", "name": "y", "value": None},
-                ],
-            },
+            "type": "program",
+            "mode": "single",
+            "body": [
+                {
+                    "type": "lambda",
+                    "params": ["x", "y"],
+                    "body": {
+                        "type": "function",
+                        "name": "add",
+                        "params": [
+                            {"type": "value", "name": "x", "value": None},
+                            {"type": "value", "name": "y", "value": None},
+                        ],
+                    },
+                }
+            ],
         }
         result = AST.parse(ast_dict)
-        self.assertIsInstance(result, TreeLambda)
-        self.assertEqual(result.params, ["x", "y"])
-        self.assertIsInstance(result.body, TreeFunction)
-        self.assertEqual(result.body.name, "add")
+        lambda_node = result.body[0]
+        self.assertIsInstance(lambda_node, TreeLambda)
+        self.assertEqual(lambda_node.params, ["x", "y"])
+        self.assertIsInstance(lambda_node.body, TreeFunction)
+        self.assertEqual(lambda_node.body.name, "add")
 
     def test_parse_map(self):
         ast_dict = {
-            "type": "map",
-            "function": {
-                "type": "lambda",
-                "params": ["x"],
-                "body": {
-                    "type": "function",
-                    "name": "square",
-                    "params": [{"type": "value", "name": "x", "value": 0}],
-                },
-            },
-            "iterable": {"type": "value", "name": "numbers", "value": [1, 2, 3]},
+            "type": "program",
+            "mode": "single",
+            "body": [
+                {
+                    "type": "map",
+                    "function": {
+                        "type": "lambda",
+                        "params": ["x"],
+                        "body": {
+                            "type": "function",
+                            "name": "square",
+                            "params": [{"type": "value", "name": "x", "value": 0}],
+                        },
+                    },
+                    "iterable": {
+                        "type": "value",
+                        "name": "numbers",
+                        "value": [1, 2, 3],
+                    },
+                }
+            ],
         }
         result = AST.parse(ast_dict)
-        self.assertIsInstance(result, TreeMap)
-        self.assertIsInstance(result.function, TreeLambda)
-        self.assertIsInstance(result.iterable, TreeValue)
+        map_node = result.body[0]
+        self.assertIsInstance(map_node, TreeMap)
+        self.assertIsInstance(map_node.function, TreeLambda)
+        self.assertIsInstance(map_node.iterable, TreeValue)
 
     def test_parse_filter(self):
         ast_dict = {
-            "type": "filter",
-            "function": {
-                "type": "lambda",
-                "params": ["x"],
-                "body": {
-                    "type": "function",
-                    "name": "is_even",
-                    "params": [{"type": "value", "name": "x", "value": 0}],
-                },
-            },
-            "iterable": {"type": "value", "name": "numbers", "value": [1, 2, 3, 4]},
+            "type": "program",
+            "mode": "single",
+            "body": [
+                {
+                    "type": "filter",
+                    "function": {
+                        "type": "lambda",
+                        "params": ["x"],
+                        "body": {
+                            "type": "function",
+                            "name": "is_even",
+                            "params": [{"type": "value", "name": "x", "value": 0}],
+                        },
+                    },
+                    "iterable": {
+                        "type": "value",
+                        "name": "numbers",
+                        "value": [1, 2, 3, 4],
+                    },
+                }
+            ],
         }
         result = AST.parse(ast_dict)
-        self.assertIsInstance(result, TreeFilter)
-        self.assertIsInstance(result.function, TreeLambda)
-        self.assertIsInstance(result.iterable, TreeValue)
+        filter_node = result.body[0]
+        self.assertIsInstance(filter_node, TreeFilter)
+        self.assertIsInstance(filter_node.function, TreeLambda)
+        self.assertIsInstance(filter_node.iterable, TreeValue)
 
     def test_parse_reduce(self):
         ast_dict = {
-            "type": "reduce",
-            "function": {
-                "type": "lambda",
-                "params": ["acc", "item"],
-                "body": {
-                    "type": "function",
-                    "name": "add",
-                    "params": [
-                        {"type": "value", "name": "acc", "value": 0},
-                        {"type": "value", "name": "item", "value": 0},
-                    ],
-                },
-            },
-            "iterable": {"type": "value", "name": "numbers", "value": [1, 2, 3]},
+            "type": "program",
+            "mode": "single",
+            "body": [
+                {
+                    "type": "reduce",
+                    "function": {
+                        "type": "lambda",
+                        "params": ["acc", "item"],
+                        "body": {
+                            "type": "function",
+                            "name": "add",
+                            "params": [
+                                {"type": "value", "name": "acc", "value": 0},
+                                {"type": "value", "name": "item", "value": 0},
+                            ],
+                        },
+                    },
+                    "iterable": {
+                        "type": "value",
+                        "name": "numbers",
+                        "value": [1, 2, 3],
+                    },
+                }
+            ],
         }
         result = AST.parse(ast_dict)
-        self.assertIsInstance(result, TreeReduce)
-        self.assertIsInstance(result.function, TreeLambda)
-        self.assertIsInstance(result.iterable, TreeValue)
+        reduce_node = result.body[0]
+        self.assertIsInstance(reduce_node, TreeReduce)
+        self.assertIsInstance(reduce_node.function, TreeLambda)
+        self.assertIsInstance(reduce_node.iterable, TreeValue)
 
     def test_parse_value(self):
-        ast_dict = {"type": "value", "name": "test_value", "value": 42}
+        ast_dict = {
+            "type": "program",
+            "mode": "single",
+            "body": [{"type": "value", "name": "test_value", "value": 42}],
+        }
         result = AST.parse(ast_dict)
-        self.assertIsInstance(result, TreeValue)
+        value_node = result.body[0]
+        self.assertIsInstance(value_node, TreeValue)
 
     def test_parse_unknown(self):
         ast_dict = {"type": "unknown"}
@@ -676,6 +828,7 @@ class TestAST(unittest.TestCase):
 
         ast_dict = {
             "type": "program",
+            "mode": "single",
             "body": [
                 {
                     "type": "conditional",
@@ -737,6 +890,7 @@ class TestAST(unittest.TestCase):
 
         ast_dict = {
             "type": "program",
+            "mode": "single",
             "body": [
                 {
                     "type": "lambda",
@@ -787,6 +941,7 @@ class TestAST(unittest.TestCase):
 
         ast_dict = {
             "type": "program",
+            "mode": "single",
             "body": [
                 {
                     "type": "map",
@@ -842,6 +997,7 @@ class TestAST(unittest.TestCase):
 
         ast_dict = {
             "type": "program",
+            "mode": "single",
             "body": [
                 {
                     "type": "filter",
@@ -897,6 +1053,7 @@ class TestAST(unittest.TestCase):
 
         ast_dict = {
             "type": "program",
+            "mode": "single",
             "body": [
                 {
                     "type": "reduce",
@@ -907,7 +1064,7 @@ class TestAST(unittest.TestCase):
                             "type": "function",
                             "name": "add",
                             "params": [
-                                {"type": "value", "name": "acc", "value": None},
+                                {"type": "value", "name": "acc", "value": 0},
                                 {"type": "value", "name": "item", "value": None},
                             ],
                         },
@@ -926,16 +1083,18 @@ class TestAST(unittest.TestCase):
         self.assertEqual(result, 6)
 
     def test_visit(self):
-        node = TreeNode("test")
+        node = TreeNode()
         op = Mock()
         AST.visit(node, op)
         op.assert_called_once_with(node)
 
     def test_visit_with_conditional(self):
-        condition = TreeValue("condition", True)
-        true_branch = TreeValue("true_branch", "True Result")
-        false_branch = TreeValue("false_branch", "False Result")
-        conditional = TreeConditional(condition, true_branch, false_branch)
+        condition = TreeValue(name="condition", value=True)
+        true_branch = TreeValue(name="true_branch", value="True Result")
+        false_branch = TreeValue(name="false_branch", value="False Result")
+        conditional = TreeConditional(
+            condition=condition, true_branch=true_branch, false_branch=false_branch
+        )
 
         op = Mock()
         AST.visit(conditional, op)
@@ -949,8 +1108,11 @@ class TestAST(unittest.TestCase):
 
     def test_visit_with_lambda(self):
         params = ["x", "y"]
-        body = TreeFunction("add", [TreeValue("x", None), TreeValue("y", None)])
-        lam = TreeLambda(params, body)
+        body = TreeFunction(
+            name="add",
+            params=[TreeValue(name="x", value=None), TreeValue(name="y", value=None)],
+        )
+        lam = TreeLambda(params=params, body=body)
 
         op = Mock()
         AST.visit(lam, op)
@@ -962,9 +1124,12 @@ class TestAST(unittest.TestCase):
         self.assertEqual(op.call_count, 4)
 
     def test_visit_with_map(self):
-        function = TreeLambda(["x"], TreeFunction("double", [TreeValue("x", None)]))
-        iterable = TreeValue("items", [1, 2, 3])
-        tree_map = TreeMap(function, iterable)
+        function = TreeLambda(
+            params=["x"],
+            body=TreeFunction(name="double", params=[TreeValue(name="x", value=None)]),
+        )
+        iterable = TreeValue(name="items", value=[1, 2, 3])
+        tree_map = TreeMap(function=function, iterable=iterable)
 
         op = Mock()
         AST.visit(tree_map, op)
@@ -976,9 +1141,12 @@ class TestAST(unittest.TestCase):
         self.assertEqual(op.call_count, 5)
 
     def test_visit_with_filter(self):
-        function = TreeLambda(["x"], TreeFunction("is_even", [TreeValue("x", None)]))
-        iterable = TreeValue("items", [1, 2, 3, 4])
-        tree_filter = TreeFilter(function, iterable)
+        function = TreeLambda(
+            params=["x"],
+            body=TreeFunction(name="is_even", params=[TreeValue(name="x", value=None)]),
+        )
+        iterable = TreeValue(name="items", value=[1, 2, 3, 4])
+        tree_filter = TreeFilter(function=function, iterable=iterable)
 
         op = Mock()
         AST.visit(tree_filter, op)
@@ -991,12 +1159,17 @@ class TestAST(unittest.TestCase):
 
     def test_visit_with_reduce(self):
         function = TreeLambda(
-            ["acc", "item"],
-            TreeFunction("add", [TreeValue("acc", None), TreeValue("item", None)]),
+            params=["acc", "item"],
+            body=TreeFunction(
+                name="add",
+                params=[
+                    TreeValue(name="acc", value=None),
+                    TreeValue(name="item", value=None),
+                ],
+            ),
         )
-        iterable = TreeValue("items", [1, 2, 3])
-        tree_reduce = TreeReduce(function, iterable)
-
+        iterable = TreeValue(name="items", value=[1, 2, 3])
+        tree_reduce = TreeReduce(function=function, iterable=iterable)
         op = Mock()
         AST.visit(tree_reduce, op)
 
@@ -1005,121 +1178,6 @@ class TestAST(unittest.TestCase):
         op.assert_any_call(function)
         op.assert_any_call(iterable)
         self.assertEqual(op.call_count, 6)
-
-    def test_repr(self):
-        ast = TreeProgram(
-            body=[
-                TreeFunction(name="foo", params=[]),
-                TreeValue(name="z", value=10),
-            ]
-        )
-        result = AST.repr(ast)
-        self.assertEqual(result, '{"foo_1": {}, "z": [10]}')
-
-    def test_repr_with_conditional(self):
-        ast = TreeProgram(
-            body=[
-                TreeConditional(
-                    condition=TreeFunction(
-                        name="isPositive", params=[TreeValue(name="x", value=-5)]
-                    ),
-                    true_branch=TreeFunction(
-                        name="print",
-                        params=[TreeValue(name="message", value="Positive")],
-                    ),
-                    false_branch=TreeFunction(
-                        name="print",
-                        params=[TreeValue(name="message", value="Negative")],
-                    ),
-                )
-            ]
-        )
-        result = AST.repr(ast)
-        expected = (
-            '{"conditional_1": {"isPositive_1": {"x": [-5]}, '
-            '"print_1": {"message": ["Positive"]}, '
-            '"print_2": {"message": ["Negative"]}}}'
-        )
-        self.assertEqual(result, expected)
-
-    def test_repr_with_lambda(self):
-        ast = TreeProgram(
-            body=[
-                TreeLambda(
-                    params=["x", "y"],
-                    body=TreeFunction(
-                        name="add",
-                        params=[
-                            TreeValue(name="x", value=None),
-                            TreeValue(name="y", value=None),
-                        ],
-                    ),
-                )
-            ]
-        )
-        result = AST.repr(ast)
-        expected = '{"lambda_1": {"add_1": {"x": [], "y": []}}}'
-        self.assertEqual(result, expected)
-
-    def test_repr_with_map(self):
-        ast = TreeProgram(
-            body=[
-                TreeMap(
-                    function=TreeLambda(
-                        params=["x"],
-                        body=TreeFunction(
-                            name="double", params=[TreeValue(name="x", value=None)]
-                        ),
-                    ),
-                    iterable=TreeValue(name="items", value=[1, 2, 3]),
-                )
-            ]
-        )
-        result = AST.repr(ast)
-        expected = (
-            '{"map_1": {"lambda_1": {"double_1": {"x": []}}, "items": [[1, 2, 3]]}}'
-        )
-        self.assertEqual(result, expected)
-
-    def test_repr_with_filter(self):
-        ast = TreeProgram(
-            body=[
-                TreeFilter(
-                    function=TreeLambda(
-                        params=["x"],
-                        body=TreeFunction(
-                            name="is_even", params=[TreeValue(name="x", value=None)]
-                        ),
-                    ),
-                    iterable=TreeValue(name="items", value=[1, 2, 3, 4]),
-                )
-            ]
-        )
-        result = AST.repr(ast)
-        expected = '{"filter_1": {"lambda_1": {"is_even_1": {"x": []}}, "items": [[1, 2, 3, 4]]}}'
-        self.assertEqual(result, expected)
-
-    def test_repr_with_reduce(self):
-        ast = TreeProgram(
-            body=[
-                TreeReduce(
-                    function=TreeLambda(
-                        params=["acc", "item"],
-                        body=TreeFunction(
-                            name="add",
-                            params=[
-                                TreeValue(name="acc", value=None),
-                                TreeValue(name="item", value=None),
-                            ],
-                        ),
-                    ),
-                    iterable=TreeValue(name="items", value=[1, 2, 3]),
-                )
-            ]
-        )
-        result = AST.repr(ast)
-        expected = '{"reduce_1": {"lambda_1": {"add_1": {"acc": [], "item": []}}, "items": [[1, 2, 3]]}}'
-        self.assertEqual(result, expected)
 
 
 class TestToolMethod(unittest.IsolatedAsyncioTestCase):
@@ -1134,6 +1192,7 @@ class TestToolMethod(unittest.IsolatedAsyncioTestCase):
                     ],
                 )
             ],
+            mode="single",
             name="add_tool",
             description="Adds two numbers",
         )
@@ -1188,6 +1247,7 @@ class TestToolMethod(unittest.IsolatedAsyncioTestCase):
                     ),
                 )
             ],
+            mode="single",
             name="is_positive_tool",
             description="Checks if a number is positive",
         )
@@ -1318,6 +1378,7 @@ class TestToolMethod(unittest.IsolatedAsyncioTestCase):
                     ),
                 )
             ],
+            mode="single",
             name="is_positive_tool",
             description="Checks if a number is positive",
         )

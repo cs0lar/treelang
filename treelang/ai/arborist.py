@@ -17,6 +17,7 @@ from treelang.ai.prompt import (
 )
 from treelang.ai.provider import ToolProvider
 from treelang.ai.selector import AllToolsSelector, BaseToolSelector
+from treelang.trees.schemas import ast_examples, ast_json_schema
 from treelang.trees.tree import AST, TreeNode, TreeProgram
 
 load_dotenv()
@@ -57,7 +58,6 @@ class EvalResponse(Model):
         content (Any): The content of the evaluation response. This can be a TreeNode
         if type is TREE or Any if type is WALK depending on the evaluation.
         jsontree (dict[str, Any] | None): The JSON representation of the tree if available.
-            This is used for tree responses to generate a description of the tree.
 
     Methods:
         explain() -> str:
@@ -150,13 +150,14 @@ class EvalResponse(Model):
         if self.type == EvalType.WALK:
             raise ValueError("Only tree responses can be described.")
 
-        if not self.jsontree:
+        if not self.content:
             raise ValueError("No JSON representation of the tree available.")
 
         if not isinstance(self.content, TreeProgram):
             raise ValueError("Only TreeProgram instances can be described.")
 
-        query = TREE_DESCRIPTOR_USER_PROMPT.format(tree=json.dumps(self.jsontree))
+        jsontree = AST.repr(self.content)
+        query = TREE_DESCRIPTOR_USER_PROMPT.format(tree=json.dumps(jsontree))
         messages = [
             {"role": "system", "content": TREE_DESCRIPTOR_SYSTEM_PROMPT},
             {"role": "user", "content": query},
@@ -265,7 +266,16 @@ class OpenAIArborist(BaseArborist):
         selector: BaseToolSelector = AllToolsSelector(),
         memory: Memory | None = None,
     ):
-        super().__init__(model, ARBORIST_SYSTEM_PROMPT, "", provider, selector)
+        super().__init__(
+            model,
+            ARBORIST_SYSTEM_PROMPT.format(
+                schema=ast_json_schema(), examples=ast_examples()
+            ),
+            "",
+            provider,
+            selector,
+        )
+
         self.openai = AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY"))
         self.memory = memory
 
