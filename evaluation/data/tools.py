@@ -44,7 +44,9 @@ def get_largest_city(country):
 
 
 def get_largest_city_by_ranking(country, ranking):
-    """Get the largest city in a given country by the given numerical ranking."""
+    """Returns the city name at the given population rank within a country.
+       country: string (e.g., "Australia"), ranking: integer only (1 = largest, 2 = second largest, etc.)
+    """
     country_lower = country.lower()
     ranking = int(ranking)
     if country_lower == "france":
