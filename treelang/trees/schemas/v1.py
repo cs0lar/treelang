@@ -87,6 +87,7 @@ class TreeProgram(TreeNode):
     mode: Literal["single", "parallel"]
     name: Optional[str] = None
     description: Optional[str] = None
+    schema_version: Literal["1.0"] = "1.0"
 
     async def eval(self, provider: ToolProvider) -> Any:
         result = await asyncio.gather(*[node.eval(provider) for node in self.body])
