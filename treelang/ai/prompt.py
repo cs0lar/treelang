@@ -89,6 +89,8 @@ TREE: { "type": "program", "body": [
     {
         "type": "function",
         "name": "chartDist",
+        "mode": "single",
+        "schema_version": "1.0",
         "params": [
             {"type": "function", "name": "randInts", "params" : [
                 {"type": "value", "name": "n", "value": 100},
