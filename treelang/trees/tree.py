@@ -1,265 +1,22 @@
 import asyncio
-from inspect import Signature, Parameter
 import random
-from typing import Any, List, Union, Dict
 from collections.abc import Callable
+from inspect import Parameter, Signature
+from typing import Any, Dict, List, Union
 
 from treelang.ai.provider import ToolProvider
-
-
-class TreeNode:
-    """
-    Represents a node in the abstract syntax tree (AST).
-
-    Attributes:
-        type (str): The type of the AST node.
-
-    Methods:
-        eval(ToolProvider): Evaluates the node using the provided ToolProvider.
-    """
-
-    def __init__(self, node_type: str) -> None:
-        self.type = node_type
-
-    async def eval(self, provider: ToolProvider) -> Any:
-        raise NotImplementedError()
-
-
-class TreeProgram(TreeNode):
-    """
-    Represents a program in the abstract syntax tree (AST).
-
-    Attributes:
-        body (List[TreeNode]): The list of statements in the program.
-        name str: optional name for this program.
-        description str: optional description for this program.
-
-    Methods:
-        eval(ToolProvider): Evaluates the program by evaluating each statement in the body.
-    """
-
-    def __init__(
-        self, body: List[TreeNode], name: str = None, description: str = None
-    ) -> None:
-        super().__init__("program")
-        self.body = body
-        self.name = name
-        self.description = description
-
-    async def eval(self, provider: ToolProvider) -> Any:
-        result = await asyncio.gather(*[node.eval(provider) for node in self.body])
-        return result[0] if len(result) == 1 else result
-
-
-class TreeFunction(TreeNode):
-    """
-    Represents a function in the abstract syntax tree (AST).
-
-    Attributes:
-        name (str): The name of the function.
-        params (List[str]): The list of parameters of the function.
-
-    Methods:
-        eval(ToolProvider): Evaluates the function by calling the underlying tool with the provided parameters.
-    """
-
-    def __init__(self, name: str, params: List[TreeNode]) -> None:
-        super().__init__("function")
-        self.name = name
-        self.params = params
-
-    async def eval(self, provider: ToolProvider) -> Any:
-        tool = await provider.get_tool_definition(self.name)
-
-        if not tool:
-            raise ValueError(f"Tool {self.name} is not available")
-
-        tool_properties = tool["properties"].keys()
-
-        # evaluate each parameter in order
-        results = await asyncio.gather(*[param.eval(provider) for param in self.params])
-        # create a dictionary of parameter names and values
-        params = dict(zip(tool_properties, results))
-        # invoke the underlying tool
-        output = await provider.call_tool(self.name, params)
-
-        return output.content
-
-
-class TreeValue(TreeNode):
-    """
-    Represents a value in the abstract syntax tree (AST).
-
-    Attributes:
-        value (Any): The value of the node.
-
-    Methods:
-        eval(ToolProvider): Returns the value of the node.
-    """
-
-    def __init__(self, name: str, value: Any) -> None:
-        super().__init__("value")
-        self.name = name
-        self.value = value
-
-    async def eval(self, provider: ToolProvider) -> Any:
-        return self.value
-
-
-class TreeConditional(TreeNode):
-    """
-    Represents a conditional statement in the AST.
-
-    Attributes:
-        condition (TreeNode): The condition to evaluate.
-        true_branch (TreeNode): The branch to execute if the condition is true.
-        false_branch (TreeNode): The branch to execute if the condition is false.
-
-    Methods:
-        eval(ToolProvider): Evaluates the condition and executes the appropriate branch.
-    """
-
-    def __init__(
-        self, condition: TreeNode, true_branch: TreeNode, false_branch: TreeNode = None
-    ) -> None:
-        super().__init__("conditional")
-        self.condition = condition
-        self.true_branch = true_branch
-        self.false_branch = false_branch
-
-    async def eval(self, provider: ToolProvider) -> Any:
-        condition_result = await self.condition.eval(provider)
-
-        if condition_result:
-            return await self.true_branch.eval(provider)
-        elif self.false_branch:
-            return await self.false_branch.eval(provider)
-
-        return None
-
-
-class TreeLambda(TreeNode):
-    """
-    Represents an anonymous (lambda) function.
-    Attributes:
-        params (List[str]): Parameter names.
-        body (TreeFunction): The function body.
-    """
-
-    def __init__(self, params: List[str], body: TreeFunction):
-        super().__init__("lambda")
-        self.params = params
-        self.body = body
-
-    async def eval(self, provider: ToolProvider):
-        # Returns a callable that can be invoked with arguments
-        async def func(*args):
-            # update this TreeFunction's argument values with
-            # the provided arguments preserving the order. Note that
-            # the number of arguments maybe less than or equal to
-            # the number of parameters but not more.
-            for i, param in enumerate(self.body.params):
-                if i < len(args):
-                    param.value = args[i]
-                else:
-                    # if there are not enough arguments, we leave the parameter value as is
-                    break
-            return await self.body.eval(provider)
-
-        return func
-
-
-class TreeMap(TreeNode):
-    """
-    Represents a map operation in the abstract syntax tree (AST).
-
-    Attributes:
-        function (TreeLambda): The function to apply to each item in the iterable.
-        iterable (TreeNode): The iterable to map over. The iterable TreeNode should evaluate to a list.
-
-    Methods:
-        eval(ToolProvider): Applies the map function to each item in the iterable.
-    """
-
-    def __init__(self, function: TreeLambda, iterable: TreeNode):
-        super().__init__("map")
-        self.function = function
-        self.iterable = iterable
-
-    async def eval(self, provider: ToolProvider) -> Any:
-        items = await self.iterable.eval(provider)
-
-        if not isinstance(items, list):
-            raise TypeError("Map expects an iterable (list) as input")
-
-        func = await self.function.eval(provider)
-
-        return [await func(item) for item in items]
-
-
-class TreeFilter(TreeNode):
-    """
-    Represents a filter operation in the abstract syntax tree (AST).
-
-    Attributes:
-        function (TreeLambda): The function to apply to each item in the iterable. The function should return a boolean value.
-        iterable (TreeNode): The iterable to filter. The iterable TreeNode should evaluate to a list.
-
-    Methods:
-        eval(ToolProvider): Applies the filter function to each item in the iterable.
-    """
-
-    def __init__(self, function: TreeLambda, iterable: TreeNode):
-        super().__init__("filter")
-        self.function = function
-        self.iterable = iterable
-
-    async def eval(self, provider: ToolProvider) -> Any:
-        items = await self.iterable.eval(provider)
-
-        if not isinstance(items, list):
-            raise TypeError("Filter expects an iterable (list) as input")
-
-        func = await self.function.eval(provider)
-
-        return [item for item in items if await func(item)]
-
-
-class TreeReduce(TreeNode):
-    """
-    Represents a reduce operation in the abstract syntax tree (AST).
-
-    Attributes:
-        function (TreeLambda): The function to apply to each item in the iterable. The function should take two arguments,
-                               the accumulated value and the current item, and return a new accumulated value.
-        iterable (TreeNode): The iterable to reduce. The iterable TreeNode should evaluate to a list.
-
-    Methods:
-        eval(ToolProvider): Applies the reduce function to each item in the iterable.
-    """
-
-    def __init__(self, function: TreeLambda, iterable: TreeNode):
-        super().__init__("reduce")
-        self.function = function
-        self.iterable = iterable
-
-    async def eval(self, provider: ToolProvider) -> Any:
-        items = await self.iterable.eval(provider)
-
-        if not isinstance(items, list):
-            raise TypeError("Reduce expects an iterable (list) as input")
-
-        func = await self.function.eval(provider)
-
-        if not items:
-            return None
-
-        result = items[0]
-
-        for item in items[1:]:
-            result = await func(result, item)
-
-        return result
+from treelang.trees.schemas.v1 import AST as ASTSchema
+from treelang.trees.schemas.v1 import (
+    TreeConditional,
+    TreeFilter,
+    TreeFunction,
+    TreeLambda,
+    TreeMap,
+    TreeNode,
+    TreeProgram,
+    TreeReduce,
+    TreeValue,
+)
 
 
 class AST:
@@ -283,66 +40,10 @@ class AST:
         """
         if isinstance(ast, List):
             return [cls.parse(node) for node in ast]
-        node_type = ast.get("type")
-
-        if node_type == "program":
-            return TreeProgram(cls.parse(ast["body"]))
-        if node_type == "function":
-            return TreeFunction(ast["name"], cls.parse(ast["params"]))
-        if node_type == "value":
-            return TreeValue(ast["name"], ast["value"])
-        if node_type == "conditional":
-            return TreeConditional(
-                cls.parse(ast["condition"]),
-                cls.parse(ast["true_branch"]),
-                cls.parse(ast.get("false_branch")),
-            )
-        if node_type == "lambda":
-            return TreeLambda(
-                ast["params"],
-                TreeFunction(ast["body"]["name"], cls.parse(ast["body"]["params"])),
-            )
-        if node_type == "map":
-            return TreeMap(
-                TreeLambda(
-                    ast["function"]["params"],
-                    TreeFunction(
-                        ast["function"]["body"]["name"],
-                        cls.parse(ast["function"]["body"]["params"]),
-                    ),
-                ),
-                cls.parse(ast["iterable"]),
-            )
-        if node_type == "filter":
-            # if the body of the function is a conditional, we can
-            # we can extract the condition and use it directly
-            if ast["function"]["body"]["type"] == "conditional":
-                ast["function"]["body"] = ast["function"]["body"]["condition"]
-                return cls.parse(ast)
-
-            return TreeFilter(
-                TreeLambda(
-                    ast["function"]["params"],
-                    TreeFunction(
-                        ast["function"]["body"]["name"],
-                        cls.parse(ast["function"]["body"]["params"]),
-                    ),
-                ),
-                cls.parse(ast["iterable"]),
-            )
-        if node_type == "reduce":
-            return TreeReduce(
-                TreeLambda(
-                    ast["function"]["params"],
-                    TreeFunction(
-                        ast["function"]["body"]["name"],
-                        cls.parse(ast["function"]["body"]["params"]),
-                    ),
-                ),
-                cls.parse(ast["iterable"]),
-            )
-
-        raise ValueError(f"unknown node type: {node_type}")
+        try:
+            return ASTSchema.model_validate(ast).root
+        except Exception as e:
+            raise ValueError(f"Failed to parse AST: {e}") from e
 
     @classmethod
     async def eval(cls, ast: TreeNode, provider: ToolProvider) -> Any:
@@ -351,6 +52,7 @@ class AST:
 
         Args:
             ast TreeNode: The AST to evaluate.
+            provider ToolProvider: The provider to use for evaluation.
 
         Returns:
             Any: The result of evaluating the AST.
@@ -381,7 +83,8 @@ class AST:
             cls.visit(ast.condition, op)
             cls.visit(ast.true_branch, op)  # Recursively visit the true branch
             if ast.false_branch:
-                cls.visit(ast.false_branch, op)  # Recursively visit the false branch
+                # Recursively visit the false branch
+                cls.visit(ast.false_branch, op)
 
         if isinstance(ast, TreeLambda):
             cls.visit(ast.body, op)
@@ -397,7 +100,8 @@ class AST:
 
         elif isinstance(ast, TreeFunction):
             for param in ast.params:
-                cls.visit(param, op)  # Recursively visit each parameter of the function
+                # Recursively visit each parameter of the function
+                cls.visit(param, op)
 
     @classmethod
     async def avisit(cls, ast: TreeNode, op: Callable[[TreeNode], None]) -> None:
@@ -412,7 +116,8 @@ class AST:
             None
         """
         if asyncio.iscoroutinefunction(op):
-            await op(ast)  # Apply the asynchronous operation to the current node
+            # Apply the asynchronous operation to the current node
+            await op(ast)
         else:
             return cls.visit(ast, op)  # Fallback to synchronous visit
 
@@ -449,117 +154,15 @@ class AST:
     @classmethod
     def repr(cls, ast: TreeNode) -> str:
         """
-        Returns a string representation of the given TreeNode.
+        Returns a string representation of the AST.
 
-        Parameters:
-        - cls (class): The class containing the `repr` method.
-        - ast (TreeNode): The TreeNode to be represented.
+        Args:
+            ast (TreeNode): The AST to represent.
 
         Returns:
-        - str: The string representation of the TreeNode.
-
-        Example:
-        >>> ast = TreeProgram(body=[TreeFunction(name='foo', params=['x', 'y']), TreeValue(name='z', value=10)])
-        >>> AST.repr(ast)
-        "{foo_1: {x, y}, z_1: [10]}"
+            str: The string representation of the AST.
         """
-        representation = ""
-        name_counts = dict()
-
-        def _f(node: TreeNode):
-            nonlocal representation
-            if isinstance(node, TreeProgram):
-                representation = "{" + ", ".join(["%s"] * len(node.body)) + "}"
-            if isinstance(node, TreeFunction):
-                name = node.name
-                if name not in name_counts:
-                    name_counts[name] = 0
-                name_counts[name] += 1
-                args = "{" + ", ".join(["%s"] * len(node.params)) + "}"
-                representation = representation.replace(
-                    "%s", f'"{name}_{name_counts[name]}": {args}', 1
-                )
-            if isinstance(node, TreeValue):
-                name = node.name
-                value = node.value
-                if type(value) is str:
-                    value = f'"{value}"'
-                if type(value) is bool:
-                    value = str(value).lower()
-                if type(value) is list:
-                    value = (
-                        "["
-                        + ", ".join(
-                            [f'"{v}"' if isinstance(v, str) else str(v) for v in value]
-                        )
-                        + "]"
-                    )
-                if isinstance(value, float) and value.is_integer():
-                    value = int(value)
-                representation = representation.replace("%s", f'"{name}": [{value}]', 1)
-            if isinstance(node, TreeConditional):
-                name = "conditional"
-
-                if name not in name_counts:
-                    name_counts[name] = 0
-
-                name_counts[name] += 1
-                num_operands = 3 if node.false_branch else 2
-                args = "{" + ", ".join(["%s"] * num_operands) + "}"
-
-                representation = representation.replace(
-                    "%s",
-                    f'"{name}_{name_counts[name]}": {args}',
-                    1,
-                )
-            if isinstance(node, TreeLambda):
-                name = "lambda"
-
-                if name not in name_counts:
-                    name_counts[name] = 0
-
-                name_counts[name] += 1
-                args = "{" + ", ".join(["%s"]) + "}"
-                representation = representation.replace(
-                    "%s", f'"{name}_{name_counts[name]}": {args}', 1
-                )
-            if isinstance(node, TreeMap):
-                name = "map"
-
-                if name not in name_counts:
-                    name_counts[name] = 0
-
-                name_counts[name] += 1
-                args = "{" + ", ".join(["%s"] * 2) + "}"
-                representation = representation.replace(
-                    "%s", f'"{name}_{name_counts[name]}": {args}', 1
-                )
-            if isinstance(node, TreeFilter):
-                name = "filter"
-
-                if name not in name_counts:
-                    name_counts[name] = 0
-
-                name_counts[name] += 1
-                args = "{" + ", ".join(["%s"] * 2) + "}"
-                representation = representation.replace(
-                    "%s", f'"{name}_{name_counts[name]}": {args}', 1
-                )
-            if isinstance(node, TreeReduce):
-                name = "reduce"
-
-                if name not in name_counts:
-                    name_counts[name] = 0
-
-                name_counts[name] += 1
-                args = "{" + ", ".join(["%s"] * 2) + "}"
-                representation = representation.replace(
-                    "%s", f'"{name}_{name_counts[name]}": {args}', 1
-                )
-
-        cls.visit(ast, _f)
-
-        return representation.replace("None", "")
+        return ast.model_dump_json(indent=2)
 
     @staticmethod
     async def tool(ast: TreeNode, provider: ToolProvider) -> Callable[..., Any]:
@@ -656,7 +259,8 @@ class AST:
                 parameters=param_objects,
             )
         except ValueError as e:
-            raise ValueError(f"Invalid function signature for {ast.name}") from e
+            raise ValueError(
+                f"Invalid function signature for {ast.name}") from e
 
         # convert the AST to a callable function
         async def wrapper(*args, **kwargs):
@@ -666,7 +270,8 @@ class AST:
                 # apply the default values if any
                 bound_args.apply_defaults()
             except TypeError as e:
-                raise TypeError(f"Argument binding failed for {ast.name}(): {e}") from e
+                raise TypeError(
+                    f"Argument binding failed for {ast.name}(): {e}") from e
             # evaluating this tool is equivalent to evaluating the AST
             # thus, we need to inject the arguments'values into the AST
             try:

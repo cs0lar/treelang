@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.9.0] - 2026-01-29
+
+### Added
+
+- Added `mode` and `schema_version` parameters to `TreeProgram`
+- Added `ast_json_schema` and `ast_examples` functions to retrieve the JSON schema and example ASTs for a given `schema_version`.
+
+### Changed
+
+- Updated `ARBORIST_SYSTEM_PROMPT` to now include automatically generated AST schema and valid AST examples based on the selected `schema_version`. Correctness rules have also been updated to reflect the selected schema version.
+- AST nodes are now pydantic models with strict type checking defining a canonical schema for `treelang` programs.
+- Updated all cookbooks and tests to use the new AST schema.
+- Updated `Evaluator` to now perform result matching and correctness of AST based on presence of required nodes and structure rather than exact AST matching.
+- `AST.repr()` now outputs a full AST in JSON format.
+
+### Fixed
+
+- Parameter binding in higher order functions now using named parameters.
+
 ## [0.8.1] - 2025-10-30
 
 ### Changed
