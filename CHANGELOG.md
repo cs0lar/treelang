@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.9.1] - 2026-02-03
+
+### Changed
+
+- In `evaluation/data/tools.py` the `get_largest_city_by_ranking` tool has been renamed to `get_largest_city_by_rank` and the `ranking` parameter has been renamed to `rank` for consistency. This seems to help the agent better understand the parameter.
+
 ## [0.9.0] - 2026-01-29
 
 ### Added
