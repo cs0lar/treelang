@@ -267,7 +267,11 @@ tools = [
     get_capital_city,
     get_weather,
     get_largest_city,
+    << << << < HEAD
     get_largest_city_by_rank,
+    == == == =
+    get_largest_city_by_ranking,
+    >>>>>> > main
     get_city_population,
     get_country_population,
     get_exchange_rate,
