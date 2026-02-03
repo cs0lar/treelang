@@ -43,12 +43,12 @@ def get_largest_city(country):
         return "Unknown"
 
 
-def get_largest_city_by_ranking(country, ranking):
+def get_largest_city_by_rank(country, rank):
     """Returns the city name at the given population rank within a country.
-       country: string (e.g., "Australia"), ranking: integer only (1 = largest, 2 = second largest, etc.)
+    country: string (e.g., "Australia"), rank: integer only (1 = largest, 2 = second largest, etc.)
     """
     country_lower = country.lower()
-    ranking = int(ranking)
+    rank = int(rank)
     if country_lower == "france":
         cities = ["Paris", "Marseille", "Lyon"]
     elif country_lower == "japan":
@@ -60,8 +60,8 @@ def get_largest_city_by_ranking(country, ranking):
     else:
         return "Unknown"
 
-    if 1 <= ranking <= len(cities):
-        return cities[ranking - 1]
+    if 1 <= rank <= len(cities):
+        return cities[rank - 1]
     else:
         return "Ranking out of range"
 
@@ -267,7 +267,7 @@ tools = [
     get_capital_city,
     get_weather,
     get_largest_city,
-    get_largest_city_by_ranking,
+    get_largest_city_by_rank,
     get_city_population,
     get_country_population,
     get_exchange_rate,
