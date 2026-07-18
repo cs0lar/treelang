@@ -4,9 +4,10 @@
 
 `treelang/` contains the library. AST models and evaluation behavior live under
 `treelang/trees/`, while providers, prompts, selection, and memory integrations
-live under `treelang/ai/`. Unit tests mirror the package beneath `tests/`; the
-current suite is in `tests/trees/test_tree.py`. Use `cookbook/` for runnable
-examples and notebooks. `evaluation/` contains the regression harness, curated
+live under `treelang/ai/`. Unit tests mirror the package beneath `tests/`; tree
+tests are split across `tests/trees/test_ast.py`, `test_nodes.py`, and
+`test_tool.py`. Use `cookbook/` for runnable examples and notebooks.
+`evaluation/` contains the regression harness, curated
 questions, and evaluation tools. Package metadata and dependencies are declared
 in `pyproject.toml` and locked in `uv.lock`.
 
@@ -34,9 +35,10 @@ and provider-specific behavior in `treelang/ai/`; avoid mixing those concerns.
 Tests run with `pytest`; existing cases use `unittest.IsolatedAsyncioTestCase`
 and `AsyncMock` for asynchronous behavior.
 Name files `test_*.py`, classes `Test*`, and methods `test_*`. Add focused tests
-for success paths, validation failures, and async provider interactions. There is
-no documented coverage threshold, but every behavior change should include a
-regression test. Run the full suite before opening a pull request.
+for success paths, validation failures, and async provider interactions. The
+current branch-coverage floor is 60%; raise it only with corresponding tests.
+Every behavior change should include a regression test. Run the full suite before
+opening a pull request.
 
 ## Commit & Pull Request Guidelines
 
@@ -53,3 +55,77 @@ the change has a relevant visual effect.
 Copy `.env.example` for local configuration and set `OPENAI_API_KEY` outside
 version control. Never commit credentials, generated secrets, or sensitive
 evaluation data. Report vulnerabilities according to `SECURITY.md`.
+
+## Modernization Roadmap & Session Handoff
+
+Phases 1 and 2 are merged into `dev` through PR #66. They established uv,
+Hatchling, Ruff, pytest/coverage, incremental mypy, pre-commit, CI for Python
+3.12/3.13, reproducible builds, and the split test suite. Phase 3 is PR #67 on
+branch `feat/api-correctness-hardening` at commit `86a7dfd`; at handoff it has 70
+passing tests, 64.99% branch coverage, and a 60% enforced floor. It adds the
+public API and exception hierarchy, deterministic non-mutating AST compilation,
+runtime arity validation, corrected Pydantic context handling, and robust MCP
+result decoding. Before new work, check whether PR #67 merged, then run:
+
+```sh
+git fetch origin
+git switch dev
+git pull --ff-only
+uv sync --frozen --all-groups
+make check
+```
+
+### Phase 4: Architecture & Full Typing
+
+Start from updated `dev` and keep refactors behind characterization tests.
+
+1. Separate schema models (`schemas/v1.py`), traversal, execution, and callable
+   compilation; preserve serialized schema version `1.0` and public imports.
+2. Break `ai/arborist.py` into typed configuration, OpenAI transport, response
+   models, and orchestration. Inject clients/configuration instead of reading
+   environment variables throughout runtime methods.
+3. Replace mutable traversal-based lambda argument injection with per-invocation
+   execution context so concurrent calls cannot corrupt shared AST nodes.
+4. Define typed tool metadata (model, TypedDict, or protocol) instead of raw
+   nested dictionaries. Specify cancellation, timeout, and provider-error behavior.
+5. Expand mypy module-by-module until all `treelang/` code is checked. Do not
+   suppress categories globally; fix or narrowly justify each incompatibility.
+
+Exit criteria: no shared AST mutation during evaluation, full-package mypy in CI,
+public API compatibility tests pass, and coverage is at least 75%.
+
+### Phase 5: Evaluation & Observability
+
+Turn `evaluation/` into a reproducible benchmark rather than an ad hoc script.
+
+1. Version datasets and expected outcomes; separate offline deterministic cases
+   from credentialed model evaluations.
+2. Record parse success, schema validity, execution success, answer correctness,
+   latency, tokens, estimated cost, model/provider, and categorized failures.
+3. Add deterministic fixtures/fake transports so core evaluation logic runs in CI.
+   Run live model evaluations only through a scheduled/manual workflow with secrets.
+4. Emit structured logging and optional tracing. Redact API keys, tool secrets,
+   prompts, and sensitive outputs by default.
+5. Persist machine-readable benchmark results and compare them with an explicit
+   regression tolerance; document how to reproduce each published result.
+
+Exit criteria: offline evaluation passes in normal CI, live runs are repeatable,
+and releases include comparable quality/latency/cost evidence.
+
+### Phase 6: Release, Security & Documentation
+
+1. Add semantic-version release automation, generated changelog/release notes,
+   PyPI Trusted Publishing, isolated wheel/sdist smoke tests, and provenance.
+2. Add CodeQL, dependency auditing, Dependabot/Renovate policy, and secret
+   scanning in CI. Triage the high-severity Dependabot alert reported during the
+   Phase 3 branch push rather than assuming lockfile updates resolve it.
+3. Generate API documentation from the supported root exports. Add architecture
+   decisions for schema versioning, execution semantics, and provider contracts.
+4. Execute cookbook scripts/notebooks in CI where practical so examples cannot
+   drift. Document migration steps for compatibility-relevant releases.
+5. Configure branch protection on `dev` and `main`: required CI, review, no force
+   pushes, and release-only promotion from `dev` to `main`.
+
+Exit criteria: a tagged release is built and published without long-lived
+credentials, installed artifacts pass smoke tests, security gates are green, and
+documentation matches the released API.

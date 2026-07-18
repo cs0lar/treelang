@@ -1,5 +1,21 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+- Added a supported package-level API and domain-specific exception hierarchy.
+- Added explicit handling for structured, textual, empty, non-text, and error MCP results.
+
+### Changed
+
+- Compiled AST tool signatures now use deterministic duplicate parameter names without mutating the source tree.
+- Tool execution validates provider definitions and parameter counts before invocation.
+
+### Removed
+
+- Removed the undocumented, conditionally defined `LlamIndexToolProvider`, which depended on an undeclared optional package and could not execute successfully.
+
 ## [0.9.1] - 2026-02-03
 
 ### Changed

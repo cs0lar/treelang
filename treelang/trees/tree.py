@@ -1,10 +1,10 @@
 import asyncio
-import random
 from collections.abc import Callable
 from inspect import Parameter, Signature
 from typing import Any, Dict, List, Union
 
 from treelang.ai.provider import ToolProvider
+from treelang.exceptions import ASTCompilationError, ASTExecutionError
 from treelang.trees.schemas.v1 import AST as ASTSchema
 from treelang.trees.schemas.v1 import (
     TreeConditional,
@@ -199,6 +199,7 @@ class AST:
 
         # extract the programs' parameters from the tree
         param_objects = []
+        param_bindings: list[tuple[str, TreeValue]] = []
 
         # the arguments of the new tool are to be gathered from
         # the leaves of the tree
@@ -229,23 +230,18 @@ class AST:
 
                     properties = props[-1]
                     key = node.name
-                    # be mindful of duplicate arguments names
-                    if key in arg_names:
-                        # we add a random suffix to the key
-                        key = key + f"_{random.randint(1, 1000)}"
-                        # rename the parameter in the properties dict
-                        properties = {
-                            key if k == node.name else k: v
-                            for k, v in properties.items()
-                        }
-                        node.name = key
+                    suffix = 2
+                    while key in arg_names:
+                        key = f"{node.name}_{suffix}"
+                        suffix += 1
                     arg_names.append(key)
+                    param_bindings.append((key, node))
                     param_objs.append(
                         Parameter(
                             key,
                             Parameter.KEYWORD_ONLY,
                             annotation=types_map.get(
-                                properties[node.name]["type"], Any
+                                properties[node.name].get("type"), Any
                             ),
                         )
                     )
@@ -259,7 +255,9 @@ class AST:
                 parameters=param_objects,
             )
         except ValueError as e:
-            raise ValueError(f"Invalid function signature for {ast.name}") from e
+            raise ASTCompilationError(
+                f"Invalid function signature for {ast.name}"
+            ) from e
 
         # convert the AST to a callable function
         async def wrapper(*args, **kwargs):
@@ -270,25 +268,12 @@ class AST:
                 bound_args.apply_defaults()
             except TypeError as e:
                 raise TypeError(f"Argument binding failed for {ast.name}(): {e}") from e
-            # evaluating this tool is equivalent to evaluating the AST
-            # thus, we need to inject the arguments'values into the AST
             try:
-
-                def inject(*vargs, **vwargs) -> Callable[[TreeNode], None]:
-                    def _f(node: TreeNode) -> None:
-                        if isinstance(node, TreeValue):
-                            if vwargs and node.name in vwargs:
-                                node.value = vwargs[node.name]
-                            elif vargs:
-                                node.value = vargs.pop()
-
-                    return _f
-
-                AST.visit(ast, inject(*bound_args.args, **bound_args.kwargs))
-                # finally, evaluate the AST
+                for parameter_name, node in param_bindings:
+                    node.value = bound_args.arguments[parameter_name]
                 return await ast.eval(provider)
             except Exception as e:
-                raise RuntimeError(f"Error executing {ast.name}(): {e}") from e
+                raise ASTExecutionError(f"Error executing {ast.name}(): {e}") from e
 
         # set the function's signature and metadata
         wrapper.__name__ = ast.name

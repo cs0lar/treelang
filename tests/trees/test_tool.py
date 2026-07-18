@@ -60,6 +60,37 @@ class TestToolMethod(unittest.IsolatedAsyncioTestCase):
         self.assertIn("a", tool_function.__signature__.parameters)
         self.assertIn("b", tool_function.__signature__.parameters)
 
+    async def test_duplicate_parameters_are_stable_without_mutating_ast(self):
+        ast = TreeProgram(
+            body=[
+                TreeFunction(
+                    name="subtract",
+                    params=[
+                        TreeValue(name="value", value=None),
+                        TreeValue(name="value", value=None),
+                    ],
+                )
+            ],
+            mode="single",
+            name="subtract_tool",
+            description="Subtracts two values",
+        )
+        provider = AsyncMock(spec=ToolProvider)
+        provider.get_tool_definition.return_value = {
+            "name": "subtract",
+            "properties": {"value": {"type": "integer"}},
+        }
+        provider.call_tool.side_effect = lambda _, arguments: ToolOutput(
+            content=arguments["value"]
+        )
+
+        first = await AST.tool(ast, provider)
+        second = await AST.tool(ast, provider)
+
+        self.assertEqual(list(first.__signature__.parameters), ["value", "value_2"])
+        self.assertEqual(list(second.__signature__.parameters), ["value", "value_2"])
+        self.assertEqual([node.name for node in ast.body[0].params], ["value", "value"])
+
     async def test_tool_with_conditional_creation(self):
         provider = AsyncMock(spec=ToolProvider)
 

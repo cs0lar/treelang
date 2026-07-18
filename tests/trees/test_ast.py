@@ -2,7 +2,10 @@ import asyncio
 import unittest
 from unittest.mock import AsyncMock, Mock, patch
 
+from pydantic import ValidationError
+
 from treelang.ai.provider import ToolOutput, ToolProvider
+from treelang.trees.schemas.v1 import AST as ASTSchema
 from treelang.trees.schemas.v1 import (
     TreeConditional,
     TreeFilter,
@@ -47,6 +50,24 @@ class TestAST(unittest.TestCase):
         ast_dict = {"type": "program", "body": [], "mode": "single"}
         result = AST.parse(ast_dict)
         self.assertIsInstance(result, TreeProgram)
+
+    def test_contextual_tool_arity_validation(self):
+        ast = {
+            "type": "program",
+            "mode": "single",
+            "body": [
+                {
+                    "type": "function",
+                    "name": "add",
+                    "params": [{"type": "value", "name": "a", "value": 1}],
+                }
+            ],
+        }
+
+        with self.assertRaisesRegex(ValidationError, "expects 2 positional params"):
+            ASTSchema.model_validate(
+                ast, context={"tool_param_order": {"add": ["a", "b"]}}
+            )
 
     def test_parse_function(self):
         ast_dict = {

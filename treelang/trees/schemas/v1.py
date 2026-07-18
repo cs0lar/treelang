@@ -2,9 +2,17 @@ import asyncio
 from hashlib import sha256
 from typing import Annotated, Any, Dict, List, Literal, Optional, Union
 
-from pydantic import BaseModel, ConfigDict, Field, RootModel, model_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    RootModel,
+    ValidationInfo,
+    model_validator,
+)
 
 from treelang.ai.provider import ToolProvider
+from treelang.exceptions import ASTValidationError, ProviderResponseError
 
 
 class TreeNode(BaseModel):
@@ -57,23 +65,30 @@ class TreeFunction(TreeNode):
     params: List["Node"]
 
     async def eval(self, provider: ToolProvider) -> Any:
-        # strip "functions." prefix if present
-        if self.name.startswith("functions."):
-            self.name = self.name[len("functions.") :]
-
-        tool = await provider.get_tool_definition(self.name)
+        tool_name = self.name.removeprefix("functions.")
+        tool = await provider.get_tool_definition(tool_name)
 
         if not tool:
-            raise ValueError(f"Tool {self.name} is not available")
+            raise ProviderResponseError(f"Tool {tool_name} is not available")
 
-        tool_properties = tool["properties"].keys()
+        properties = tool.get("properties")
+        if not isinstance(properties, dict):
+            raise ProviderResponseError(
+                f"Tool '{tool_name}' has no valid properties definition"
+            )
+        tool_properties = list(properties)
+        if len(tool_properties) != len(self.params):
+            raise ASTValidationError(
+                f"Function '{tool_name}' expects {len(tool_properties)} parameters, "
+                f"got {len(self.params)}"
+            )
 
         # evaluate each parameter in order
         results = await asyncio.gather(*[param.eval(provider) for param in self.params])
         # create a dictionary of parameter names and values
-        params = dict(zip(tool_properties, results))
+        params = dict(zip(tool_properties, results, strict=True))
         # invoke the underlying tool
-        output = await provider.call_tool(self.name, params)
+        output = await provider.call_tool(tool_name, params)
         return output.content
 
 
@@ -264,7 +279,7 @@ class AST(RootModel[TreeProgram]):
     """
 
     @model_validator(mode="after")
-    def enforce_function_param_count_and_order(self) -> "AST":
+    def enforce_function_param_count_and_order(self, info: ValidationInfo) -> "AST":
         """
         Optional enforcement using tool signatures.
 
@@ -275,7 +290,7 @@ class AST(RootModel[TreeProgram]):
           len(params) == len(expected)
         and can be extended to enforce types/constraints per arg.
         """
-        ctx = getattr(self, "__pydantic_context__", None) or {}
+        ctx = info.context or {}
         sig_map: dict[str, list[str]] = ctx.get("tool_param_order", {})
 
         def walk(n: Node) -> None:

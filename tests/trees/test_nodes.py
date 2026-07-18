@@ -3,6 +3,7 @@ import unittest
 from unittest.mock import AsyncMock
 
 from treelang.ai.provider import ToolOutput, ToolProvider
+from treelang.exceptions import ASTValidationError, ProviderResponseError
 from treelang.trees.schemas.v1 import (
     TreeConditional,
     TreeFilter,
@@ -70,6 +71,40 @@ class TestTreeFunction(unittest.TestCase):
         self.assertIsNotNone(result)
         provider.get_tool_definition.assert_called_once_with("test_function")
         provider.call_tool.assert_called_once_with("test_function", {"param": 42})
+
+    def test_tree_function_rejects_tool_arity_mismatch(self):
+        function = TreeFunction(
+            name="test_function", params=[TreeValue(name="param", value=42)]
+        )
+        provider = AsyncMock(spec=ToolProvider)
+        provider.get_tool_definition.return_value = {
+            "name": "test_function",
+            "properties": {"first": {}, "second": {}},
+        }
+
+        with self.assertRaisesRegex(ASTValidationError, "expects 2 parameters, got 1"):
+            asyncio.run(function.eval(provider))
+
+    def test_tree_function_rejects_invalid_tool_definition(self):
+        function = TreeFunction(name="test_function", params=[])
+        provider = AsyncMock(spec=ToolProvider)
+        provider.get_tool_definition.return_value = {"name": "test_function"}
+
+        with self.assertRaisesRegex(ProviderResponseError, "properties definition"):
+            asyncio.run(function.eval(provider))
+
+    def test_tree_function_does_not_mutate_prefixed_name(self):
+        function = TreeFunction(name="functions.test_function", params=[])
+        provider = AsyncMock(spec=ToolProvider)
+        provider.get_tool_definition.return_value = {
+            "name": "test_function",
+            "properties": {},
+        }
+        provider.call_tool.return_value = ToolOutput(content="ok")
+
+        self.assertEqual(asyncio.run(function.eval(provider)), "ok")
+        self.assertEqual(function.name, "functions.test_function")
+        provider.call_tool.assert_awaited_once_with("test_function", {})
 
 
 class TestTreeValue(unittest.TestCase):
