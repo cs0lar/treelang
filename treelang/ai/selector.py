@@ -13,7 +13,9 @@ class BaseToolSelector:
 
     """
 
-    async def select(self, provider: ToolProvider, query: str, **kwargs) -> List[Any]:
+    async def select(
+        self, provider: ToolProvider, query: str, **kwargs: Any
+    ) -> List[Any]:
         """
         It selects a subset of all the available tools registered on the MCP server
         corresponding to the given session.
@@ -33,5 +35,7 @@ class AllToolsSelector(BaseToolSelector):
     The most basic Selector which just returns all tools available in the system.
     """
 
-    async def select(self, provider: ToolProvider, query: str, **kwargs) -> List[Any]:
+    async def select(
+        self, provider: ToolProvider, query: str, **kwargs: Any
+    ) -> List[Any]:
         return await provider.list_tools()

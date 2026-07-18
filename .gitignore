@@ -173,4 +173,4 @@ cython_debug/
 # PyPI configuration file
 .pypirc
 .vscode/
-uv.lock
+# uv is the canonical package manager; commit uv.lock for reproducible installs.

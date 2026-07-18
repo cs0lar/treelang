@@ -259,8 +259,7 @@ class AST:
                 parameters=param_objects,
             )
         except ValueError as e:
-            raise ValueError(
-                f"Invalid function signature for {ast.name}") from e
+            raise ValueError(f"Invalid function signature for {ast.name}") from e
 
         # convert the AST to a callable function
         async def wrapper(*args, **kwargs):
@@ -270,8 +269,7 @@ class AST:
                 # apply the default values if any
                 bound_args.apply_defaults()
             except TypeError as e:
-                raise TypeError(
-                    f"Argument binding failed for {ast.name}(): {e}") from e
+                raise TypeError(f"Argument binding failed for {ast.name}(): {e}") from e
             # evaluating this tool is equivalent to evaluating the AST
             # thus, we need to inject the arguments'values into the AST
             try:
