@@ -55,6 +55,7 @@ files = [
     "treelang/ai/memory.py",
     "treelang/ai/provider.py",
     "treelang/ai/selector.py",
+    "treelang/ai/tool.py",
     "treelang/trees/compilation.py",
     "treelang/trees/execution.py",
     "treelang/trees/schemas/v1.py",

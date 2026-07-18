@@ -3,6 +3,7 @@
 from importlib.metadata import PackageNotFoundError, version
 
 from treelang.ai.provider import MCPToolProvider, ToolOutput, ToolProvider
+from treelang.ai.tool import ToolDefinition, ToolProperty
 from treelang.exceptions import (
     ASTCompilationError,
     ASTExecutionError,
@@ -40,8 +41,10 @@ __all__ = [
     "MCPToolProvider",
     "ProviderResponseError",
     "ToolExecutionError",
+    "ToolDefinition",
     "ToolNotFoundError",
     "ToolOutput",
+    "ToolProperty",
     "ToolProvider",
     "TreeConditional",
     "TreeFilter",

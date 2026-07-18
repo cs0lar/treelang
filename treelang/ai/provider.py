@@ -7,6 +7,7 @@ from mcp import ClientSession
 from mcp.types import TextContent
 from pydantic import BaseModel
 
+from treelang.ai.tool import ToolDefinition, normalize_tool_definition
 from treelang.exceptions import (
     ProviderResponseError,
     ToolExecutionError,
@@ -20,9 +21,9 @@ class ToolOutput(BaseModel):
 
 class ToolProvider(ABC):
     def __init__(self) -> None:
-        self.tools: dict[str, dict[str, Any]] | None = None
+        self.tools: dict[str, ToolDefinition] | None = None
 
-    async def get_tool_definition(self, name: str) -> dict[str, Any]:
+    async def get_tool_definition(self, name: str) -> ToolDefinition:
         """Method to provide the definition of a tool."""
         if self.tools is None:
             await self.list_tools()
@@ -33,7 +34,7 @@ class ToolProvider(ABC):
         if name not in self.tools:
             raise ToolNotFoundError(f"Tool '{name}' not found.")
 
-        return self.tools[name]
+        return normalize_tool_definition(self.tools[name], expected_name=name)
 
     @abstractmethod
     async def call_tool(self, name: str, arguments: dict[str, Any]) -> ToolOutput:
@@ -41,7 +42,7 @@ class ToolProvider(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    async def list_tools(self) -> list[dict[str, Any]]:
+    async def list_tools(self) -> list[ToolDefinition]:
         """Method to list all tools."""
         raise NotImplementedError
 
@@ -85,17 +86,20 @@ class MCPToolProvider(ToolProvider):
             except (ValueError, SyntaxError):
                 return value
 
-    async def list_tools(self) -> list[dict[str, Any]]:
+    async def list_tools(self) -> list[ToolDefinition]:
         if self.tools is None:
             response = await self.session.list_tools()
-            tools = []
+            tools: list[ToolDefinition] = []
             for tool in response.tools:
                 tools.append(
-                    {
-                        "name": tool.name,
-                        "description": tool.description,
-                        "properties": tool.inputSchema.get("properties", {}),
-                    }
+                    normalize_tool_definition(
+                        {
+                            "name": tool.name,
+                            "description": tool.description,
+                            "properties": tool.inputSchema.get("properties", {}),
+                        },
+                        expected_name=tool.name,
+                    )
                 )
             self.tools = {tool["name"]: tool for tool in tools}
             return tools

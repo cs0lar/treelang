@@ -5,6 +5,7 @@ from inspect import Parameter, Signature
 from typing import Any
 
 from treelang.ai.provider import ToolProvider
+from treelang.ai.tool import normalize_tool_definition
 from treelang.exceptions import ASTCompilationError, ASTExecutionError
 from treelang.trees.execution import ExecutionContext
 from treelang.trees.schemas.v1 import (
@@ -53,7 +54,9 @@ async def compile_tool(ast: TreeNode, provider: ToolProvider) -> CompiledTool:
             )
 
         if isinstance(node, TreeFunction):
-            definition = await provider.get_tool_definition(node.name)
+            definition = normalize_tool_definition(
+                await provider.get_tool_definition(node.name), expected_name=node.name
+            )
             properties = definition["properties"]
             property_stack.append(properties)
 
@@ -65,14 +68,17 @@ async def compile_tool(ast: TreeNode, provider: ToolProvider) -> CompiledTool:
 
         properties = property_stack[-1]
         parameter_name = _unique_name(node.name, argument_names)
+        property_type = properties[node.name].get("type")
         argument_names.append(parameter_name)
         bindings.append((parameter_name, node))
         try:
             parameter = Parameter(
                 parameter_name,
                 Parameter.KEYWORD_ONLY,
-                annotation=JSON_TYPE_ANNOTATIONS.get(
-                    properties[node.name].get("type"), Any
+                annotation=(
+                    JSON_TYPE_ANNOTATIONS.get(property_type, Any)
+                    if property_type is not None
+                    else Any
                 ),
             )
         except ValueError as error:
