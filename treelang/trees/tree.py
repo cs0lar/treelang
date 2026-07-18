@@ -1,22 +1,20 @@
-import asyncio
 from collections.abc import Callable
 from inspect import Parameter, Signature
 from typing import Any, Dict, List, Union
 
 from treelang.ai.provider import ToolProvider
 from treelang.exceptions import ASTCompilationError, ASTExecutionError
+from treelang.trees.execution import ExecutionContext
 from treelang.trees.schemas.v1 import AST as ASTSchema
 from treelang.trees.schemas.v1 import (
-    TreeConditional,
-    TreeFilter,
     TreeFunction,
     TreeLambda,
     TreeMap,
     TreeNode,
     TreeProgram,
-    TreeReduce,
     TreeValue,
 )
+from treelang.trees.traversal import avisit, visit
 
 
 class AST:
@@ -71,37 +69,7 @@ class AST:
         Returns:
             None
         """
-        op(ast)  # Apply the operation to the current node
-
-        if isinstance(ast, TreeProgram):
-            for statement in ast.body:
-                cls.visit(
-                    statement, op
-                )  # Recursively visit each statement in the program
-
-        if isinstance(ast, TreeConditional):
-            cls.visit(ast.condition, op)
-            cls.visit(ast.true_branch, op)  # Recursively visit the true branch
-            if ast.false_branch:
-                # Recursively visit the false branch
-                cls.visit(ast.false_branch, op)
-
-        if isinstance(ast, TreeLambda):
-            cls.visit(ast.body, op)
-
-        if any(
-            [
-                isinstance(ast, node_type)
-                for node_type in [TreeMap, TreeFilter, TreeReduce]
-            ]
-        ):
-            cls.visit(ast.function, op)
-            cls.visit(ast.iterable, op)
-
-        elif isinstance(ast, TreeFunction):
-            for param in ast.params:
-                # Recursively visit each parameter of the function
-                cls.visit(param, op)
+        visit(ast, op)
 
     @classmethod
     async def avisit(cls, ast: TreeNode, op: Callable[[TreeNode], None]) -> None:
@@ -115,41 +83,7 @@ class AST:
         Returns:
             None
         """
-        if asyncio.iscoroutinefunction(op):
-            # Apply the asynchronous operation to the current node
-            await op(ast)
-        else:
-            return cls.visit(ast, op)  # Fallback to synchronous visit
-
-        if isinstance(ast, TreeProgram):
-            for statement in ast.body:
-                await cls.avisit(
-                    statement, op
-                )  # Recursively visit each statement in the program
-
-        if isinstance(ast, TreeConditional):
-            await cls.avisit(ast.condition, op)
-            await cls.avisit(ast.true_branch, op)
-            if ast.false_branch:
-                await cls.avisit(ast.false_branch, op)
-
-        if isinstance(ast, TreeLambda):
-            await cls.avisit(ast.body, op)
-
-        if any(
-            [
-                isinstance(ast, node_type)
-                for node_type in [TreeMap, TreeFilter, TreeReduce]
-            ]
-        ):
-            await cls.avisit(ast.function, op)
-            await cls.avisit(ast.iterable, op)
-
-        elif isinstance(ast, TreeFunction):
-            for param in ast.params:
-                await cls.avisit(
-                    param, op
-                )  # Recursively visit each parameter of the function
+        await avisit(ast, op)
 
     @classmethod
     def repr(cls, ast: TreeNode) -> str:
@@ -269,9 +203,13 @@ class AST:
             except TypeError as e:
                 raise TypeError(f"Argument binding failed for {ast.name}(): {e}") from e
             try:
-                for parameter_name, node in param_bindings:
-                    node.value = bound_args.arguments[parameter_name]
-                return await ast.eval(provider)
+                context = ExecutionContext().bind_nodes(
+                    {
+                        id(node): bound_args.arguments[parameter_name]
+                        for parameter_name, node in param_bindings
+                    }
+                )
+                return await ast.eval(provider, context)
             except Exception as e:
                 raise ASTExecutionError(f"Error executing {ast.name}(): {e}") from e
 

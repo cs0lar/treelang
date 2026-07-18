@@ -1,6 +1,6 @@
 import asyncio
 from hashlib import sha256
-from typing import Annotated, Any, Dict, List, Literal, Optional, Union
+from typing import TYPE_CHECKING, Annotated, Any, Dict, List, Literal, Optional, Union
 
 from pydantic import (
     BaseModel,
@@ -13,6 +13,9 @@ from pydantic import (
 
 from treelang.ai.provider import ToolProvider
 from treelang.exceptions import ASTValidationError, ProviderResponseError
+
+if TYPE_CHECKING:
+    from treelang.trees.execution import ExecutionContext
 
 
 class TreeNode(BaseModel):
@@ -29,7 +32,9 @@ class TreeNode(BaseModel):
         populate_by_name=True,  # For alias support
     )
 
-    async def eval(self, provider: ToolProvider) -> Any:
+    async def eval(
+        self, provider: ToolProvider, context: "ExecutionContext | None" = None
+    ) -> Any:
         raise NotImplementedError()
 
     def hash(self) -> str:
@@ -51,8 +56,12 @@ class TreeValue(TreeNode):
     name: str = Field(..., min_length=1)
     value: JsonValue
 
-    async def eval(self, provider: ToolProvider) -> Any:
-        return self.value
+    async def eval(
+        self, provider: ToolProvider, context: "ExecutionContext | None" = None
+    ) -> Any:
+        if context is None:
+            return self.value
+        return context.value_for(self, self.name, self.value)
 
 
 class TreeFunction(TreeNode):
@@ -64,7 +73,9 @@ class TreeFunction(TreeNode):
     name: str = Field(..., min_length=1)
     params: List["Node"]
 
-    async def eval(self, provider: ToolProvider) -> Any:
+    async def eval(
+        self, provider: ToolProvider, context: "ExecutionContext | None" = None
+    ) -> Any:
         tool_name = self.name.removeprefix("functions.")
         tool = await provider.get_tool_definition(tool_name)
 
@@ -84,7 +95,9 @@ class TreeFunction(TreeNode):
             )
 
         # evaluate each parameter in order
-        results = await asyncio.gather(*[param.eval(provider) for param in self.params])
+        results = await asyncio.gather(
+            *[param.eval(provider, context) for param in self.params]
+        )
         # create a dictionary of parameter names and values
         params = dict(zip(tool_properties, results, strict=True))
         # invoke the underlying tool
@@ -104,8 +117,12 @@ class TreeProgram(TreeNode):
     description: Optional[str] = None
     schema_version: Literal["1.0"] = "1.0"
 
-    async def eval(self, provider: ToolProvider) -> Any:
-        result = await asyncio.gather(*[node.eval(provider) for node in self.body])
+    async def eval(
+        self, provider: ToolProvider, context: "ExecutionContext | None" = None
+    ) -> Any:
+        result = await asyncio.gather(
+            *[node.eval(provider, context) for node in self.body]
+        )
         return result[0] if len(result) == 1 else result
 
 
@@ -119,13 +136,15 @@ class TreeConditional(TreeNode):
     true_branch: "Node"
     false_branch: Optional["Node"] = None
 
-    async def eval(self, provider: ToolProvider) -> Any:
-        condition_result = await self.condition.eval(provider)
+    async def eval(
+        self, provider: ToolProvider, context: "ExecutionContext | None" = None
+    ) -> Any:
+        condition_result = await self.condition.eval(provider, context)
 
         if condition_result:
-            return await self.true_branch.eval(provider)
+            return await self.true_branch.eval(provider, context)
         elif self.false_branch:
-            return await self.false_branch.eval(provider)
+            return await self.false_branch.eval(provider, context)
 
         return None
 
@@ -139,36 +158,16 @@ class TreeLambda(TreeNode):
     params: List[str]
     body: TreeFunction
 
-    async def eval(self, provider: ToolProvider):
+    async def eval(
+        self, provider: ToolProvider, context: "ExecutionContext | None" = None
+    ):
         # Returns a callable that can be invoked with arguments
+        from treelang.trees.execution import ExecutionContext
+
+        base_context = context or ExecutionContext()
+
         async def func(**kwargs):
-            # Recursively replace TreeValue values with those in kwargs
-            def replace_values(node):
-                if isinstance(node, TreeValue) and node.name in kwargs:
-                    node.value = kwargs[node.name]
-                elif hasattr(node, "params"):
-                    for param in node.params:
-                        replace_values(param)
-                elif hasattr(node, "body"):
-                    if isinstance(node.body, list):
-                        for item in node.body:
-                            replace_values(item)
-                    else:
-                        replace_values(node.body)
-                elif hasattr(node, "condition"):
-                    replace_values(node.condition)
-                elif hasattr(node, "true_branch"):
-                    replace_values(node.true_branch)
-                elif hasattr(node, "false_branch") and node.false_branch is not None:
-                    replace_values(node.false_branch)
-                elif hasattr(node, "function"):
-                    replace_values(node.function)
-                elif hasattr(node, "iterable"):
-                    replace_values(node.iterable)
-
-            replace_values(self.body)
-
-            return await self.body.eval(provider)
+            return await self.body.eval(provider, base_context.bind_names(kwargs))
 
         return func
 
@@ -182,13 +181,15 @@ class TreeMap(TreeNode):
     function: TreeLambda
     iterable: "Node"
 
-    async def eval(self, provider: ToolProvider) -> Any:
-        items = await self.iterable.eval(provider)
+    async def eval(
+        self, provider: ToolProvider, context: "ExecutionContext | None" = None
+    ) -> Any:
+        items = await self.iterable.eval(provider, context)
 
         if not isinstance(items, list):
             raise TypeError("Map expects an iterable (list) as input")
 
-        func = await self.function.eval(provider)
+        func = await self.function.eval(provider, context)
         kwarg = self.function.params[0]
 
         return [await func(**{kwarg: item}) for item in items]
@@ -203,12 +204,14 @@ class TreeFilter(TreeNode):
     function: TreeLambda
     iterable: "Node"
 
-    async def eval(self, provider: ToolProvider) -> Any:
-        items = await self.iterable.eval(provider)
+    async def eval(
+        self, provider: ToolProvider, context: "ExecutionContext | None" = None
+    ) -> Any:
+        items = await self.iterable.eval(provider, context)
         if not isinstance(items, list):
             raise TypeError("Filter expects an iterable (list) as input")
 
-        func = await self.function.eval(provider)
+        func = await self.function.eval(provider, context)
         kwarg = self.function.params[0]
 
         return [item for item in items if await func(**{kwarg: item})]
@@ -223,13 +226,15 @@ class TreeReduce(TreeNode):
     function: TreeLambda
     iterable: "Node"
 
-    async def eval(self, provider: ToolProvider) -> Any:
-        items = await self.iterable.eval(provider)
+    async def eval(
+        self, provider: ToolProvider, context: "ExecutionContext | None" = None
+    ) -> Any:
+        items = await self.iterable.eval(provider, context)
 
         if not isinstance(items, list):
             raise TypeError("Reduce expects an iterable (list) as input")
 
-        func = await self.function.eval(provider)
+        func = await self.function.eval(provider, context)
 
         if not items:
             return None
