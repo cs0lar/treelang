@@ -46,8 +46,16 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - run: uv sync --frozen --all-groups
       - run: uv run pytest
+      - name: Run deterministic offline evaluation
+        if: matrix.python-version == '3.12'
+        run: uv run python evaluation/eval.py --output evaluation-results/offline.json
       - uses: actions/upload-artifact@v4
         if: matrix.python-version == '3.12'
         with:
           name: coverage
           path: coverage.xml
+      - uses: actions/upload-artifact@v4
+        if: matrix.python-version == '3.12'
+        with:
+          name: offline-evaluation
+          path: evaluation-results/offline.json

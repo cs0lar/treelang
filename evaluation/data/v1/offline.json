@@ -1,0 +1,74 @@
+{
+  "version": "1.0",
+  "cases": [
+    {
+      "id": "weather-capital-france",
+      "question": "What's the weather like in the capital of France?",
+      "expected": "Sunny, 25°C",
+      "must_use": ["get_capital_city", "get_weather"],
+      "ast": {
+        "type": "program",
+        "mode": "single",
+        "body": [
+          {
+            "type": "function",
+            "name": "get_weather",
+            "params": [
+              {
+                "type": "function",
+                "name": "get_capital_city",
+                "params": [{"type": "value", "name": "country", "value": "France"}]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "conditional-gdp-brazil",
+      "question": "If the GDP of Brazil is positive, return its GDP.",
+      "expected": 1839.76,
+      "must_use": ["conditional"],
+      "ast": {
+        "type": "program",
+        "mode": "single",
+        "body": [
+          {
+            "type": "conditional",
+            "condition": {
+              "type": "function",
+              "name": "greater_than",
+              "params": [
+                {"type": "function", "name": "get_gdp", "params": [{"type": "value", "name": "country", "value": "Brazil"}]},
+                {"type": "value", "name": "threshold", "value": 0}
+              ]
+            },
+            "true_branch": {"type": "function", "name": "get_gdp", "params": [{"type": "value", "name": "country", "value": "Brazil"}]},
+            "false_branch": {"type": "value", "name": "fallback", "value": 0}
+          }
+        ]
+      }
+    },
+    {
+      "id": "map-australian-populations",
+      "question": "What are the populations of the three largest cities in Australia?",
+      "expected": [5312000, 5078000, 2514000],
+      "must_use": ["map", "lambda"],
+      "ast": {
+        "type": "program",
+        "mode": "single",
+        "body": [
+          {
+            "type": "map",
+            "function": {
+              "type": "lambda",
+              "params": ["city"],
+              "body": {"type": "function", "name": "get_city_population", "params": [{"type": "value", "name": "city", "value": null}]}
+            },
+            "iterable": {"type": "value", "name": "cities", "value": ["Sydney", "Melbourne", "Brisbane"]}
+          }
+        ]
+      }
+    }
+  ]
+}
