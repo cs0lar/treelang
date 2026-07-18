@@ -5,9 +5,11 @@ from unittest.mock import AsyncMock
 import mcp.types as types
 
 from treelang.ai.provider import ToolOutput, ToolProvider
+from treelang.exceptions import ASTCompilationError
 from treelang.trees.schemas.v1 import (
     TreeConditional,
     TreeFunction,
+    TreeLambda,
     TreeProgram,
     TreeValue,
 )
@@ -311,6 +313,55 @@ class TestToolMethod(unittest.IsolatedAsyncioTestCase):
 
         with self.assertRaises(ValueError):
             await AST.tool(invalid_ast, provider)
+
+    async def test_tool_requires_program_metadata(self):
+        provider = AsyncMock(spec=ToolProvider)
+        missing_name = self.ast.model_copy(update={"name": None})
+        missing_description = self.ast.model_copy(update={"description": None})
+
+        with self.assertRaisesRegex(ValueError, "must have a name"):
+            await AST.tool(missing_name, provider)
+        with self.assertRaisesRegex(ValueError, "must have a description"):
+            await AST.tool(missing_description, provider)
+
+    async def test_tool_rejects_higher_order_programs(self):
+        ast = TreeProgram(
+            body=[
+                TreeLambda(
+                    params=["x"],
+                    body=TreeFunction(
+                        name="identity", params=[TreeValue(name="x", value=None)]
+                    ),
+                )
+            ],
+            mode="single",
+            name="higher_order",
+            description="Unsupported higher-order program",
+        )
+
+        with self.assertRaisesRegex(ValueError, "Higher order functions"):
+            await AST.tool(ast, AsyncMock(spec=ToolProvider))
+
+    async def test_tool_wraps_invalid_python_signature(self):
+        ast = TreeProgram(
+            body=[
+                TreeFunction(
+                    name="identity",
+                    params=[TreeValue(name="not valid", value=None)],
+                )
+            ],
+            mode="single",
+            name="invalid_signature",
+            description="Contains an invalid Python parameter name",
+        )
+        provider = AsyncMock(spec=ToolProvider)
+        provider.get_tool_definition.return_value = {
+            "name": "identity",
+            "properties": {"not valid": {"type": "string"}},
+        }
+
+        with self.assertRaisesRegex(ASTCompilationError, "Invalid function signature"):
+            await AST.tool(ast, provider)
 
     async def test_tool_runtime_error(self):
         async def mock_call_tool(name, arguments):
