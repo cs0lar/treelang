@@ -1,6 +1,15 @@
-import asyncio
 from hashlib import sha256
-from typing import TYPE_CHECKING, Annotated, Any, Dict, List, Literal, Optional, Union
+from typing import (
+    TYPE_CHECKING,
+    Annotated,
+    Any,
+    Dict,
+    List,
+    Literal,
+    Optional,
+    TypedDict,
+    Union,
+)
 
 from pydantic import (
     BaseModel,
@@ -12,7 +21,6 @@ from pydantic import (
 )
 
 from treelang.ai.provider import ToolProvider
-from treelang.exceptions import ASTValidationError, ProviderResponseError
 
 if TYPE_CHECKING:
     from treelang.trees.execution import ExecutionContext
@@ -35,7 +43,9 @@ class TreeNode(BaseModel):
     async def eval(
         self, provider: ToolProvider, context: "ExecutionContext | None" = None
     ) -> Any:
-        raise NotImplementedError()
+        from treelang.trees.execution import evaluate
+
+        return await evaluate(self, provider, context)
 
     def hash(self) -> str:
         canonical_json = self.model_dump_json(by_alias=True, exclude_unset=False)
@@ -52,16 +62,16 @@ class TreeValue(TreeNode):
     Represents a value in the abstract syntax tree (AST).
     """
 
-    type: Literal["value"] = "value"
+    type: Literal["value"] = "value"  # type: ignore[assignment]
     name: str = Field(..., min_length=1)
     value: JsonValue
 
     async def eval(
         self, provider: ToolProvider, context: "ExecutionContext | None" = None
     ) -> Any:
-        if context is None:
-            return self.value
-        return context.value_for(self, self.name, self.value)
+        from treelang.trees.execution import evaluate
+
+        return await evaluate(self, provider, context)
 
 
 class TreeFunction(TreeNode):
@@ -69,40 +79,16 @@ class TreeFunction(TreeNode):
     Represents a function in the abstract syntax tree (AST).
     """
 
-    type: Literal["function"] = "function"
+    type: Literal["function"] = "function"  # type: ignore[assignment]
     name: str = Field(..., min_length=1)
     params: List["Node"]
 
     async def eval(
         self, provider: ToolProvider, context: "ExecutionContext | None" = None
     ) -> Any:
-        tool_name = self.name.removeprefix("functions.")
-        tool = await provider.get_tool_definition(tool_name)
+        from treelang.trees.execution import evaluate
 
-        if not tool:
-            raise ProviderResponseError(f"Tool {tool_name} is not available")
-
-        properties = tool.get("properties")
-        if not isinstance(properties, dict):
-            raise ProviderResponseError(
-                f"Tool '{tool_name}' has no valid properties definition"
-            )
-        tool_properties = list(properties)
-        if len(tool_properties) != len(self.params):
-            raise ASTValidationError(
-                f"Function '{tool_name}' expects {len(tool_properties)} parameters, "
-                f"got {len(self.params)}"
-            )
-
-        # evaluate each parameter in order
-        results = await asyncio.gather(
-            *[param.eval(provider, context) for param in self.params]
-        )
-        # create a dictionary of parameter names and values
-        params = dict(zip(tool_properties, results, strict=True))
-        # invoke the underlying tool
-        output = await provider.call_tool(tool_name, params)
-        return output.content
+        return await evaluate(self, provider, context)
 
 
 class TreeProgram(TreeNode):
@@ -110,7 +96,7 @@ class TreeProgram(TreeNode):
     Represents a program in the abstract syntax tree (AST).
     """
 
-    type: Literal["program"] = "program"
+    type: Literal["program"] = "program"  # type: ignore[assignment]
     body: List["Node"]
     mode: Literal["single", "parallel"]
     name: Optional[str] = None
@@ -120,10 +106,9 @@ class TreeProgram(TreeNode):
     async def eval(
         self, provider: ToolProvider, context: "ExecutionContext | None" = None
     ) -> Any:
-        result = await asyncio.gather(
-            *[node.eval(provider, context) for node in self.body]
-        )
-        return result[0] if len(result) == 1 else result
+        from treelang.trees.execution import evaluate
+
+        return await evaluate(self, provider, context)
 
 
 class TreeConditional(TreeNode):
@@ -131,7 +116,7 @@ class TreeConditional(TreeNode):
     Represents a conditional statement in the AST.
     """
 
-    type: Literal["conditional"] = "conditional"
+    type: Literal["conditional"] = "conditional"  # type: ignore[assignment]
     condition: "Node"
     true_branch: "Node"
     false_branch: Optional["Node"] = None
@@ -139,14 +124,9 @@ class TreeConditional(TreeNode):
     async def eval(
         self, provider: ToolProvider, context: "ExecutionContext | None" = None
     ) -> Any:
-        condition_result = await self.condition.eval(provider, context)
+        from treelang.trees.execution import evaluate
 
-        if condition_result:
-            return await self.true_branch.eval(provider, context)
-        elif self.false_branch:
-            return await self.false_branch.eval(provider, context)
-
-        return None
+        return await evaluate(self, provider, context)
 
 
 class TreeLambda(TreeNode):
@@ -154,22 +134,16 @@ class TreeLambda(TreeNode):
     Represents an anonymous (lambda) function.
     """
 
-    type: Literal["lambda"] = "lambda"
+    type: Literal["lambda"] = "lambda"  # type: ignore[assignment]
     params: List[str]
     body: TreeFunction
 
     async def eval(
         self, provider: ToolProvider, context: "ExecutionContext | None" = None
-    ):
-        # Returns a callable that can be invoked with arguments
-        from treelang.trees.execution import ExecutionContext
+    ) -> Any:
+        from treelang.trees.execution import evaluate
 
-        base_context = context or ExecutionContext()
-
-        async def func(**kwargs):
-            return await self.body.eval(provider, base_context.bind_names(kwargs))
-
-        return func
+        return await evaluate(self, provider, context)
 
 
 class TreeMap(TreeNode):
@@ -177,22 +151,16 @@ class TreeMap(TreeNode):
     Represents a map operation in the abstract syntax tree (AST).
     """
 
-    type: Literal["map"] = "map"
+    type: Literal["map"] = "map"  # type: ignore[assignment]
     function: TreeLambda
     iterable: "Node"
 
     async def eval(
         self, provider: ToolProvider, context: "ExecutionContext | None" = None
     ) -> Any:
-        items = await self.iterable.eval(provider, context)
+        from treelang.trees.execution import evaluate
 
-        if not isinstance(items, list):
-            raise TypeError("Map expects an iterable (list) as input")
-
-        func = await self.function.eval(provider, context)
-        kwarg = self.function.params[0]
-
-        return [await func(**{kwarg: item}) for item in items]
+        return await evaluate(self, provider, context)
 
 
 class TreeFilter(TreeNode):
@@ -200,21 +168,16 @@ class TreeFilter(TreeNode):
     Represents a filter operation in the abstract syntax tree (AST).
     """
 
-    type: Literal["filter"] = "filter"
+    type: Literal["filter"] = "filter"  # type: ignore[assignment]
     function: TreeLambda
     iterable: "Node"
 
     async def eval(
         self, provider: ToolProvider, context: "ExecutionContext | None" = None
     ) -> Any:
-        items = await self.iterable.eval(provider, context)
-        if not isinstance(items, list):
-            raise TypeError("Filter expects an iterable (list) as input")
+        from treelang.trees.execution import evaluate
 
-        func = await self.function.eval(provider, context)
-        kwarg = self.function.params[0]
-
-        return [item for item in items if await func(**{kwarg: item})]
+        return await evaluate(self, provider, context)
 
 
 class TreeReduce(TreeNode):
@@ -222,36 +185,16 @@ class TreeReduce(TreeNode):
     Represents a reduce operation in the abstract syntax tree (AST).
     """
 
-    type: Literal["reduce"] = "reduce"
+    type: Literal["reduce"] = "reduce"  # type: ignore[assignment]
     function: TreeLambda
     iterable: "Node"
 
     async def eval(
         self, provider: ToolProvider, context: "ExecutionContext | None" = None
     ) -> Any:
-        items = await self.iterable.eval(provider, context)
+        from treelang.trees.execution import evaluate
 
-        if not isinstance(items, list):
-            raise TypeError("Reduce expects an iterable (list) as input")
-
-        func = await self.function.eval(provider, context)
-
-        if not items:
-            return None
-
-        # find the initial accumulator value
-        accum_name = self.function.params[0]
-        accum = next(
-            param
-            for param in self.function.body.params
-            if getattr(param, "name", None) == accum_name
-        ).value
-
-        for item in items:
-            args = zip(self.function.params, [accum, item])
-            accum = await func(**dict(args))
-
-        return accum
+        return await evaluate(self, provider, context)
 
 
 type Node = Annotated[
@@ -336,11 +279,18 @@ class AST(RootModel[TreeProgram]):
         return self
 
 
-def ast_v1_examples() -> list[str]:
-    """Provide example ASTs in canonical JSON format for use in few-shots prompts for LLMs."""
-    examples: list[str] = []
+class ASTExample(TypedDict):
+    """One question and canonical serialized AST example."""
 
-    example_1 = {
+    q: str
+    a: str
+
+
+def ast_v1_examples() -> list[ASTExample]:
+    """Provide example ASTs in canonical JSON format for use in few-shots prompts for LLMs."""
+    examples: list[ASTExample] = []
+
+    example_1: ASTExample = {
         "q": "Can you calculate (12*6)+4?",
         "a": AST(
             root=TreeProgram(
@@ -366,7 +316,7 @@ def ast_v1_examples() -> list[str]:
         ).model_dump_json(by_alias=True, exclude_unset=False),
     }
     examples.append(example_1)
-    example_2 = {
+    example_2: ASTExample = {
         "q": "Chart the distribution of a list of 100 random numbers between 1 and 10.",
         "a": AST(
             root=TreeProgram(
@@ -397,7 +347,7 @@ def ast_v1_examples() -> list[str]:
     }
     examples.append(example_2)
 
-    example_3 = {
+    example_3: ASTExample = {
         "q": "Calculate the resistance of a wire with a length of 5m and cross sectional area 0.01m\u00b2 with resistivity of copper and aluminum.",
         "a": AST(
             root=TreeProgram(
@@ -431,7 +381,7 @@ def ast_v1_examples() -> list[str]:
     }
     examples.append(example_3)
 
-    example_4 = {
+    example_4: ASTExample = {
         "q": "Filter out even numbers from a list of numbers from 1 to 10.",
         "a": AST(
             root=TreeProgram(
@@ -461,7 +411,7 @@ def ast_v1_examples() -> list[str]:
 
     examples.append(example_4)
 
-    example_5 = {
+    example_5: ASTExample = {
         "q": "Sum all numbers in a randomly generated list of integers.",
         "a": AST(
             root=TreeProgram(
