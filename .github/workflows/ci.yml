@@ -48,7 +48,10 @@ jobs:
       - run: uv run pytest
       - name: Run deterministic offline evaluation
         if: matrix.python-version == '3.12'
-        run: uv run python evaluation/eval.py --output evaluation-results/offline.json
+        run: >-
+          uv run python evaluation/eval.py
+          --output evaluation-results/offline.json
+          --comparison-output evaluation-results/comparison.json
       - uses: actions/upload-artifact@v4
         if: matrix.python-version == '3.12'
         with:
@@ -58,4 +61,4 @@ jobs:
         if: matrix.python-version == '3.12'
         with:
           name: offline-evaluation
-          path: evaluation-results/offline.json
+          path: evaluation-results/

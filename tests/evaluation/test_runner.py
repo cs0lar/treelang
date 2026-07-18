@@ -109,13 +109,24 @@ async def test_offline_model_transport_returns_curated_ast():
 @pytest.mark.asyncio
 async def test_cli_writes_machine_readable_result(tmp_path):
     output = tmp_path / "results" / "offline.json"
+    comparison_output = tmp_path / "results" / "comparison.json"
 
-    assert await main(DEFAULT_DATASET_PATH, output) == 0
+    assert (
+        await main(
+            DEFAULT_DATASET_PATH,
+            output,
+            comparison_output_path=comparison_output,
+        )
+        == 0
+    )
     payload = json.loads(output.read_text(encoding="utf-8"))
     assert payload["dataset_version"] == "1.0"
     assert payload["passed"] == payload["total"] == 3
     assert payload["pass_rate"] == 1.0
     assert len(payload["results"]) == 3
+    comparison = json.loads(comparison_output.read_text(encoding="utf-8"))
+    assert comparison["passed"] is True
+    assert comparison["issues"] == []
 
 
 @pytest.mark.asyncio

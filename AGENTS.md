@@ -17,7 +17,9 @@ in `pyproject.toml` and locked in `uv.lock`.
 - `make check`: run linting, type checks, tests with coverage, and package builds.
 - `uv run pytest`: run the complete test suite.
 - `make format`: apply Ruff lint fixes and formatting.
-- `uv run python evaluation/eval.py`: run the LLM evaluation harness; this requires configured provider credentials and may make external API calls.
+- `uv run python evaluation/eval.py`: run the deterministic offline benchmark and
+  compare it with the committed baseline; this requires no credentials or network
+  access.
 
 Python 3.12 or newer is required. Run cookbook scripts with uv, for example
 `uv run python cookbook/calculator.py`.
@@ -58,14 +60,16 @@ evaluation data. Report vulnerabilities according to `SECURITY.md`.
 
 ## Modernization Roadmap & Session Handoff
 
-Phases 1 and 2 are merged into `dev` through PR #66. They established uv,
-Hatchling, Ruff, pytest/coverage, incremental mypy, pre-commit, CI for Python
-3.12/3.13, reproducible builds, and the split test suite. Phase 3 is PR #67 on
-branch `feat/api-correctness-hardening` at commit `86a7dfd`; at handoff it has 70
-passing tests, 64.99% branch coverage, and a 60% enforced floor. It adds the
-public API and exception hierarchy, deterministic non-mutating AST compilation,
-runtime arity validation, corrected Pydantic context handling, and robust MCP
-result decoding. Before new work, check whether PR #67 merged, then run:
+Phases 1 through 4 are merged into `dev` through PR #72. They established the
+modern build and CI foundation, hardened the public API and execution semantics,
+separated schemas, traversal, compilation, execution, and AI transport concerns,
+eliminated shared AST mutation during evaluation, and enabled full-package mypy.
+
+Phase 5's versioned offline benchmark and result schema are merged through PR
+#73. Structured, redacted observability is merged through PR #74. The next Phase
+5 increment adds committed benchmark baselines, explicit regression tolerances,
+machine-readable comparisons, and CI enforcement. Before new work, update `dev`
+and run:
 
 ```sh
 git fetch origin

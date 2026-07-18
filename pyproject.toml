@@ -51,6 +51,7 @@ select = ["E4", "E7", "E9", "F", "I"]
 python_version = "3.12"
 files = [
     "treelang",
+    "evaluation/comparison.py",
     "evaluation/dataset.py",
     "evaluation/eval.py",
     "evaluation/models.py",

@@ -1,0 +1,61 @@
+{
+  "dataset_version": "1.0",
+  "mode": "offline",
+  "started_at": "2026-07-18T00:00:00Z",
+  "duration_ms": 0.0,
+  "model": "curated-ast-v1",
+  "provider": "offline-tools-v1",
+  "results": [
+    {
+      "case_id": "weather-capital-france",
+      "question": "What's the weather like in the capital of France?",
+      "expected": "Sunny, 25°C",
+      "actual": "Sunny, 25°C",
+      "parse_success": true,
+      "schema_valid": true,
+      "execution_success": true,
+      "answer_correct": true,
+      "required_tools_used": true,
+      "latency_ms": 0.0,
+      "prompt_tokens": 0,
+      "completion_tokens": 0,
+      "estimated_cost_usd": 0.0,
+      "model": "curated-ast-v1",
+      "provider": "offline-tools-v1"
+    },
+    {
+      "case_id": "conditional-gdp-brazil",
+      "question": "If the GDP of Brazil is positive, return its GDP.",
+      "expected": 1839.76,
+      "actual": 1839.76,
+      "parse_success": true,
+      "schema_valid": true,
+      "execution_success": true,
+      "answer_correct": true,
+      "required_tools_used": true,
+      "latency_ms": 0.0,
+      "prompt_tokens": 0,
+      "completion_tokens": 0,
+      "estimated_cost_usd": 0.0,
+      "model": "curated-ast-v1",
+      "provider": "offline-tools-v1"
+    },
+    {
+      "case_id": "map-australian-populations",
+      "question": "What are the populations of the three largest cities in Australia?",
+      "expected": [5312000, 5078000, 2514000],
+      "actual": [5312000, 5078000, 2514000],
+      "parse_success": true,
+      "schema_valid": true,
+      "execution_success": true,
+      "answer_correct": true,
+      "required_tools_used": true,
+      "latency_ms": 0.0,
+      "prompt_tokens": 0,
+      "completion_tokens": 0,
+      "estimated_cost_usd": 0.0,
+      "model": "curated-ast-v1",
+      "provider": "offline-tools-v1"
+    }
+  ]
+}
