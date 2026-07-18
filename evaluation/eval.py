@@ -2,6 +2,7 @@
 
 import argparse
 import asyncio
+import logging
 from pathlib import Path
 
 from evaluation.dataset import DEFAULT_DATASET_PATH, load_dataset
@@ -31,5 +32,6 @@ async def main(dataset_path: Path, output_path: Path | None = None) -> int:
 
 
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO, format="%(message)s")
     arguments = parse_args()
     raise SystemExit(asyncio.run(main(arguments.dataset, arguments.output)))

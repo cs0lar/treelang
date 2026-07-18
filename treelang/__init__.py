@@ -13,6 +13,7 @@ from treelang.exceptions import (
     ToolNotFoundError,
     TreelangError,
 )
+from treelang.observability import NoOpTraceSink, Observability, TraceSink
 from treelang.trees.schemas import CURRENT_SCHEMA_VERSION, ast_examples, ast_json_schema
 from treelang.trees.schemas.v1 import (
     TreeConditional,
@@ -39,6 +40,8 @@ __all__ = [
     "ASTValidationError",
     "CURRENT_SCHEMA_VERSION",
     "MCPToolProvider",
+    "NoOpTraceSink",
+    "Observability",
     "ProviderResponseError",
     "ToolExecutionError",
     "ToolDefinition",
@@ -46,6 +49,7 @@ __all__ = [
     "ToolOutput",
     "ToolProperty",
     "ToolProvider",
+    "TraceSink",
     "TreeConditional",
     "TreeFilter",
     "TreeFunction",

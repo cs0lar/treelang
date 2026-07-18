@@ -2,11 +2,13 @@
 
 import asyncio
 from collections.abc import AsyncIterator, Mapping
+from time import perf_counter
 from typing import Any, Protocol, cast, runtime_checkable
 
 from openai import AsyncOpenAI
 
 from treelang.exceptions import ProviderResponseError
+from treelang.observability import Observability
 
 ModelRequest = Mapping[str, Any]
 
@@ -24,12 +26,73 @@ async def complete_with_timeout(
     transport: ModelTransport,
     request: ModelRequest,
     timeout: float | None,
+    observability: Observability | None = None,
 ) -> str:
     """Complete a request, propagating cancellation and enforcing its deadline."""
-    if timeout is None:
-        return await transport.complete(request)
-    async with asyncio.timeout(timeout):
-        return await transport.complete(request)
+    observer = observability or Observability()
+    started = perf_counter()
+    observer.emit("model.request.started", request=request, timeout=timeout)
+    try:
+        if timeout is None:
+            response = await transport.complete(request)
+        else:
+            async with asyncio.timeout(timeout):
+                response = await transport.complete(request)
+    except asyncio.CancelledError:
+        observer.emit(
+            "model.request.cancelled",
+            latency_ms=(perf_counter() - started) * 1000,
+        )
+        raise
+    except Exception as error:
+        observer.emit(
+            "model.request.failed",
+            latency_ms=(perf_counter() - started) * 1000,
+            error=f"{type(error).__name__}: {error}",
+        )
+        raise
+    observer.emit(
+        "model.request.completed",
+        latency_ms=(perf_counter() - started) * 1000,
+        response=response,
+    )
+    return response
+
+
+async def stream_with_observability(
+    transport: ModelTransport,
+    request: ModelRequest,
+    observability: Observability | None = None,
+) -> AsyncIterator[str]:
+    """Stream a request with redacted lifecycle events."""
+    observer = observability or Observability()
+    started = perf_counter()
+    chunks = 0
+    observer.emit("model.stream.started", request=request)
+    try:
+        async for content in transport.stream(request):
+            chunks += 1
+            yield content
+    except asyncio.CancelledError:
+        observer.emit(
+            "model.stream.cancelled",
+            latency_ms=(perf_counter() - started) * 1000,
+            chunks=chunks,
+        )
+        raise
+    except Exception as error:
+        observer.emit(
+            "model.stream.failed",
+            latency_ms=(perf_counter() - started) * 1000,
+            chunks=chunks,
+            error=f"{type(error).__name__}: {error}",
+        )
+        raise
+    observer.emit(
+        "model.stream.completed",
+        latency_ms=(perf_counter() - started) * 1000,
+        chunks=chunks,
+    )
 
 
 class OpenAITransport:

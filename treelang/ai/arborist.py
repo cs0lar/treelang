@@ -14,6 +14,7 @@ from treelang.ai.transport import (
     OpenAITransport,
     complete_with_timeout,
 )
+from treelang.observability import Observability
 from treelang.trees.schemas import ast_examples, ast_json_schema
 from treelang.trees.schemas.v1 import TreeNode
 from treelang.trees.tree import AST
@@ -61,6 +62,7 @@ class OpenAIArborist(BaseArborist):
         *,
         config: ArboristConfig | None = None,
         transport: ModelTransport | None = None,
+        observability: Observability | None = None,
     ) -> None:
         runtime_config = config or ArboristConfig.from_env(model)
         super().__init__(
@@ -79,6 +81,7 @@ class OpenAIArborist(BaseArborist):
         # Compatibility for callers that accessed the OpenAI client directly.
         self.openai = getattr(self.transport, "client", None)
         self.memory = memory
+        self.observability = observability or Observability()
 
     def grow(self) -> None:
         return None
@@ -131,7 +134,10 @@ class OpenAIArborist(BaseArborist):
             ]
 
         content = await complete_with_timeout(
-            self.transport, request, self.config.timeout
+            self.transport,
+            request,
+            self.config.timeout,
+            self.observability,
         )
         parsed = json.loads(content)
         if not isinstance(parsed, dict):
@@ -151,6 +157,7 @@ class OpenAIArborist(BaseArborist):
             jsontree=jsontree,
             config=self.config,
             transport=self.transport,
+            observability=self.observability,
         )
 
 

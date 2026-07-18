@@ -18,7 +18,9 @@ from treelang.ai.transport import (
     ModelTransport,
     OpenAITransport,
     complete_with_timeout,
+    stream_with_observability,
 )
+from treelang.observability import Observability
 from treelang.trees.schemas.v1 import TreeNode, TreeProgram
 from treelang.trees.tree import AST
 
@@ -47,6 +49,7 @@ class EvalResponse(BaseModel):
     jsontree: dict[str, Any] | None = None
     config: ArboristConfig | None = Field(default=None, exclude=True, repr=False)
     transport: ModelTransport | None = Field(default=None, exclude=True, repr=False)
+    observability: Observability | None = Field(default=None, exclude=True, repr=False)
 
     def _runtime(self) -> tuple[ArboristConfig, ModelTransport]:
         config = self.config or ArboristConfig.from_env()
@@ -71,7 +74,9 @@ class EvalResponse(BaseModel):
                 },
             ],
         }
-        return await complete_with_timeout(transport, request, config.timeout)
+        return await complete_with_timeout(
+            transport, request, config.timeout, self.observability
+        )
 
     async def explain_stream(self):
         if self.type == EvalType.TREE:
@@ -89,7 +94,9 @@ class EvalResponse(BaseModel):
                 },
             ],
         }
-        async for content in transport.stream(request):
+        async for content in stream_with_observability(
+            transport, request, self.observability
+        ):
             yield content.encode()
 
     async def describe(self) -> TreeNode:
@@ -114,7 +121,9 @@ class EvalResponse(BaseModel):
             ],
             "response_format": {"type": "json_object"},
         }
-        content = await complete_with_timeout(transport, request, config.timeout)
+        content = await complete_with_timeout(
+            transport, request, config.timeout, self.observability
+        )
         description = TreeDescription.model_validate_json(content)
         self.content.name = description.name
         self.content.description = description.description
