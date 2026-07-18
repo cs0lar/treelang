@@ -1,10 +1,17 @@
 import ast
 import json
 from abc import ABC, abstractmethod
-from typing import Any, Callable, Dict, List
+from typing import Any
 
 from mcp import ClientSession
+from mcp.types import TextContent
 from pydantic import BaseModel
+
+from treelang.exceptions import (
+    ProviderResponseError,
+    ToolExecutionError,
+    ToolNotFoundError,
+)
 
 
 class ToolOutput(BaseModel):
@@ -12,76 +19,73 @@ class ToolOutput(BaseModel):
 
 
 class ToolProvider(ABC):
-    def __init__(self):
-        self.tools: Dict[str, Dict[str, Any]] = None
+    def __init__(self) -> None:
+        self.tools: dict[str, dict[str, Any]] | None = None
 
-    async def get_tool_definition(self, name: str) -> Dict[str, Any]:
+    async def get_tool_definition(self, name: str) -> dict[str, Any]:
         """Method to provide the definition of a tool."""
         if self.tools is None:
             await self.list_tools()
 
+        if self.tools is None:
+            raise ProviderResponseError("Provider did not populate its tool registry")
+
         if name not in self.tools:
-            raise ValueError(f"Tool '{name}' not found.")
+            raise ToolNotFoundError(f"Tool '{name}' not found.")
 
         return self.tools[name]
 
     @abstractmethod
-    async def call_tool(self, name: str, arguments: Dict[str, Any]) -> ToolOutput:
+    async def call_tool(self, name: str, arguments: dict[str, Any]) -> ToolOutput:
         """Method to provide the name of the tool."""
-        pass
+        raise NotImplementedError
 
     @abstractmethod
-    async def list_tools(self) -> List[Dict[str, Any]]:
+    async def list_tools(self) -> list[dict[str, Any]]:
         """Method to list all tools."""
-        pass
+        raise NotImplementedError
 
 
 class MCPToolProvider(ToolProvider):
-    def __init__(self, session: ClientSession):
+    def __init__(self, session: ClientSession) -> None:
         super().__init__()
         self.session = session
 
-    async def call_tool(self, name: str, arguments: Dict[str, Any]) -> ToolOutput:
+    async def call_tool(self, name: str, arguments: dict[str, Any]) -> ToolOutput:
         output = await self.session.call_tool(name, arguments)
 
-        if isinstance(output.content, list) and len(output.content):
-            if output.content[0].text.startswith("Error"):
-                raise RuntimeError(
-                    f"Error calling tool {name}: {output.content[0].text}"
-                )
-            # return the result attempting to transform it into its appropriate type
+        text_items = [
+            item.text for item in output.content if isinstance(item, TextContent)
+        ]
+        if output.isError:
+            detail = "; ".join(text_items) or "provider returned an unspecified error"
+            raise ToolExecutionError(f"Error calling tool {name}: {detail}")
 
-            def cast(value: str):
-                if not isinstance(value, str):
-                    return value
+        if output.structuredContent is not None:
+            return ToolOutput(content=output.structuredContent)
 
-                text = value.strip()
+        if not output.content:
+            return ToolOutput(content=None)
 
-                lowered = text.lower()
-                if lowered == "true":
-                    return True
-                if lowered == "false":
-                    return False
-                if lowered == "null":
-                    return None
+        if len(text_items) != len(output.content):
+            content = [item.model_dump(mode="json") for item in output.content]
+            return ToolOutput(content=content)
 
-                try:
-                    return ast.literal_eval(text)
-                except (ValueError, SyntaxError):
-                    return value
+        decoded = [self._decode_text(item) for item in text_items]
+        return ToolOutput(content=decoded[0] if len(decoded) == 1 else decoded)
 
-            content = (
-                output.content[0].text
-                if len(output.content) == 1
-                else [cast(item.text) for item in output.content]
-            )
+    @staticmethod
+    def _decode_text(value: str) -> Any:
+        text = value.strip()
+        try:
+            return json.loads(text)
+        except json.JSONDecodeError:
             try:
-                content = content if isinstance(content, list) else json.loads(content)
-                return ToolOutput(content=content)
-            except json.JSONDecodeError:
-                return ToolOutput(content=content)
+                return ast.literal_eval(text)
+            except (ValueError, SyntaxError):
+                return value
 
-    async def list_tools(self) -> List[Dict[str, Any]]:
+    async def list_tools(self) -> list[dict[str, Any]]:
         if self.tools is None:
             response = await self.session.list_tools()
             tools = []
@@ -90,52 +94,9 @@ class MCPToolProvider(ToolProvider):
                     {
                         "name": tool.name,
                         "description": tool.description,
-                        "properties": tool.inputSchema["properties"],
+                        "properties": tool.inputSchema.get("properties", {}),
                     }
                 )
             self.tools = {tool["name"]: tool for tool in tools}
             return tools
-        else:
-            return self.tools.values()
-
-
-try:
-    """
-    Example of a non-MCP tool provider using LlamaIndex for tools provision.
-    In order to use this, you need to install LlamaIndex and have it available in your environment:
-
-    `pip install llama-index`
-
-    """
-    from llama_index.tools import FunctionTool
-
-    class LlamIndexToolProvider(ToolProvider):
-        def __init__(self, fns: List[Callable[..., Any]]):
-            super().__init__()
-            self.fn_tools = [FunctionTool.from_defaults(fn=fn) for fn in fns]
-
-        async def call_tool(self, name: str, arguments: Dict[str, Any]) -> ToolOutput:
-            if name not in self.tools:
-                raise ValueError(f"Tool '{name}' not found.")
-            return self.tools[name].fn(**arguments)
-
-        async def list_tools(self) -> List[Dict[str, Any]]:
-            if self.tools is None:
-                tools = []
-                for fn in self.fn_tool:
-                    meta = fn.to_openai_tool()
-                    tools.append(
-                        {
-                            "name": meta["function"]["name"],
-                            "description": meta["function"]["description"],
-                            "properties": meta["function"]["parameters"],
-                        }
-                    )
-                self.tools = {tool["name"]: tool for tool in tools}
-                return tools
-            else:
-                return self.tools.values()
-
-except ImportError:
-    # LlamaIndex is not available
-    pass
+        return list(self.tools.values())
