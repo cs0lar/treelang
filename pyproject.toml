@@ -49,19 +49,7 @@ select = ["E4", "E7", "E9", "F", "I"]
 
 [tool.mypy]
 python_version = "3.12"
-files = [
-    "treelang/__init__.py",
-    "treelang/exceptions.py",
-    "treelang/ai/memory.py",
-    "treelang/ai/provider.py",
-    "treelang/ai/selector.py",
-    "treelang/ai/tool.py",
-    "treelang/trees/compilation.py",
-    "treelang/trees/execution.py",
-    "treelang/trees/schemas/v1.py",
-    "treelang/trees/traversal.py",
-    "treelang/trees/tree.py",
-]
+files = ["treelang"]
 check_untyped_defs = true
 disallow_any_generics = true
 disallow_incomplete_defs = true
