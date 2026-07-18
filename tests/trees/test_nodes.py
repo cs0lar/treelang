@@ -218,7 +218,7 @@ class TestTreeLambda(unittest.IsolatedAsyncioTestCase):
         provider.get_tool_definition.assert_called_once_with("add")
         provider.call_tool.assert_called_once_with("add", {"a": 3, "b": 4})
 
-    async def test_tree_lambda_eval_updates_body_params(self):
+    async def test_tree_lambda_eval_does_not_mutate_body_params(self):
         params = ["x"]
         value_node = TreeValue(name="x", value=None)
         body = TreeFunction(name="identity", params=[value_node])
@@ -232,7 +232,28 @@ class TestTreeLambda(unittest.IsolatedAsyncioTestCase):
         provider.call_tool.return_value = ToolOutput(content=123)
         func = await lam.eval(provider)
         await func(x=123)
-        self.assertEqual(value_node.value, 123)
+        self.assertIsNone(value_node.value)
+
+    async def test_tree_lambda_concurrent_calls_have_isolated_bindings(self):
+        value_node = TreeValue(name="x", value=None)
+        lam = TreeLambda(
+            params=["x"], body=TreeFunction(name="identity", params=[value_node])
+        )
+
+        class OverlappingProvider(ToolProvider):
+            async def list_tools(self):
+                return []
+
+            async def get_tool_definition(self, name):
+                return {"name": name, "properties": {"x": {}}}
+
+            async def call_tool(self, name, arguments):
+                await asyncio.sleep(0)
+                return ToolOutput(content=arguments["x"])
+
+        func = await lam.eval(OverlappingProvider())
+        self.assertEqual(await asyncio.gather(func(x=1), func(x=2)), [1, 2])
+        self.assertIsNone(value_node.value)
 
 
 class TestTreeMap(unittest.IsolatedAsyncioTestCase):

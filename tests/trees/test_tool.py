@@ -1,3 +1,4 @@
+import asyncio
 import unittest
 from unittest.mock import AsyncMock
 
@@ -190,6 +191,27 @@ class TestToolMethod(unittest.IsolatedAsyncioTestCase):
         tool_function = await AST.tool(self.ast, provider)
         result = await tool_function(a=5, b=10)
         self.assertEqual(result, 15)
+
+    async def test_concurrent_tool_calls_have_isolated_bindings(self):
+        values = self.ast.body[0].params
+
+        class OverlappingProvider(ToolProvider):
+            async def list_tools(self):
+                return []
+
+            async def get_tool_definition(self, name):
+                await asyncio.sleep(0)
+                return {"name": name, "properties": {"a": {}, "b": {}}}
+
+            async def call_tool(self, name, arguments):
+                await asyncio.sleep(0)
+                return ToolOutput(content=(arguments["a"], arguments["b"]))
+
+        tool_function = await AST.tool(self.ast, OverlappingProvider())
+        results = await asyncio.gather(tool_function(a=1, b=2), tool_function(a=3, b=4))
+
+        self.assertEqual(results, [(1, 2), (3, 4)])
+        self.assertEqual([node.value for node in values], [None, None])
 
     async def test_tool_with_conditional_execution(self):
         async def mock_call_tool(name, arguments):

@@ -9,7 +9,7 @@ license = "MIT"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
-    "mcp>=1.23,<2",
+    "mcp>=1.28.1,<2",
     "openai>=1.68,<2",
     "pydantic>=2.10,<3",
     "python-dotenv>=1.0,<2",
@@ -23,7 +23,7 @@ Issues = "https://github.com/cs0lar/treelang/issues"
 dev = [
     "build>=1.4,<2",
     "ipykernel>=6.29,<8",
-    "mcp[cli]>=1.23,<2",
+    "mcp[cli]>=1.28.1,<2",
     "mypy>=1.19,<2",
     "pre-commit>=4.5,<5",
     "pytest>=9.0,<10",
@@ -55,6 +55,8 @@ files = [
     "treelang/ai/memory.py",
     "treelang/ai/provider.py",
     "treelang/ai/selector.py",
+    "treelang/trees/execution.py",
+    "treelang/trees/traversal.py",
 ]
 check_untyped_defs = true
 disallow_any_generics = true
