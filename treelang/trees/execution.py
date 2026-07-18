@@ -6,6 +6,7 @@ from dataclasses import dataclass, field
 from typing import Any, Mapping
 
 from treelang.ai.provider import ToolProvider
+from treelang.ai.tool import normalize_tool_definition
 from treelang.exceptions import ASTValidationError, ProviderResponseError
 from treelang.trees.schemas.v1 import (
     TreeConditional,
@@ -82,15 +83,11 @@ async def _evaluate_function(
     context: ExecutionContext | None,
 ) -> Any:
     tool_name = node.name.removeprefix("functions.")
-    tool = await provider.get_tool_definition(tool_name)
-    if not tool:
+    raw_tool = await provider.get_tool_definition(tool_name)
+    if not raw_tool:
         raise ProviderResponseError(f"Tool {tool_name} is not available")
-
-    properties = tool.get("properties")
-    if not isinstance(properties, dict):
-        raise ProviderResponseError(
-            f"Tool '{tool_name}' has no valid properties definition"
-        )
+    tool = normalize_tool_definition(raw_tool, expected_name=tool_name)
+    properties = tool["properties"]
     property_names = list(properties)
     if len(property_names) != len(node.params):
         raise ASTValidationError(

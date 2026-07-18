@@ -3,7 +3,13 @@ from unittest.mock import AsyncMock
 import pytest
 from mcp.types import CallToolResult, ImageContent, ListToolsResult, TextContent, Tool
 
-from treelang import MCPToolProvider, ToolExecutionError, ToolNotFoundError
+from treelang import (
+    MCPToolProvider,
+    ProviderResponseError,
+    ToolExecutionError,
+    ToolNotFoundError,
+)
+from treelang.ai.tool import normalize_tool_definition
 
 
 @pytest.fixture
@@ -95,3 +101,84 @@ async def test_missing_tool_raises_domain_error(session):
 
     with pytest.raises(ToolNotFoundError, match="missing"):
         await provider.get_tool_definition("missing")
+
+
+def test_tool_definition_normalization_preserves_mapping_compatibility():
+    raw = {
+        "description": "Adds values",
+        "properties": {
+            "value": {
+                "type": "integer",
+                "description": "Input value",
+                "minimum": 0,
+            }
+        },
+    }
+
+    definition = normalize_tool_definition(raw, expected_name="add")
+
+    assert definition == {
+        "name": "add",
+        "description": "Adds values",
+        "properties": {
+            "value": {
+                "type": "integer",
+                "description": "Input value",
+                "minimum": 0,
+            }
+        },
+    }
+    assert definition is not raw
+
+
+@pytest.mark.parametrize(
+    ("value", "expected_name", "message"),
+    [
+        (None, None, "must be a mapping"),
+        ({"properties": {}}, None, "no valid name"),
+        (
+            {"name": "other", "properties": {}},
+            "requested",
+            "when 'requested' was requested",
+        ),
+        (
+            {"name": "tool", "description": 42, "properties": {}},
+            None,
+            "description definition",
+        ),
+        ({"name": "tool"}, None, "properties definition"),
+        (
+            {"name": "tool", "properties": {"": {}}},
+            None,
+            "invalid property name",
+        ),
+        (
+            {"name": "tool", "properties": {"value": "integer"}},
+            None,
+            "must be a mapping",
+        ),
+        (
+            {"name": "tool", "properties": {"value": {"type": 42}}},
+            None,
+            "invalid type",
+        ),
+        (
+            {
+                "name": "tool",
+                "properties": {"value": {"description": 42}},
+            },
+            None,
+            "invalid description",
+        ),
+        (
+            {"name": "tool", "properties": {"value": {"enum": "one"}}},
+            None,
+            "invalid enum",
+        ),
+    ],
+)
+def test_tool_definition_normalization_rejects_malformed_metadata(
+    value, expected_name, message
+):
+    with pytest.raises(ProviderResponseError, match=message):
+        normalize_tool_definition(value, expected_name=expected_name)
