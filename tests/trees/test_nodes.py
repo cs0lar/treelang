@@ -107,6 +107,36 @@ class TestTreeFunction(unittest.TestCase):
         provider.call_tool.assert_awaited_once_with("test_function", {})
 
 
+class TestTreeFunctionCancellation(unittest.IsolatedAsyncioTestCase):
+    async def test_cancellation_propagates_to_provider_call(self):
+        started = asyncio.Event()
+        cancelled = asyncio.Event()
+
+        class BlockingProvider(ToolProvider):
+            async def list_tools(self):
+                return []
+
+            async def get_tool_definition(self, name):
+                return {"name": name, "properties": {}}
+
+            async def call_tool(self, name, arguments):
+                started.set()
+                try:
+                    await asyncio.Event().wait()
+                finally:
+                    cancelled.set()
+
+        task = asyncio.create_task(
+            TreeFunction(name="blocking", params=[]).eval(BlockingProvider())
+        )
+        await started.wait()
+        task.cancel()
+
+        with self.assertRaises(asyncio.CancelledError):
+            await task
+        self.assertTrue(cancelled.is_set())
+
+
 class TestTreeValue(unittest.TestCase):
     def test_tree_value_init(self):
         value = TreeValue(name="test_value", value=42)

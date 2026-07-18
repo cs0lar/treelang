@@ -1,5 +1,5 @@
 from collections.abc import Callable
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List, Union, overload
 
 from treelang.ai.provider import ToolProvider
 from treelang.trees.compilation import compile_tool
@@ -13,8 +13,18 @@ class AST:
     Represents an Abstract Syntax Tree (AST) for a very simple programming language.
     """
 
+    @overload
     @classmethod
-    def parse(cls, ast: Union[Dict[str, Any], List[Dict[str, Any]]]) -> TreeNode:
+    def parse(cls, ast: Dict[str, Any]) -> TreeNode: ...
+
+    @overload
+    @classmethod
+    def parse(cls, ast: List[Dict[str, Any]]) -> list[TreeNode]: ...
+
+    @classmethod
+    def parse(
+        cls, ast: Union[Dict[str, Any], List[Dict[str, Any]]]
+    ) -> TreeNode | list[TreeNode]:
         """
         Parses the given dictionary or list into a TreeNode.
 
