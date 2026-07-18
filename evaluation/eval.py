@@ -69,7 +69,7 @@ async def main():
     stream_ctxt = sse_client(
         url=f"http://localhost:{mcp.settings.port}{mcp.settings.sse_path}"
     )
-    (read, write) = await stream_ctxt.__aenter__()
+    read, write = await stream_ctxt.__aenter__()
     session_ctxt = ClientSession(read, write)
     session = await session_ctxt.__aenter__()
     provider = MCPToolProvider(session)

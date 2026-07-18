@@ -10,15 +10,15 @@ Please follow our [Code of Conduct](CODE_OF_CONDUCT.md) to ensure a respectful a
 
 ### Prerequisites
 
-- Ensure you have [Git](https://git-scm.com/) and [Poetry](https://python-poetry.org/) installed.
+- Ensure you have [Git](https://git-scm.com/) and [uv](https://docs.astral.sh/uv/) installed.
 - Fork the repository and clone it to your local machine:
   ```sh
   git clone https://github.com/cs0lar/treelang.git
   cd treelang
   ```
-- Install dependencies using Poetry:
+- Install the locked development environment:
   ```sh
-  poetry install
+  uv sync --frozen --all-groups
   ```
 
 ## 🌳 Branching Strategy
@@ -67,14 +67,14 @@ Examples:
 
 ## ✅ Code Quality & Testing
 
-- Run **linting** before submitting a PR:
+- Run the complete local quality gate before submitting a PR:
   ```sh
-  poetry run black .
+  make check
   ```
-- Write **unit tests** using `unittest` where applicable.
+- Write tests using `pytest`; existing `unittest` test cases remain supported.
 - Ensure all tests pass before submitting a PR:
   ```sh
-  poetry run python -m unittest discover tests
+  uv run pytest
   ```
 
 ## 🧪 Evaluation
@@ -84,7 +84,7 @@ The `evaluation` directory contains code for tracking the quality and robustness
 - Add more evaluation metrics. 
 - To run an evaluation use:
   ```sh
-  poetry run python evaluation/eval.py
+  uv run python evaluation/eval.py
   ```
 
 ## 📖 Documentation Contributions
@@ -98,4 +98,3 @@ The `evaluation` directory contains code for tracking the quality and robustness
 - Open an issue if you're unsure about something.
 
 We appreciate your contributions and look forward to working with you! 🚀
-
