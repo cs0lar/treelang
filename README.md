@@ -117,12 +117,13 @@ Use `response.jsontree` with `AST.parse()` or `AST.repr()` if you want to log, c
 - **Cookbook notebooks** (`cookbook/`) walk through building trees, call patterns, and evaluation strategies.
 - **Reproducible benchmark** (`evaluation/eval.py`) runs versioned deterministic
   cases without credentials, records machine-readable quality and resource
-  metrics, and checks them against committed regression baselines. See
+  metrics, and checks them against committed regression baselines. A separate
+  manual/scheduled live workflow records comparable model quality, latency,
+  token, and cost evidence without exposing credentials to pull requests. See
   [`evaluation/README.md`](evaluation/README.md) for commands and baseline policy.
 - **Unit tests** (`tests/`) cover the AST core and are a good reference for expected behavior when extending nodes.
 
 ## Contributing & local development
 
 We actively welcome contributions—see [CONTRIBUTING.md](CONTRIBUTING.md) for the full workflow.
-
 

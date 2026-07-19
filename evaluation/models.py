@@ -12,6 +12,7 @@ class FailureCategory(str, Enum):
     PARSE = "parse"
     SCHEMA = "schema"
     EXECUTION = "execution"
+    PROVIDER = "provider"
     CORRECTNESS = "correctness"
     INTERNAL = "internal"
 
@@ -27,6 +28,18 @@ class EvaluationCase(BaseModel):
 class EvaluationDataset(BaseModel):
     version: str = Field(pattern=r"^\d+\.\d+$")
     cases: list[EvaluationCase]
+
+
+class LiveEvaluationCase(BaseModel):
+    id: str = Field(min_length=1)
+    question: str = Field(alias="q", min_length=1)
+    expected: Any = Field(alias="a")
+    must_use: list[str] = Field(default_factory=list)
+
+
+class LiveEvaluationDataset(BaseModel):
+    version: str = Field(pattern=r"^\d+\.\d+$")
+    cases: list[LiveEvaluationCase]
 
 
 class CaseResult(BaseModel):
@@ -62,7 +75,7 @@ class CaseResult(BaseModel):
 
 class BenchmarkResult(BaseModel):
     dataset_version: str
-    mode: Literal["offline"] = "offline"
+    mode: Literal["offline", "live"] = "offline"
     started_at: datetime
     duration_ms: float = Field(ge=0)
     model: str

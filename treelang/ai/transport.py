@@ -2,6 +2,8 @@
 
 import asyncio
 from collections.abc import AsyncIterator, Mapping
+from contextvars import ContextVar
+from dataclasses import dataclass
 from time import perf_counter
 from typing import Any, Protocol, cast, runtime_checkable
 
@@ -11,6 +13,14 @@ from treelang.exceptions import ProviderResponseError
 from treelang.observability import Observability
 
 ModelRequest = Mapping[str, Any]
+
+
+@dataclass(frozen=True)
+class ModelUsage:
+    """Token usage reported for one model completion."""
+
+    prompt_tokens: int = 0
+    completion_tokens: int = 0
 
 
 @runtime_checkable
@@ -106,14 +116,32 @@ class OpenAITransport:
         client: AsyncOpenAI | None = None,
     ) -> None:
         self.client = client or AsyncOpenAI(api_key=api_key, timeout=timeout)
+        self._usage: ContextVar[ModelUsage] = ContextVar(
+            "openai_completion_usage", default=ModelUsage()
+        )
 
     async def complete(self, request: ModelRequest) -> str:
         create = cast(Any, self.client.chat.completions.create)
         completion = await create(**dict(request))
+        usage = getattr(completion, "usage", None)
+        self._usage.set(
+            ModelUsage(
+                prompt_tokens=(getattr(usage, "prompt_tokens", 0) or 0) if usage else 0,
+                completion_tokens=(
+                    (getattr(usage, "completion_tokens", 0) or 0) if usage else 0
+                ),
+            )
+        )
         content = completion.choices[0].message.content
         if not isinstance(content, str):
             raise ProviderResponseError("Model response contained no text content")
         return content
+
+    def consume_usage(self) -> ModelUsage:
+        """Return and clear usage for the latest completion in this async context."""
+        usage = self._usage.get()
+        self._usage.set(ModelUsage())
+        return usage
 
     async def stream(self, request: ModelRequest) -> AsyncIterator[str]:
         create = cast(Any, self.client.chat.completions.create)

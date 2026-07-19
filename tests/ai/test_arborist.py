@@ -263,7 +263,8 @@ async def test_base_arborist_defaults_and_abstract_operations():
 @pytest.mark.asyncio
 async def test_openai_transport_complete_and_stream_without_network():
     completion = SimpleNamespace(
-        choices=[SimpleNamespace(message=SimpleNamespace(content="complete"))]
+        choices=[SimpleNamespace(message=SimpleNamespace(content="complete"))],
+        usage=SimpleNamespace(prompt_tokens=12, completion_tokens=3),
     )
     chunks = [
         SimpleNamespace(
@@ -286,6 +287,8 @@ async def test_openai_transport_complete_and_stream_without_network():
     transport = OpenAITransport(client=client)
 
     assert await transport.complete({"model": "model", "messages": []}) == "complete"
+    assert transport.consume_usage().prompt_tokens == 12
+    assert transport.consume_usage().prompt_tokens == 0
     assert [
         part async for part in transport.stream({"model": "model", "messages": []})
     ] == ["part"]
