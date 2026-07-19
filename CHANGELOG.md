@@ -1,22 +1,29 @@
 # Changelog
 
-## [Unreleased]
+## [0.10.0] - 2026-07-19
 
 ### Added
 
 - Added a supported package-level API and domain-specific exception hierarchy.
-- Added explicit handling for structured, textual, empty, non-text, and error MCP results.
-- Added a tag-validated release pipeline with isolated artifact smoke tests,
-  generated release notes, build provenance, and PyPI Trusted Publishing.
+- Added deterministic offline and credentialed live evaluation workflows.
+- Added structured, redacted observability and optional tracing hooks.
+- Added benchmark baselines and regression enforcement.
+- Added a tag-validated release pipeline with artifact smoke tests, generated release notes, provenance, and PyPI Trusted
+Publishing.
 
 ### Changed
 
-- Compiled AST tool signatures now use deterministic duplicate parameter names without mutating the source tree.
-- Tool execution validates provider definitions and parameter counts before invocation.
+- Migrated packaging and development workflows from Poetry to uv and Hatchling.
+- Separated AST schemas, traversal, execution, and callable compilation.
+- Split Arborist configuration, transport, response, and orchestration concerns.
+- Made AST evaluation safe for concurrent invocation without shared mutation.
+- Added fully typed provider metadata and full-package mypy enforcement.
+- Raised the MCP dependency floor to patched version 1.28.1.
 
 ### Removed
 
-- Removed the undocumented, conditionally defined `LlamIndexToolProvider`, which depended on an undeclared optional package and could not execute successfully.
+- Removed the undocumented `LlamIndexToolProvider`.
+- Removed Poetry packaging and its legacy lockfile.
 
 ## [0.9.1] - 2026-02-03
 
