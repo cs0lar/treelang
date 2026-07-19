@@ -54,6 +54,8 @@ files = [
     "evaluation/comparison.py",
     "evaluation/dataset.py",
     "evaluation/eval.py",
+    "evaluation/live.py",
+    "evaluation/live_eval.py",
     "evaluation/models.py",
     "evaluation/offline.py",
     "evaluation/runner.py",

@@ -66,10 +66,11 @@ separated schemas, traversal, compilation, execution, and AI transport concerns,
 eliminated shared AST mutation during evaluation, and enabled full-package mypy.
 
 Phase 5's versioned offline benchmark and result schema are merged through PR
-#73. Structured, redacted observability is merged through PR #74. The next Phase
-5 increment adds committed benchmark baselines, explicit regression tolerances,
-machine-readable comparisons, and CI enforcement. Before new work, update `dev`
-and run:
+#73. Structured, redacted observability is merged through PR #74. Committed
+benchmark baselines, explicit regression tolerances, machine-readable
+comparisons, and CI enforcement are merged through PR #75. The final Phase 5
+increment adds repeatable credentialed live evaluation and comparable
+quality/latency/token/cost evidence. Before new work, update `dev` and run:
 
 ```sh
 git fetch origin

@@ -16,8 +16,42 @@ definition.
 
 Datasets live under versioned directories in `evaluation/data/`. Add or change a
 case by creating a new dataset version so benchmark results remain comparable.
-The credentialed questions in `data/v1/live.jsonl` are intentionally excluded
-from normal CI until a manual/scheduled live workflow is introduced.
+The credentialed questions in `data/v1/live.jsonl` are excluded from normal CI.
+Each case has a stable ID so results remain comparable across runs.
+
+## Live evaluation
+
+Run the credentialed benchmark locally with explicit pricing for the selected
+model:
+
+```sh
+OPENAI_API_KEY=... uv run python evaluation/live_eval.py \
+  --output evaluation-results/live.json \
+  --model gpt-4o-2024-11-20 \
+  --input-cost-per-million 0 \
+  --output-cost-per-million 0
+```
+
+The prices are inputs rather than hard-coded values because provider pricing may
+change. Set them to the current USD price per million tokens when cost evidence
+is required. The result records the exact model, provider, dataset version,
+case-level quality, latency, token usage, and estimated cost.
+
+The `Live evaluation` GitHub Actions workflow runs every Monday and on manual
+dispatch. It reads `OPENAI_API_KEY` from the protected `live-evaluation`
+environment, never runs for pull requests, has a 30-minute timeout, and retains
+the machine-readable result artifact for 90 days. Configure environment approval
+rules if live spend requires review. Set the environment variables `OPENAI_MODEL`,
+`OPENAI_INPUT_COST_PER_MILLION`, and `OPENAI_OUTPUT_COST_PER_MILLION` for scheduled
+runs; absent pricing variables deliberately produce zero estimated cost rather
+than silently applying a stale price. Manual runs can override model and pricing.
+
+Compare only artifacts with identical dataset version, ordered case IDs, model,
+and provider. Use the metric definitions and explicit tolerances in
+`baselines/v1/tolerances.json`; investigate quality decreases before accepting a
+new result. Latency, tokens, and cost must be interpreted using the recorded model
+and pricing inputs. Promote a live result as published evidence only after
+reviewing every failed case and recording the workflow run URL with the result.
 
 Benchmark and model-transport lifecycle events are emitted as structured JSON
 logs. They contain metadata only by default: prompts, questions, ASTs, tool
