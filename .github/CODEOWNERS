@@ -1,0 +1,13 @@
+# Protect the ownership rules themselves
+/.github/CODEOWNERS @cs0lar
+
+# Protect every GitHub Actions workflow
+/.github/workflows/ @cs0lar
+
+# Release-authority files
+/.github/release.yml @cs0lar
+/scripts/validate_release.py @cs0lar
+/scripts/smoke_release.py @cs0lar
+/pyproject.toml @cs0lar
+/CHANGELOG.md @cs0lar
+/RELEASING.md @cs0lar

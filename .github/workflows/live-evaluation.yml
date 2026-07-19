@@ -1,0 +1,61 @@
+name: Live evaluation
+
+on:
+  workflow_dispatch:
+    inputs:
+      model:
+        description: OpenAI model identifier
+        required: true
+        default: gpt-4o-2024-11-20
+        type: string
+      input_cost_per_million:
+        description: Input-token price in USD per million tokens
+        required: true
+        default: "0"
+        type: string
+      output_cost_per_million:
+        description: Output-token price in USD per million tokens
+        required: true
+        default: "0"
+        type: string
+permissions:
+  contents: read
+
+concurrency:
+  group: live-evaluation
+  cancel-in-progress: false
+
+jobs:
+  benchmark:
+    if: github.actor == github.repository_owner
+    runs-on: ubuntu-latest
+    environment: live-evaluation
+    timeout-minutes: 30
+    env:
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      OPENAI_MODEL: ${{ inputs.model }}
+      INPUT_COST_PER_MILLION: ${{ inputs.input_cost_per_million }}
+      OUTPUT_COST_PER_MILLION: ${{ inputs.output_cost_per_million }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - run: uv sync --frozen --all-groups
+      - name: Run credentialed live benchmark
+        run: >-
+          uv run python evaluation/live_eval.py
+          --output evaluation-results/live.json
+          --model "$OPENAI_MODEL"
+          --input-cost-per-million "$INPUT_COST_PER_MILLION"
+          --output-cost-per-million "$OUTPUT_COST_PER_MILLION"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: live-evaluation-${{ github.run_id }}
+          path: evaluation-results/
+          if-no-files-found: warn
+          retention-days: 90

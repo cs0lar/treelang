@@ -1,0 +1,184 @@
+from unittest.mock import AsyncMock
+
+import pytest
+from mcp.types import CallToolResult, ImageContent, ListToolsResult, TextContent, Tool
+
+from treelang import (
+    MCPToolProvider,
+    ProviderResponseError,
+    ToolExecutionError,
+    ToolNotFoundError,
+)
+from treelang.ai.tool import normalize_tool_definition
+
+
+@pytest.fixture
+def session():
+    return AsyncMock()
+
+
+@pytest.mark.asyncio
+async def test_call_tool_decodes_single_and_multiple_text_values(session):
+    provider = MCPToolProvider(session)
+    session.call_tool.side_effect = [
+        CallToolResult(content=[TextContent(type="text", text='{"value": 3}')]),
+        CallToolResult(
+            content=[
+                TextContent(type="text", text="true"),
+                TextContent(type="text", text="'literal'"),
+            ]
+        ),
+    ]
+
+    assert (await provider.call_tool("one", {})).content == {"value": 3}
+    assert (await provider.call_tool("many", {})).content == [True, "literal"]
+
+
+@pytest.mark.asyncio
+async def test_call_tool_prefers_structured_content(session):
+    provider = MCPToolProvider(session)
+    session.call_tool.return_value = CallToolResult(
+        content=[TextContent(type="text", text="ignored")],
+        structuredContent={"result": 42},
+    )
+
+    assert (await provider.call_tool("tool", {})).content == {"result": 42}
+
+
+@pytest.mark.asyncio
+async def test_call_tool_handles_empty_and_non_text_content(session):
+    provider = MCPToolProvider(session)
+    session.call_tool.side_effect = [
+        CallToolResult(content=[]),
+        CallToolResult(
+            content=[ImageContent(type="image", data="aW1hZ2U=", mimeType="image/png")]
+        ),
+    ]
+
+    assert (await provider.call_tool("empty", {})).content is None
+    image = (await provider.call_tool("image", {})).content[0]
+    assert image["type"] == "image"
+    assert image["mimeType"] == "image/png"
+
+
+@pytest.mark.asyncio
+async def test_call_tool_raises_domain_error_for_provider_failure(session):
+    provider = MCPToolProvider(session)
+    session.call_tool.return_value = CallToolResult(
+        content=[TextContent(type="text", text="permission denied")], isError=True
+    )
+
+    with pytest.raises(ToolExecutionError, match="permission denied"):
+        await provider.call_tool("restricted", {})
+
+
+@pytest.mark.asyncio
+async def test_list_tools_is_cached_and_always_returns_a_list(session):
+    provider = MCPToolProvider(session)
+    session.list_tools.return_value = ListToolsResult(
+        tools=[
+            Tool(
+                name="ping",
+                description="Ping",
+                inputSchema={"type": "object"},
+            )
+        ]
+    )
+
+    first = await provider.list_tools()
+    second = await provider.list_tools()
+
+    assert (
+        first == second == [{"name": "ping", "description": "Ping", "properties": {}}]
+    )
+    session.list_tools.assert_awaited_once()
+
+
+@pytest.mark.asyncio
+async def test_missing_tool_raises_domain_error(session):
+    provider = MCPToolProvider(session)
+    session.list_tools.return_value = ListToolsResult(tools=[])
+
+    with pytest.raises(ToolNotFoundError, match="missing"):
+        await provider.get_tool_definition("missing")
+
+
+def test_tool_definition_normalization_preserves_mapping_compatibility():
+    raw = {
+        "description": "Adds values",
+        "properties": {
+            "value": {
+                "type": "integer",
+                "description": "Input value",
+                "minimum": 0,
+            }
+        },
+    }
+
+    definition = normalize_tool_definition(raw, expected_name="add")
+
+    assert definition == {
+        "name": "add",
+        "description": "Adds values",
+        "properties": {
+            "value": {
+                "type": "integer",
+                "description": "Input value",
+                "minimum": 0,
+            }
+        },
+    }
+    assert definition is not raw
+
+
+@pytest.mark.parametrize(
+    ("value", "expected_name", "message"),
+    [
+        (None, None, "must be a mapping"),
+        ({"properties": {}}, None, "no valid name"),
+        (
+            {"name": "other", "properties": {}},
+            "requested",
+            "when 'requested' was requested",
+        ),
+        (
+            {"name": "tool", "description": 42, "properties": {}},
+            None,
+            "description definition",
+        ),
+        ({"name": "tool"}, None, "properties definition"),
+        (
+            {"name": "tool", "properties": {"": {}}},
+            None,
+            "invalid property name",
+        ),
+        (
+            {"name": "tool", "properties": {"value": "integer"}},
+            None,
+            "must be a mapping",
+        ),
+        (
+            {"name": "tool", "properties": {"value": {"type": 42}}},
+            None,
+            "invalid type",
+        ),
+        (
+            {
+                "name": "tool",
+                "properties": {"value": {"description": 42}},
+            },
+            None,
+            "invalid description",
+        ),
+        (
+            {"name": "tool", "properties": {"value": {"enum": "one"}}},
+            None,
+            "invalid enum",
+        ),
+    ],
+)
+def test_tool_definition_normalization_rejects_malformed_metadata(
+    value, expected_name, message
+):
+    with pytest.raises(ProviderResponseError, match=message):
+        normalize_tool_definition(value, expected_name=expected_name)

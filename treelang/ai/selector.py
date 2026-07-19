@@ -1,6 +1,7 @@
-from typing import Any, List
+from typing import Any
 
 from treelang.ai.provider import ToolProvider
+from treelang.ai.tool import ToolDefinition
 
 
 class BaseToolSelector:
@@ -13,7 +14,9 @@ class BaseToolSelector:
 
     """
 
-    async def select(self, provider: ToolProvider, query: str, **kwargs) -> List[Any]:
+    async def select(
+        self, provider: ToolProvider, query: str, **kwargs: Any
+    ) -> list[ToolDefinition]:
         """
         It selects a subset of all the available tools registered on the MCP server
         corresponding to the given session.
@@ -33,5 +36,7 @@ class AllToolsSelector(BaseToolSelector):
     The most basic Selector which just returns all tools available in the system.
     """
 
-    async def select(self, provider: ToolProvider, query: str, **kwargs) -> List[Any]:
+    async def select(
+        self, provider: ToolProvider, query: str, **kwargs: Any
+    ) -> list[ToolDefinition]:
         return await provider.list_tools()

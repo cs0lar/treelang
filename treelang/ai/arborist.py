@@ -1,214 +1,27 @@
+"""Arborist orchestration for generating and evaluating AST programs."""
+
 import json
-import os
-from enum import Enum
 from typing import Any
 
-from dotenv import load_dotenv
-from openai import AsyncOpenAI
-from pydantic import BaseModel, ConfigDict
-
+from treelang.ai.config import ArboristConfig
 from treelang.ai.memory import Memory
-from treelang.ai.prompt import (
-    ARBORIST_SYSTEM_PROMPT,
-    EXPLAIN_EVALUATION_SYSTEM_PROMPT,
-    EXPLAIN_EVALUATION_USER_PROMPT,
-    TREE_DESCRIPTOR_SYSTEM_PROMPT,
-    TREE_DESCRIPTOR_USER_PROMPT,
-)
+from treelang.ai.prompt import ARBORIST_SYSTEM_PROMPT
 from treelang.ai.provider import ToolProvider
+from treelang.ai.responses import EvalResponse, EvalType, TreeDescription
 from treelang.ai.selector import AllToolsSelector, BaseToolSelector
+from treelang.ai.transport import (
+    ModelTransport,
+    OpenAITransport,
+    complete_with_timeout,
+)
+from treelang.observability import Observability
 from treelang.trees.schemas import ast_examples, ast_json_schema
-from treelang.trees.tree import AST, TreeNode, TreeProgram
-
-load_dotenv()
-
-
-class EvalType(Enum):
-    """
-    Enum representing the types of evaluation modes for tree processing.
-
-    Attributes:
-        TREE (str): Represents an evaluation mode where evaluation of the tree is deferred to a third party (i.e. only return the tree).
-        WALK (str): Represents an evaluation mode where the tree is to be fully evaluated (i.e. evaluate the tree and return the result).
-    """
-
-    TREE = "tree"
-    WALK = "walk"
-
-
-class Model(BaseModel):
-    model_config = ConfigDict(
-        arbitrary_types_allowed=True,
-    )
-
-
-class TreeDescription(Model):
-    name: str
-    description: str
-    properties: dict[str, Any]
-
-
-class EvalResponse(Model):
-    """
-    Data model representing the response of an evaluation process.
-
-    Attributes:
-        query (str): The original query that was evaluated.
-        type (EvalType): The type of evaluation being performed.
-        content (Any): The content of the evaluation response. This can be a TreeNode
-        if type is TREE or Any if type is WALK depending on the evaluation.
-        jsontree (dict[str, Any] | None): The JSON representation of the tree if available.
-
-    Methods:
-        explain() -> str:
-            Generates an English explanation of the evaluation response.
-    """
-
-    query: str
-    type: EvalType
-    content: TreeNode | Any
-    jsontree: dict[str, Any] | None = None
-
-    async def explain(self) -> str:
-        """
-        Generates an English explanation of the evaluation response.
-
-        Returns:
-            str: A string representation of the evaluation response.
-        """
-        openai = AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-
-        if self.type == EvalType.TREE:
-            raise ValueError("Cannot explain a tree response.")
-
-        query = EXPLAIN_EVALUATION_USER_PROMPT.format(
-            question=self.query, data={"data": self.content}
-        )
-
-        messages = [
-            {"role": "system", "content": EXPLAIN_EVALUATION_SYSTEM_PROMPT},
-            {"role": "user", "content": query},
-        ]
-
-        params = {
-            "model": os.getenv("OPENAI_MODEL", "gpt-4o-2024-11-20"),
-            "messages": messages,
-        }
-
-        completion = await openai.chat.completions.create(**params)
-        message = completion.choices[0].message.model_dump(mode="json")
-        content = message["content"]
-
-        return content
-
-    async def explain_stream(self):
-        """
-        Generates an English explanation of the evaluation response as a stream.
-
-        Yields:
-            str: A string representation of the evaluation response.
-        """
-        openai = AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-
-        if self.type == EvalType.TREE:
-            raise ValueError("Cannot explain a tree response.")
-
-        query = EXPLAIN_EVALUATION_USER_PROMPT.format(
-            question=self.query, data={"data": self.content}
-        )
-
-        messages = [
-            {"role": "system", "content": EXPLAIN_EVALUATION_SYSTEM_PROMPT},
-            {"role": "user", "content": query},
-        ]
-
-        params = {
-            "model": os.getenv("OPENAI_MODEL", "gpt-4o-2024-11-20"),
-            "messages": messages,
-            "stream": True,
-        }
-
-        async for chunk in await openai.chat.completions.create(**params):
-            for choice in chunk.choices:
-                if choice.delta and choice.delta.content:
-                    yield choice.delta.content.encode()
-
-    async def describe(self) -> TreeNode:
-        """
-        Generates a name and a description for the response tree.
-        It uses an LLM to generate a description based on the tree's JSON representation.
-        The name and description are set on the tree root node (a TreeProgram instance).
-
-        Raises:
-            ValueError: If the tree is not a TreeProgram instance or if the JSON representation is not available.
-
-        Returns:
-            TreeNode: The tree with the name and description set.
-        """
-        openai = AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-
-        if self.type == EvalType.WALK:
-            raise ValueError("Only tree responses can be described.")
-
-        if not self.content:
-            raise ValueError("No JSON representation of the tree available.")
-
-        if not isinstance(self.content, TreeProgram):
-            raise ValueError("Only TreeProgram instances can be described.")
-
-        jsontree = AST.repr(self.content)
-        query = TREE_DESCRIPTOR_USER_PROMPT.format(tree=json.dumps(jsontree))
-        messages = [
-            {"role": "system", "content": TREE_DESCRIPTOR_SYSTEM_PROMPT},
-            {"role": "user", "content": query},
-        ]
-        params = {
-            "model": os.getenv("OPENAI_MODEL", "gpt-4o-2024-11-20"),
-            "messages": messages,
-            "response_format": {"type": "json_object"},
-        }
-
-        completion = await openai.chat.completions.create(**params)
-        message = completion.choices[0].message.model_dump(mode="json")
-        response = json.loads(message["content"])
-
-        self.content.name = response["name"]
-        self.content.description = response["description"]
-
-        return self.content
+from treelang.trees.schemas.v1 import TreeNode
+from treelang.trees.tree import AST
 
 
 class BaseArborist:
-    """
-    Base class for LLM agents that solve problems by assembling Abstract Syntax Trees out of
-    the tools (function calls) they have at their disposal.
-
-    This class provides a foundation for implementing tree manipulation and evaluation
-    logic. It includes methods for pruning, growing, walking, and evaluating trees,
-    which can be extended or overridden by subclasses.
-
-    Attributes:
-        model (str): The name or identifier of the model being used.
-        system_prompt (str): The system-level prompt used for guiding the AI's behavior.
-        user_prompt_template (str): A template for generating user prompts.
-        provider (ToolProvider): A provider for accessing tools and their definitions.
-        selector (BaseToolSelector): A tool selector instance for determining applicable tools.
-            Defaults to an instance of `AllToolsSelector`.
-
-    Methods:
-        prune(tree: TreeNode) -> TreeNode:
-            Prunes the given tree. By default, this method returns the tree unchanged.
-
-        grow():
-            Abstract method for growing the tree. Must be implemented by subclasses.
-
-        async walk(tree: TreeNode) -> Any:
-            Walks through the tree and evaluates it asynchronously using the provided session.
-
-        async eval(query: str, type: EvalType = EvalType.WALK) -> EvalResponse:
-            Abstract method for generating trees that solve a user query. Must be implemented
-            by subclasses.
-    """
+    """Base orchestration interface for AST-generating agents."""
 
     def __init__(
         self,
@@ -216,18 +29,18 @@ class BaseArborist:
         system_prompt: str,
         user_prompt_template: str,
         provider: ToolProvider,
-        selector: BaseToolSelector = AllToolsSelector(),
-    ):
+        selector: BaseToolSelector | None = None,
+    ) -> None:
         self.model = model
         self.system_prompt = system_prompt
         self.user_prompt_template = user_prompt_template
         self.provider = provider
-        self.selector = selector
+        self.selector = selector or AllToolsSelector()
 
     def prune(self, tree: TreeNode) -> TreeNode:
         return tree
 
-    def grow(self):
+    def grow(self) -> None:
         raise NotImplementedError()
 
     async def walk(self, tree: TreeNode) -> Any:
@@ -238,36 +51,22 @@ class BaseArborist:
 
 
 class OpenAIArborist(BaseArborist):
-    """
-    A specialized implementation of the `BaseArborist` class that integrates with OpenAI's API
-    to evaluate queries and generate abstract syntax trees (ASTs). This class is designed to
-    facilitate interaction with OpenAI's chat models and supports tool selection for enhanced
-    functionality.
-
-    Attributes:
-        model (str): The name of the OpenAI model to use for generating responses.
-        provider (ToolProvider): A provider for accessing tools and their definitions.
-        selector (BaseToolSelector): A tool selector instance to determine available tools
-            for the evaluation process. Defaults to `AllToolsSelector`.
-        openai (OpenAI): An instance of the OpenAI client initialized with the API key.
-
-    Methods:
-        grow():
-            Placeholder method for extending functionality. Currently not implemented.
-
-        eval(query: str, type: EvalType = EvalType.WALK) -> EvalResponse:
-            Asynchronously evaluates a query using the OpenAI model and generates an AST.
-    """
+    """Generate AST programs with an injected model transport."""
 
     def __init__(
         self,
         model: str,
         provider: ToolProvider,
-        selector: BaseToolSelector = AllToolsSelector(),
+        selector: BaseToolSelector | None = None,
         memory: Memory | None = None,
-    ):
+        *,
+        config: ArboristConfig | None = None,
+        transport: ModelTransport | None = None,
+        observability: Observability | None = None,
+    ) -> None:
+        runtime_config = config or ArboristConfig.from_env(model)
         super().__init__(
-            model,
+            runtime_config.model,
             ARBORIST_SYSTEM_PROMPT.format(
                 schema=ast_json_schema(), examples=ast_examples()
             ),
@@ -275,85 +74,56 @@ class OpenAIArborist(BaseArborist):
             provider,
             selector,
         )
-
-        self.openai = AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+        self.config = runtime_config
+        self.transport = transport or OpenAITransport(
+            api_key=runtime_config.api_key, timeout=runtime_config.timeout
+        )
+        # Compatibility for callers that accessed the OpenAI client directly.
+        self.openai = getattr(self.transport, "client", None)
         self.memory = memory
+        self.observability = observability or Observability()
 
-    def grow(self):
-        pass
+    def grow(self) -> None:
+        return None
 
-    def supports_temperature(self, model_name: str) -> bool:
-        """
-        Determines if the specified model supports the 'temperature' parameter.
-        Only chat completions models support temperature adjustment.
-
-        Args:
-            model_name (str): The name of the model to check.
-
-        Returns:
-            bool: True if the model supports temperature adjustment, False otherwise.
-
-        Supported models include those whose names start with:
-            - "gpt-4o"
-            - "gpt-4o-mini"
-            - "gpt-4.1"
-            - "gpt-4.1-mini"
-            - "o1"
-            - "o1-mini"
-        """
-        chat_models = [
+    @staticmethod
+    def supports_temperature(model_name: str) -> bool:
+        chat_models = (
             "gpt-4o",
             "gpt-4o-mini",
             "gpt-4.1",
             "gpt-4.1-mini",
             "o1",
             "o1-mini",
-        ]
-        return any(model_name.startswith(m) for m in chat_models)
+        )
+        return model_name.startswith(chat_models)
 
     async def eval(self, query: str, type: EvalType = EvalType.WALK) -> EvalResponse:
-        """
-        Asynchronously evaluates a query using the OpenAI model and generates an AST.
-        Optionally prunes the tree and performs a walk operation based on the evaluation type.
-
-        Args:
-            query (str): The input query to evaluate.
-            type (EvalType): The type of evaluation to perform. Defaults to `EvalType.WALK`.
-
-        Returns:
-            EvalResponse: The result of the evaluation, either as a walked response or
-            the generated AST.
-        """
-        messages = [
+        messages: list[dict[str, str]] = [
             {"role": "system", "content": self.system_prompt},
             {"role": "user", "content": query},
         ]
-
         if self.memory:
             history = await self.memory.get()
-            for item in history[::-1]:
-                messages.insert(
-                    1, {"role": item.role, "content": item.content}
-                )  # insert after system prompt
+            for item in reversed(history):
+                messages.insert(1, {"role": item.role, "content": item.content})
 
-        params = {
-            "model": self.model,
+        request: dict[str, Any] = {
+            "model": self.config.model,
             "messages": messages,
             "response_format": {"type": "json_object"},
         }
-
-        if self.supports_temperature(self.model):
-            params["temperature"] = 0.0
+        if self.supports_temperature(self.config.model):
+            request["temperature"] = self.config.temperature
 
         available_tools = await self.selector.select(self.provider, query)
-
         if available_tools:
-            params["tools"] = [
+            request["tools"] = [
                 {
                     "type": "function",
                     "function": {
                         "name": tool["name"],
-                        "description": tool["description"],
+                        "description": tool.get("description"),
                         "parameters": {
                             "type": "object",
                             "properties": tool["properties"],
@@ -363,21 +133,39 @@ class OpenAIArborist(BaseArborist):
                 for tool in available_tools
             ]
 
-        completion = await self.openai.chat.completions.create(**params)
-        message = completion.choices[0].message.model_dump(mode="json")
-        content = message["content"]
-        jsontree = json.loads(content)
+        content = await complete_with_timeout(
+            self.transport,
+            request,
+            self.config.timeout,
+            self.observability,
+        )
+        parsed = json.loads(content)
+        if not isinstance(parsed, dict):
+            raise ValueError("Model response must contain a JSON object AST")
+        jsontree: dict[str, Any] = parsed
         tree = AST.parse(jsontree)
         tree = self.prune(tree)
 
         if type == EvalType.WALK:
-            return EvalResponse(
-                query=query,
-                type=EvalType.WALK,
-                content=await self.walk(tree),
-                jsontree=jsontree,
-            )
+            result: Any = await self.walk(tree)
         else:
-            return EvalResponse(
-                query=query, type=EvalType.TREE, content=tree, jsontree=jsontree
-            )
+            result = tree
+        return EvalResponse(
+            query=query,
+            type=type,
+            content=result,
+            jsontree=jsontree,
+            config=self.config,
+            transport=self.transport,
+            observability=self.observability,
+        )
+
+
+__all__ = [
+    "ArboristConfig",
+    "BaseArborist",
+    "EvalResponse",
+    "EvalType",
+    "OpenAIArborist",
+    "TreeDescription",
+]
