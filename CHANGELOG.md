@@ -6,6 +6,8 @@
 
 - Added a supported package-level API and domain-specific exception hierarchy.
 - Added explicit handling for structured, textual, empty, non-text, and error MCP results.
+- Added a tag-validated release pipeline with isolated artifact smoke tests,
+  generated release notes, build provenance, and PyPI Trusted Publishing.
 
 ### Changed
 

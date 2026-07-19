@@ -127,3 +127,6 @@ Use `response.jsontree` with `AST.parse()` or `AST.repr()` if you want to log, c
 
 We actively welcome contributions—see [CONTRIBUTING.md](CONTRIBUTING.md) for the full workflow.
 
+Maintainers publish signed, provenance-attested releases through PyPI Trusted
+Publishing. See [RELEASING.md](RELEASING.md) for versioning, promotion, publishing,
+and verification instructions.

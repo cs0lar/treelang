@@ -65,12 +65,13 @@ modern build and CI foundation, hardened the public API and execution semantics,
 separated schemas, traversal, compilation, execution, and AI transport concerns,
 eliminated shared AST mutation during evaluation, and enabled full-package mypy.
 
-Phase 5's versioned offline benchmark and result schema are merged through PR
-#73. Structured, redacted observability is merged through PR #74. Committed
-benchmark baselines, explicit regression tolerances, machine-readable
-comparisons, and CI enforcement are merged through PR #75. The final Phase 5
-increment adds repeatable credentialed live evaluation and comparable
-quality/latency/token/cost evidence. Before new work, update `dev` and run:
+Phase 5 is merged through PR #77. It provides versioned offline and live datasets,
+typed benchmark results, redacted structured observability and tracing hooks,
+committed regression baselines, CI comparison enforcement, and an owner-only
+manual live-evaluation workflow with comparable quality, latency, token, and cost
+evidence. Phase 6 begins with tag-validated release automation, isolated artifact
+smoke tests, generated notes, provenance, and PyPI Trusted Publishing. Before new
+work, update `dev` and run:
 
 ```sh
 git fetch origin
