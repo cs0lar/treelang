@@ -40,8 +40,10 @@ case-level quality, latency, token usage, and estimated cost.
 The `Live evaluation` GitHub Actions workflow runs every Monday and on manual
 dispatch. It reads `OPENAI_API_KEY` from the protected `live-evaluation`
 environment, never runs for pull requests, has a 30-minute timeout, and retains
-the machine-readable result artifact for 90 days. Configure environment approval
-rules if live spend requires review. Set the environment variables `OPENAI_MODEL`,
+the machine-readable result artifact for 90 days. Manual runs are restricted to
+the repository owner; attempts by other actors are skipped before the environment
+or its secrets are accessed. Configure environment approval rules if live spend
+requires an additional review. Set the environment variables `OPENAI_MODEL`,
 `OPENAI_INPUT_COST_PER_MILLION`, and `OPENAI_OUTPUT_COST_PER_MILLION` for scheduled
 runs; absent pricing variables deliberately produce zero estimated cost rather
 than silently applying a stale price. Manual runs can override model and pricing.
