@@ -59,6 +59,7 @@ files = [
     "evaluation/models.py",
     "evaluation/offline.py",
     "evaluation/runner.py",
+    "scripts",
 ]
 check_untyped_defs = true
 disallow_any_generics = true

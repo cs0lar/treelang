@@ -1,4 +1,4 @@
-PYTHON_PATHS = treelang tests evaluation cookbook/*.py
+PYTHON_PATHS = treelang tests evaluation scripts cookbook/*.py
 
 .PHONY: install format lint typecheck test build check clean
 
