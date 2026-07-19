@@ -18,9 +18,6 @@ on:
         required: true
         default: "0"
         type: string
-  schedule:
-    - cron: "17 6 * * 1"
-
 permissions:
   contents: read
 
@@ -30,14 +27,15 @@ concurrency:
 
 jobs:
   benchmark:
+    if: github.actor == github.repository_owner
     runs-on: ubuntu-latest
     environment: live-evaluation
     timeout-minutes: 30
     env:
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-      OPENAI_MODEL: ${{ inputs.model || vars.OPENAI_MODEL || 'gpt-4o-2024-11-20' }}
-      INPUT_COST_PER_MILLION: ${{ inputs.input_cost_per_million || vars.OPENAI_INPUT_COST_PER_MILLION || '0' }}
-      OUTPUT_COST_PER_MILLION: ${{ inputs.output_cost_per_million || vars.OPENAI_OUTPUT_COST_PER_MILLION || '0' }}
+      OPENAI_MODEL: ${{ inputs.model }}
+      INPUT_COST_PER_MILLION: ${{ inputs.input_cost_per_million }}
+      OUTPUT_COST_PER_MILLION: ${{ inputs.output_cost_per_million }}
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v7
