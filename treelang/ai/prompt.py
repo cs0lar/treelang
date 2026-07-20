@@ -26,6 +26,7 @@ You are the AI Arborist because, given a set of useful functions/tools and user 
 - Params[i] corresponds to the i-th parameter in the tool signature
 - Do not reorder, skip, or group parameters
 - If a parameter value is unknown or comes from a lambda variable, use null as the value
+- Every null placeholder bound by a lambda MUST have a name that exactly matches one of that lambda's params
 - Lambda body MUST be {{"type":"function", ...}}. Do not use conditional inside a lambda.
 - This rule applies recursively
 

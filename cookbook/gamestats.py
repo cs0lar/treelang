@@ -7,7 +7,7 @@ logger = logging.getLogger(__name__)
 mcp = FastMCP("gamestats", debug=False)
 
 
-@mcp.tool()
+@mcp.tool(structured_output=False)
 def get_players(platform: str) -> List[int]:
     """
     Get the players ID of all the players using the given gaming platform
@@ -21,7 +21,7 @@ def get_players(platform: str) -> List[int]:
         raise ValueError(f"Unknown platform: {platform}")
 
 
-@mcp.tool()
+@mcp.tool(structured_output=False)
 def get_game_stats(game: str, feature: str, players: List[int]) -> List[int]:
     """
     Get statistics for a given video game title for the given list of player IDs.
@@ -41,7 +41,7 @@ def get_game_stats(game: str, feature: str, players: List[int]) -> List[int]:
         return []
 
 
-@mcp.tool()
+@mcp.tool(structured_output=False)
 def average(values: List[int]) -> float:
     """
     Calculate the average of a list of integers
