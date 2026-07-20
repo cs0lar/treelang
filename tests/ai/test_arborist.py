@@ -150,11 +150,55 @@ async def test_arborist_walk_mode_executes_generated_tree():
 @pytest.mark.asyncio
 async def test_arborist_rejects_non_object_model_response():
     arborist = OpenAIArborist(
-        model="model", provider=FakeProvider(), transport=FakeTransport("[]")
+        model="model",
+        provider=FakeProvider(),
+        config=ArboristConfig(model="model", validation_retries=0),
+        transport=FakeTransport("[]"),
     )
 
     with pytest.raises(ValueError, match="JSON object AST"):
         await arborist.eval("question")
+
+
+@pytest.mark.asyncio
+async def test_arborist_retries_an_invalid_conditional_ast_with_feedback():
+    invalid = program_json(
+        [
+            {
+                "type": "conditional",
+                "condition": True,
+                "true_branch": 100,
+                "false_branch": 93,
+            }
+        ]
+    )
+    valid = program_json(
+        [
+            {
+                "type": "conditional",
+                "condition": {"type": "value", "name": "condition", "value": True},
+                "true_branch": {"type": "value", "name": "result", "value": 100},
+                "false_branch": {"type": "value", "name": "result", "value": 93},
+            }
+        ]
+    )
+    transport = FakeTransport(invalid, valid)
+    arborist = OpenAIArborist(
+        model="model", provider=FakeProvider(), transport=transport
+    )
+
+    response = await arborist.eval("cap the result at 100")
+
+    assert response.content == 100
+    assert len(transport.requests) == 2
+    correction = transport.requests[1]["messages"][-1]["content"]
+    assert "failed validation" in correction
+    assert "conditional.condition" in correction
+
+
+def test_arborist_config_rejects_negative_validation_retries():
+    with pytest.raises(ValueError, match="non-negative"):
+        ArboristConfig(model="model", validation_retries=-1)
 
 
 @pytest.mark.asyncio

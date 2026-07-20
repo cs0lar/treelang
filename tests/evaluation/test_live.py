@@ -8,7 +8,7 @@ from evaluation.live import LiveBenchmarkRunner
 from evaluation.live_eval import run as run_live_cli
 from evaluation.models import FailureCategory, LiveEvaluationCase, LiveEvaluationDataset
 from evaluation.offline import OfflineToolProvider
-from treelang.ai.arborist import OpenAIArborist
+from treelang.ai.arborist import ArboristConfig, OpenAIArborist
 from treelang.ai.transport import ModelUsage
 
 
@@ -60,7 +60,12 @@ def live_case(**updates):
 def runner(responses, **kwargs):
     transport = UsageTransport(responses)
     provider = OfflineToolProvider()
-    arborist = OpenAIArborist(model="gpt-test", provider=provider, transport=transport)
+    arborist = OpenAIArborist(
+        model="gpt-test",
+        provider=provider,
+        config=ArboristConfig(model="gpt-test", validation_retries=0),
+        transport=transport,
+    )
     return LiveBenchmarkRunner(
         arborist,
         transport,

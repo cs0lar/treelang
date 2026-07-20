@@ -347,6 +347,43 @@ def ast_v1_examples() -> list[ASTExample]:
     }
     examples.append(example_2)
 
+    example_conditional: ASTExample = {
+        "q": "Calculate 12*6, but if the result is greater than 50, return 50.",
+        "a": AST(
+            root=TreeProgram(
+                body=[
+                    TreeConditional(
+                        condition=TreeFunction(
+                            name="greater_than",
+                            params=[
+                                TreeFunction(
+                                    name="multiply",
+                                    params=[
+                                        TreeValue(name="a", value=12),
+                                        TreeValue(name="b", value=6),
+                                    ],
+                                ),
+                                TreeValue(name="b", value=50),
+                            ],
+                        ),
+                        true_branch=TreeValue(name="result", value=50),
+                        false_branch=TreeFunction(
+                            name="multiply",
+                            params=[
+                                TreeValue(name="a", value=12),
+                                TreeValue(name="b", value=6),
+                            ],
+                        ),
+                    )
+                ],
+                mode="single",
+                name="Cap Multiplication Result",
+                description="Multiplies two values and caps the result at 50.",
+            )
+        ).model_dump_json(by_alias=True, exclude_unset=False),
+    }
+    examples.append(example_conditional)
+
     example_3: ASTExample = {
         "q": "Calculate the resistance of a wire with a length of 5m and cross sectional area 0.01m\u00b2 with resistivity of copper and aluminum.",
         "a": AST(

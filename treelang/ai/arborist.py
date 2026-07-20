@@ -133,17 +133,43 @@ class OpenAIArborist(BaseArborist):
                 for tool in available_tools
             ]
 
-        content = await complete_with_timeout(
-            self.transport,
-            request,
-            self.config.timeout,
-            self.observability,
-        )
-        parsed = json.loads(content)
-        if not isinstance(parsed, dict):
-            raise ValueError("Model response must contain a JSON object AST")
-        jsontree: dict[str, Any] = parsed
-        tree = AST.parse(jsontree)
+        content = ""
+        jsontree: dict[str, Any]
+        for attempt in range(self.config.validation_retries + 1):
+            content = await complete_with_timeout(
+                self.transport,
+                request,
+                self.config.timeout,
+                self.observability,
+            )
+            try:
+                parsed = json.loads(content)
+                if not isinstance(parsed, dict):
+                    raise ValueError("Model response must contain a JSON object AST")
+                jsontree = parsed
+                tree = AST.parse(jsontree)
+                break
+            except (json.JSONDecodeError, ValueError) as error:
+                if attempt == self.config.validation_retries:
+                    raise
+                self.observability.emit(
+                    "model.response.validation_retry",
+                    attempt=attempt + 1,
+                    error=f"{error.__class__.__name__}: {error}",
+                )
+                messages.extend(
+                    [
+                        {"role": "assistant", "content": content},
+                        {
+                            "role": "user",
+                            "content": (
+                                "The JSON AST failed validation. Return a corrected, "
+                                "complete program JSON object only. Validation error: "
+                                f"{error}"
+                            ),
+                        },
+                    ]
+                )
         tree = self.prune(tree)
 
         if type == EvalType.WALK:

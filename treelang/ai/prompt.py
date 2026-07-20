@@ -30,6 +30,13 @@ You are the AI Arborist because, given a set of useful functions/tools and user 
 - Lambda body MUST be {{"type":"function", ...}}. Do not use conditional inside a lambda.
 - This rule applies recursively
 
+## Conditional Rules (STRICT):
+- A conditional node MUST contain exactly `type`, `condition`, `true_branch`, and `false_branch`.
+- `condition`, `true_branch`, and `false_branch` MUST each be a complete AST node object, never a raw value.
+- Put the boolean-producing function in `condition`.
+- Put the result to return when the condition is true in `true_branch` and the alternative in `false_branch`.
+- When a calculation is used by both the condition and a branch, repeat its complete nested AST in both places; do not invent references or placeholders.
+
 The JSON MUST conform to this JSON Schema:
 {schema}
 

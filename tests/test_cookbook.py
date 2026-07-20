@@ -32,6 +32,12 @@ def test_notebooks_await_execution_and_resolve_cookbook_server(
     assert 'if cookbook_dir.name != "cookbook"' in source
     assert f'path = cookbook_dir / "{server_name}"' in source
 
+    if notebook_name == "calculator.ipynb":
+        assert "conditional_tree = response.content" in source
+        assert (
+            "conditional_result = await AST.eval(conditional_tree, provider)" in source
+        )
+
 
 @pytest.mark.parametrize("server", [calculator_mcp, gamestats_mcp])
 def test_cookbook_servers_return_unwrapped_tool_values(server):
