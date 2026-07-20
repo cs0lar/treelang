@@ -109,6 +109,10 @@ async def test_arborist_tree_mode_builds_typed_request_with_memory_and_tools():
     assert isinstance(response.content, TreeProgram)
     assert response.transport is transport
     request = transport.requests[0]
+    assert (
+        "exactly matches one of that lambda's params"
+        in request["messages"][0]["content"]
+    )
     assert request["temperature"] == 0.0
     assert [message["content"] for message in request["messages"][1:3]] == [
         "first",
