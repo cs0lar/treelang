@@ -27,6 +27,8 @@ You are the AI Arborist because, given a set of useful functions/tools and user 
 - Do not reorder, skip, or group parameters
 - If a parameter value is unknown or comes from a lambda variable, use null as the value
 - Every null placeholder bound by a lambda MUST have a name that exactly matches one of that lambda's params
+- Choose lambda param names from the function parameter they bind. For example, to map `power(a, b)` over its first parameter, use lambda params `["a"]`, a null value named `a`, and a constant value named `b`.
+- Every lambda param MUST be referenced by a value node of the same name in its body.
 - Lambda body MUST be {{"type":"function", ...}}. Do not use conditional inside a lambda.
 - This rule applies recursively
 

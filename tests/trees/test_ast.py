@@ -69,6 +69,37 @@ class TestAST(unittest.TestCase):
                 ast, context={"tool_param_order": {"add": ["a", "b"]}}
             )
 
+    def test_parse_rejects_unbound_lambda_placeholder(self):
+        ast = {
+            "type": "program",
+            "mode": "single",
+            "body": [
+                {
+                    "type": "map",
+                    "function": {
+                        "type": "lambda",
+                        "params": ["num"],
+                        "body": {
+                            "type": "function",
+                            "name": "power",
+                            "params": [
+                                {"type": "value", "name": "a", "value": None},
+                                {"type": "value", "name": "b", "value": 2},
+                            ],
+                        },
+                    },
+                    "iterable": {
+                        "type": "value",
+                        "name": "numbers",
+                        "value": [1, 2, 3, 4, 5],
+                    },
+                }
+            ],
+        }
+
+        with self.assertRaisesRegex(ValueError, "Invalid lambda binding"):
+            AST.parse(ast)
+
     def test_parse_function(self):
         ast_dict = {
             "type": "program",

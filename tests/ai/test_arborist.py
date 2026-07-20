@@ -196,6 +196,54 @@ async def test_arborist_retries_an_invalid_conditional_ast_with_feedback():
     assert "conditional.condition" in correction
 
 
+@pytest.mark.asyncio
+async def test_arborist_repairs_an_unbound_lambda_placeholder():
+    invalid = program_json(
+        [
+            {
+                "type": "map",
+                "function": {
+                    "type": "lambda",
+                    "params": ["num"],
+                    "body": {
+                        "type": "function",
+                        "name": "identity",
+                        "params": [{"type": "value", "name": "value", "value": None}],
+                    },
+                },
+                "iterable": {"type": "value", "name": "items", "value": [1, 2]},
+            }
+        ]
+    )
+    valid = program_json(
+        [
+            {
+                "type": "map",
+                "function": {
+                    "type": "lambda",
+                    "params": ["value"],
+                    "body": {
+                        "type": "function",
+                        "name": "identity",
+                        "params": [{"type": "value", "name": "value", "value": None}],
+                    },
+                },
+                "iterable": {"type": "value", "name": "items", "value": [1, 2]},
+            }
+        ]
+    )
+    transport = FakeTransport(invalid, valid)
+    arborist = OpenAIArborist(
+        model="model", provider=FakeProvider(), transport=transport
+    )
+
+    response = await arborist.eval("return these values")
+
+    assert response.content == [1, 2]
+    assert len(transport.requests) == 2
+    assert "Invalid lambda binding" in transport.requests[1]["messages"][-1]["content"]
+
+
 def test_arborist_config_rejects_negative_validation_retries():
     with pytest.raises(ValueError, match="non-negative"):
         ArboristConfig(model="model", validation_retries=-1)
