@@ -14,6 +14,11 @@ class ArboristConfig:
     api_key: str | None = None
     temperature: float = 0.0
     timeout: float | None = None
+    validation_retries: int = 2
+
+    def __post_init__(self) -> None:
+        if self.validation_retries < 0:
+            raise ValueError("validation_retries must be non-negative")
 
     @classmethod
     def from_env(cls, model: str | None = None) -> "ArboristConfig":

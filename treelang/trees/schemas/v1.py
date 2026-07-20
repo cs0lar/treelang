@@ -241,6 +241,22 @@ class AST(RootModel[TreeProgram]):
         ctx = info.context or {}
         sig_map: dict[str, list[str]] = ctx.get("tool_param_order", {})
 
+        def lambda_values(n: Node) -> list[TreeValue]:
+            if isinstance(n, TreeValue):
+                return [n]
+            if isinstance(n, TreeFunction):
+                return [value for child in n.params for value in lambda_values(child)]
+            if isinstance(n, TreeConditional):
+                branches = [n.condition, n.true_branch]
+                if n.false_branch is not None:
+                    branches.append(n.false_branch)
+                return [value for child in branches for value in lambda_values(child)]
+            if isinstance(n, (TreeMap, TreeFilter, TreeReduce)):
+                return lambda_values(n.iterable)
+            if isinstance(n, (TreeLambda, TreeProgram)):
+                return []
+            return []
+
         def walk(n: Node) -> None:
             if isinstance(n, TreeFunction) and n.name in sig_map:
                 expected = sig_map[n.name]
@@ -251,6 +267,31 @@ class AST(RootModel[TreeProgram]):
                         f"Function '{n.name}' expects {exp_n} positional params "
                         f"({expected}), got {got_n}."
                     )
+
+            if isinstance(n, TreeLambda):
+                if len(n.params) != len(set(n.params)):
+                    raise ValueError("Lambda parameter names must be unique.")
+                values = lambda_values(n.body)
+                referenced_names = {value.name for value in values}
+                missing = [name for name in n.params if name not in referenced_names]
+                invalid_nulls = sorted(
+                    {
+                        value.name
+                        for value in values
+                        if value.value is None and value.name not in n.params
+                    }
+                )
+                if missing or invalid_nulls:
+                    details: list[str] = []
+                    if missing:
+                        details.append(
+                            f"params {missing} are not referenced by name in the body"
+                        )
+                    if invalid_nulls:
+                        details.append(
+                            f"null placeholders {invalid_nulls} do not match a lambda param"
+                        )
+                    raise ValueError(f"Invalid lambda binding: {'; '.join(details)}.")
 
             if isinstance(n, TreeProgram):
                 for c in n.body:
@@ -346,6 +387,43 @@ def ast_v1_examples() -> list[ASTExample]:
         ).model_dump_json(by_alias=True, exclude_unset=False),
     }
     examples.append(example_2)
+
+    example_conditional: ASTExample = {
+        "q": "Calculate 12*6, but if the result is greater than 50, return 50.",
+        "a": AST(
+            root=TreeProgram(
+                body=[
+                    TreeConditional(
+                        condition=TreeFunction(
+                            name="greater_than",
+                            params=[
+                                TreeFunction(
+                                    name="multiply",
+                                    params=[
+                                        TreeValue(name="a", value=12),
+                                        TreeValue(name="b", value=6),
+                                    ],
+                                ),
+                                TreeValue(name="b", value=50),
+                            ],
+                        ),
+                        true_branch=TreeValue(name="result", value=50),
+                        false_branch=TreeFunction(
+                            name="multiply",
+                            params=[
+                                TreeValue(name="a", value=12),
+                                TreeValue(name="b", value=6),
+                            ],
+                        ),
+                    )
+                ],
+                mode="single",
+                name="Cap Multiplication Result",
+                description="Multiplies two values and caps the result at 50.",
+            )
+        ).model_dump_json(by_alias=True, exclude_unset=False),
+    }
+    examples.append(example_conditional)
 
     example_3: ASTExample = {
         "q": "Calculate the resistance of a wire with a length of 5m and cross sectional area 0.01m\u00b2 with resistivity of copper and aluminum.",
