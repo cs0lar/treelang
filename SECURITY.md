@@ -74,6 +74,11 @@ Repository owners must also enable Dependabot security updates, secret scanning,
 push protection, CodeQL, and required security checks in GitHub settings. These
 server-side controls cannot be enabled by repository files alone.
 
+Secret-scanning validity checks are not required for this repository and are not
+available for a public repository owned by a personal GitHub account. If the
+repository is transferred to an organization, owners may enable validity checks
+when the organization's plan includes GitHub Secret Protection.
+
 ---
 
 ## Thanks
