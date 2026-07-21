@@ -34,3 +34,10 @@ def test_dependabot_tracks_uv_and_actions_on_dev():
     assert "package-ecosystem: uv" in content
     assert "package-ecosystem: github-actions" in content
     assert content.count("target-branch: dev") == 2
+
+
+def test_security_policy_does_not_require_unavailable_validity_checks():
+    policy = Path("SECURITY.md").read_text(encoding="utf-8")
+
+    assert "validity checks are not required" in policy
+    assert "personal GitHub account" in policy
