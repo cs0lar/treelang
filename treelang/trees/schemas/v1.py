@@ -293,6 +293,13 @@ class AST(RootModel[TreeProgram]):
                         )
                     raise ValueError(f"Invalid lambda binding: {'; '.join(details)}.")
 
+            if isinstance(n, (TreeMap, TreeFilter)) and len(n.function.params) != 1:
+                raise ValueError(
+                    f"{n.type.title()} lambda must declare exactly 1 param."
+                )
+            if isinstance(n, TreeReduce) and len(n.function.params) != 2:
+                raise ValueError("Reduce lambda must declare exactly 2 params.")
+
             if isinstance(n, TreeProgram):
                 for c in n.body:
                     walk(c)

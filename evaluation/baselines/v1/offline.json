@@ -56,6 +56,23 @@
       "estimated_cost_usd": 0.0,
       "model": "curated-ast-v1",
       "provider": "offline-tools-v1"
+    },
+    {
+      "case_id": "reduce-australian-population",
+      "question": "What is the total population of all cities in Australia?",
+      "expected": 12904000,
+      "actual": 12904000.0,
+      "parse_success": true,
+      "schema_valid": true,
+      "execution_success": true,
+      "answer_correct": true,
+      "required_tools_used": true,
+      "latency_ms": 0.0,
+      "prompt_tokens": 0,
+      "completion_tokens": 0,
+      "estimated_cost_usd": 0.0,
+      "model": "curated-ast-v1",
+      "provider": "offline-tools-v1"
     }
   ]
 }

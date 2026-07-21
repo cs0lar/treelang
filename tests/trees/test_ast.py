@@ -100,6 +100,32 @@ class TestAST(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "Invalid lambda binding"):
             AST.parse(ast)
 
+    def test_parse_rejects_invalid_higher_order_lambda_arity(self):
+        ast = {
+            "type": "program",
+            "mode": "single",
+            "body": [
+                {
+                    "type": "reduce",
+                    "function": {
+                        "type": "lambda",
+                        "params": ["item"],
+                        "body": {
+                            "type": "function",
+                            "name": "identity",
+                            "params": [
+                                {"type": "value", "name": "item", "value": None}
+                            ],
+                        },
+                    },
+                    "iterable": {"type": "value", "name": "items", "value": [1]},
+                }
+            ],
+        }
+
+        with self.assertRaisesRegex(ValueError, "exactly 2 params"):
+            AST.parse(ast)
+
     def test_parse_function(self):
         ast_dict = {
             "type": "program",

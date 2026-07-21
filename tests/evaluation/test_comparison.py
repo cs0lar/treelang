@@ -72,7 +72,7 @@ def test_quality_regression_is_categorized():
 def test_resource_regressions_use_explicit_limits():
     baseline = load_baseline()
     current = baseline.model_copy(deep=True)
-    current.results[0].latency_ms = 100
+    current.results[0].latency_ms = 200
     current.results[0].prompt_tokens = 1
     current.results[0].completion_tokens = 1
     current.results[0].estimated_cost_usd = 0.01
