@@ -1,6 +1,6 @@
 [project]
 name = "treelang"
-version = "0.10.0"
+version = "0.10.1"
 description = "LLM function calling on steroids using Abstract Syntax Trees."
 authors = [
     { name = "csolar", email = "cristiano.solarino@brightminded.com" },
@@ -25,6 +25,7 @@ dev = [
     "ipykernel>=6.29,<8",
     "mcp[cli]>=1.28.1,<2",
     "mypy>=1.19,<2",
+    "notebook>=7,<8",
     "pre-commit>=4.5,<5",
     "pytest>=9.0,<10",
     "pytest-asyncio>=1.3,<2",

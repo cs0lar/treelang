@@ -23,7 +23,7 @@ async def test_versioned_offline_dataset_passes_deterministically():
     ).run(dataset)
 
     assert dataset.version == "1.0"
-    assert result.passed == result.total == 3
+    assert result.passed == result.total == 4
     assert result.pass_rate == 1.0
     assert result.duration_ms >= 0
     assert all(case.prompt_tokens == 0 for case in result.results)
@@ -121,9 +121,9 @@ async def test_cli_writes_machine_readable_result(tmp_path):
     )
     payload = json.loads(output.read_text(encoding="utf-8"))
     assert payload["dataset_version"] == "1.0"
-    assert payload["passed"] == payload["total"] == 3
+    assert payload["passed"] == payload["total"] == 4
     assert payload["pass_rate"] == 1.0
-    assert len(payload["results"]) == 3
+    assert len(payload["results"]) == 4
     comparison = json.loads(comparison_output.read_text(encoding="utf-8"))
     assert comparison["passed"] is True
     assert comparison["issues"] == []

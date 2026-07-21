@@ -598,3 +598,37 @@ class TestTreeReduce(unittest.IsolatedAsyncioTestCase):
         provider = DummyProvider()
         result = await tree_reduce.eval(provider)
         self.assertEqual(result, 6)  # (1 + 2) + 3
+
+    async def test_tree_reduce_null_accumulator_uses_first_item(self):
+        provider = AsyncMock(spec=ToolProvider)
+        provider.get_tool_definition.return_value = {
+            "name": "add",
+            "properties": {"acc": {"type": "number"}, "item": {"type": "number"}},
+        }
+        provider.call_tool.side_effect = lambda _, arguments: ToolOutput(
+            content=float(arguments["acc"]) + float(arguments["item"])
+        )
+        tree_reduce = TreeReduce(
+            function=TreeLambda(
+                params=["acc", "item"],
+                body=TreeFunction(
+                    name="add",
+                    params=[
+                        TreeValue(name="acc", value=None),
+                        TreeValue(name="item", value=None),
+                    ],
+                ),
+            ),
+            iterable=TreeValue(
+                name="populations", value=[5_312_000, 5_078_000, 2_514_000]
+            ),
+        )
+
+        result = await tree_reduce.eval(provider)
+
+        self.assertEqual(result, 12_904_000)
+        self.assertEqual(provider.call_tool.await_count, 2)
+        self.assertEqual(
+            provider.call_tool.await_args_list[0].args,
+            ("add", {"acc": 5_312_000, "item": 5_078_000}),
+        )

@@ -69,6 +69,63 @@ class TestAST(unittest.TestCase):
                 ast, context={"tool_param_order": {"add": ["a", "b"]}}
             )
 
+    def test_parse_rejects_unbound_lambda_placeholder(self):
+        ast = {
+            "type": "program",
+            "mode": "single",
+            "body": [
+                {
+                    "type": "map",
+                    "function": {
+                        "type": "lambda",
+                        "params": ["num"],
+                        "body": {
+                            "type": "function",
+                            "name": "power",
+                            "params": [
+                                {"type": "value", "name": "a", "value": None},
+                                {"type": "value", "name": "b", "value": 2},
+                            ],
+                        },
+                    },
+                    "iterable": {
+                        "type": "value",
+                        "name": "numbers",
+                        "value": [1, 2, 3, 4, 5],
+                    },
+                }
+            ],
+        }
+
+        with self.assertRaisesRegex(ValueError, "Invalid lambda binding"):
+            AST.parse(ast)
+
+    def test_parse_rejects_invalid_higher_order_lambda_arity(self):
+        ast = {
+            "type": "program",
+            "mode": "single",
+            "body": [
+                {
+                    "type": "reduce",
+                    "function": {
+                        "type": "lambda",
+                        "params": ["item"],
+                        "body": {
+                            "type": "function",
+                            "name": "identity",
+                            "params": [
+                                {"type": "value", "name": "item", "value": None}
+                            ],
+                        },
+                    },
+                    "iterable": {"type": "value", "name": "items", "value": [1]},
+                }
+            ],
+        }
+
+        with self.assertRaisesRegex(ValueError, "exactly 2 params"):
+            AST.parse(ast)
+
     def test_parse_function(self):
         ast_dict = {
             "type": "program",

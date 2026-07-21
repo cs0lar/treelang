@@ -19,6 +19,7 @@ from treelang.trees.schemas.v1 import (
     TreeReduce,
     TreeValue,
 )
+from treelang.trees.traversal import visit
 
 LambdaCallable = Callable[..., Awaitable[Any]]
 
@@ -180,15 +181,24 @@ async def _evaluate_reduce(
         return None
 
     accumulator_name = node.function.params[0]
-    accumulator_node = next(
-        parameter
-        for parameter in node.function.body.params
-        if isinstance(parameter, TreeValue) and parameter.name == accumulator_name
+    accumulator_nodes: list[TreeValue] = []
+    visit(
+        node.function.body,
+        lambda child: (
+            accumulator_nodes.append(child)
+            if isinstance(child, TreeValue) and child.name == accumulator_name
+            else None
+        ),
     )
+    accumulator_node = accumulator_nodes[0]
     accumulator: Any = _evaluate_value(accumulator_node, context)
+    remaining_items = items
+    if accumulator is None:
+        accumulator = items[0]
+        remaining_items = items[1:]
     function = await node.function.eval(provider, context)
 
-    for item in items:
+    for item in remaining_items:
         arguments = dict(zip(node.function.params, [accumulator, item], strict=True))
         accumulator = await function(**arguments)
     return accumulator

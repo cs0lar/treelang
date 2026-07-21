@@ -123,6 +123,14 @@ Use `response.jsontree` with `AST.parse()` or `AST.repr()` if you want to log, c
   [`evaluation/README.md`](evaluation/README.md) for commands and baseline policy.
 - **Unit tests** (`tests/`) cover the AST core and are a good reference for expected behavior when extending nodes.
 
+Install the locked development environment and launch the cookbook notebooks from
+the repository root:
+
+```sh
+uv sync --frozen --all-groups
+uv run jupyter notebook cookbook/
+```
+
 ## Contributing & local development
 
 We actively welcome contributions—see [CONTRIBUTING.md](CONTRIBUTING.md) for the full workflow.

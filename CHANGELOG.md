@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.10.1] - 2026-07-21
+
+### Added
+
+- Added bounded, configurable retries with validation feedback when a model returns invalid JSON or an invalid AST.
+- Added semantic validation for lambda bindings and higher-order function arity.
+- Added the Australian population reduction to the deterministic offline evaluation dataset and baseline.
+
+### Changed
+
+- Improved Arborist guidance and examples for conditional nodes, lambda placeholders, and reduce initialization.
+- Updated cookbook notebooks to run directly in Jupyter and reliably locate their local MCP servers.
+- Updated `pydantic-settings` to patched version 2.14.2.
+
+### Fixed
+
+- Fixed malformed conditional and lambda programs reaching execution instead of being corrected or rejected.
+- Fixed reduce nodes passing a null accumulator to the first tool invocation; null accumulators now start with the first iterable item.
+- Fixed the calculator cookbook generating a conditional program twice and passing wrapped MCP scalar outputs to arithmetic tools.
+
 ## [0.10.0] - 2026-07-19
 
 ### Added

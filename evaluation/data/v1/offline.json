@@ -69,6 +69,54 @@
           }
         ]
       }
+    },
+    {
+      "id": "reduce-australian-population",
+      "question": "What is the total population of all cities in Australia?",
+      "expected": 12904000,
+      "must_use": ["reduce", "lambda"],
+      "ast": {
+        "type": "program",
+        "mode": "single",
+        "body": [
+          {
+            "type": "reduce",
+            "function": {
+              "type": "lambda",
+              "params": ["x", "y"],
+              "body": {
+                "type": "function",
+                "name": "add",
+                "params": [
+                  {"type": "value", "name": "x", "value": null},
+                  {"type": "value", "name": "y", "value": null}
+                ]
+              }
+            },
+            "iterable": {
+              "type": "map",
+              "function": {
+                "type": "lambda",
+                "params": ["city"],
+                "body": {
+                  "type": "function",
+                  "name": "get_city_population",
+                  "params": [
+                    {"type": "value", "name": "city", "value": null}
+                  ]
+                }
+              },
+              "iterable": {
+                "type": "function",
+                "name": "get_all_cities_in_country",
+                "params": [
+                  {"type": "value", "name": "country", "value": "Australia"}
+                ]
+              }
+            }
+          }
+        ]
+      }
     }
   ]
 }
