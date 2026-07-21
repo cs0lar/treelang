@@ -102,8 +102,7 @@ class AST:
     @staticmethod
     async def tool(ast: TreeNode, provider: ToolProvider) -> Callable[..., Any]:
         """
-        Converts the given AST into a callable function that can be
-        added as a tool to the MCP server.
+        Converts the given AST into a callable function that can be added as a tool.
 
         Args:
             ast (TreeNode): The AST to convert.

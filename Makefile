@@ -1,6 +1,6 @@
 PYTHON_PATHS = treelang tests evaluation scripts cookbook/*.py
 
-.PHONY: install format lint typecheck test build check clean
+.PHONY: install format lint typecheck test docs build check clean
 
 install:
 	uv sync --frozen --all-groups
@@ -19,10 +19,15 @@ typecheck:
 test:
 	uv run pytest
 
+docs:
+	uv run python scripts/generate_api_docs.py
+
 build:
 	uv build
 
-check: lint typecheck test build
+check: lint typecheck test
+	uv run python scripts/generate_api_docs.py --check
+	$(MAKE) build
 
 clean:
 	rm -rf build dist .coverage coverage.xml .mypy_cache .pytest_cache .ruff_cache

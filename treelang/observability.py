@@ -51,6 +51,8 @@ class TraceSink(Protocol):
 
 
 class NoOpTraceSink:
+    """Trace sink that intentionally discards every event."""
+
     def record(self, event: str, attributes: Mapping[str, Any]) -> None:
         return None
 

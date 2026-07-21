@@ -114,6 +114,9 @@ Use `response.jsontree` with `AST.parse()` or `AST.repr()` if you want to log, c
 
 ## Resources & examples
 
+- **Documentation** (`docs/`) contains the [supported API reference](docs/api.md),
+  [architecture decisions](docs/README.md), and the
+  [0.10 migration guide](docs/migration-0.10.md).
 - **Cookbook notebooks** (`cookbook/`) walk through building trees, call patterns, and evaluation strategies.
 - **Reproducible benchmark** (`evaluation/eval.py`) runs versioned deterministic
   cases without credentials, records machine-readable quality and resource
