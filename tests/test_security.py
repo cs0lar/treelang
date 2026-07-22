@@ -41,3 +41,14 @@ def test_security_policy_does_not_require_unavailable_validity_checks():
 
     assert "validity checks are not required" in policy
     assert "personal GitHub account" in policy
+
+
+def test_main_promotion_policy_only_accepts_the_repository_dev_branch():
+    content = workflow("promotion-policy.yml")
+
+    assert "branches: [main]" in content
+    assert "HEAD_REF" in content
+    assert "HEAD_REPOSITORY" in content
+    assert '"$HEAD_REPOSITORY" != "$REPOSITORY"' in content
+    assert '"$HEAD_REF" != "dev"' in content
+    assert "pull_request_target" not in content

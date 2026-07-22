@@ -20,6 +20,26 @@ in `pyproject.toml` and a release section in `CHANGELOG.md`.
 3. Protect `.github/workflows/release.yml` with review requirements, ideally
    through `CODEOWNERS` and branch protection.
 
+## Branch and promotion policy
+
+Repository rules protect both `dev` and `main` from deletion, force pushes, and
+unreviewed changes. Pull requests into `dev` must pass CI, CodeQL, and dependency
+auditing. Pull requests into `main` are release promotions and must originate
+from this repository's `dev` branch; `.github/workflows/promotion-policy.yml`
+enforces that boundary.
+
+After the promotion-policy workflow first lands on `main`, add `Dev-only
+promotion`, `Analyze Python`, and `audit` to the required checks for `main`. A
+workflow cannot safely be required before it exists on the protected base branch.
+The complete required-check set is then:
+
+- `quality`
+- `tests (3.12)`
+- `tests (3.13)`
+- `Analyze Python`
+- `audit`
+- `Dev-only promotion` (only on `main`)
+
 PyPI exchanges GitHub's OIDC identity for a short-lived publishing credential;
 no long-lived publishing secret is stored in GitHub.
 

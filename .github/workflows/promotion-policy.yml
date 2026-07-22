@@ -1,0 +1,24 @@
+name: Promotion policy
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  dev-only:
+    name: Dev-only promotion
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require the dev branch as the promotion source
+        env:
+          HEAD_REF: ${{ github.event.pull_request.head.ref }}
+          HEAD_REPOSITORY: ${{ github.event.pull_request.head.repo.full_name }}
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          if [[ "$HEAD_REPOSITORY" != "$REPOSITORY" || "$HEAD_REF" != "dev" ]]; then
+            echo "Pull requests into main must originate from this repository's dev branch."
+            exit 1
+          fi
