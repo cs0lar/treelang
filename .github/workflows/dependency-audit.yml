@@ -1,0 +1,42 @@
+name: Dependency audit
+
+on:
+  push:
+    branches: [main, dev]
+  pull_request:
+    branches: [main, dev]
+  schedule:
+    - cron: "41 4 * * 1"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: dependency-audit-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - run: uv sync --frozen --all-groups
+      - name: Export the locked environment
+        run: >-
+          uv export
+          --frozen
+          --all-groups
+          --no-emit-project
+          --output-file /tmp/treelang-requirements.txt
+      - name: Audit locked dependencies
+        run: >-
+          uv run pip-audit
+          --disable-pip
+          --require-hashes
+          --requirement /tmp/treelang-requirements.txt

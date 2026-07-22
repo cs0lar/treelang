@@ -69,9 +69,14 @@ Phase 5 is merged through PR #77. It provides versioned offline and live dataset
 typed benchmark results, redacted structured observability and tracing hooks,
 committed regression baselines, CI comparison enforcement, and an owner-only
 manual live-evaluation workflow with comparable quality, latency, token, and cost
-evidence. Phase 6 begins with tag-validated release automation, isolated artifact
-smoke tests, generated notes, provenance, and PyPI Trusted Publishing. Before new
-work, update `dev` and run:
+evidence.
+
+Phase 6 closure is in progress. Release v0.10.1 proved tag-validated automation,
+isolated wheel/sdist smoke tests, provenance, generated notes, and PyPI Trusted
+Publishing. Security gates, generated API documentation and architecture
+decisions, executable cookbook CI, and migration guidance are merged through PR
+#93. The remaining closure work is complete branch-policy enforcement. Before
+new work, update `dev` and run:
 
 ```sh
 git fetch origin
@@ -135,3 +140,46 @@ and releases include comparable quality/latency/cost evidence.
 Exit criteria: a tagged release is built and published without long-lived
 credentials, installed artifacts pass smoke tests, security gates are green, and
 documentation matches the released API.
+
+### Phase 7: Runtime Reliability & Safety
+
+1. Add configurable execution budgets for AST nodes, nesting depth, tool calls,
+   concurrency, and wall-clock duration.
+2. Use provider-supported strict structured output with validated repair as a
+   capability-aware fallback.
+3. Validate complete tool input schemas, including required fields, types, and
+   constraints, before execution.
+4. Add property-based and fuzz tests for parsing, traversal, conditionals,
+   lambdas, maps, filters, reductions, and concurrent execution.
+5. Define retry, idempotency, cancellation, and partial-failure semantics for
+   sequential and parallel programs. Add deterministic model/tool replay.
+
+Exit criteria: malformed or adversarial ASTs fail safely, configured budgets
+cannot be exceeded, and generative tests preserve execution invariants.
+
+### Phase 8: Provider Portability
+
+1. Separate model capability negotiation from Arborist orchestration.
+2. Add contract-tested adapters for at least one additional model provider.
+3. Normalize structured-output support, token accounting, rate limits, timeout,
+   cancellation, and provider-error translation.
+4. Publish and continuously test a provider capability and compatibility matrix.
+5. Run the same versioned live-evaluation cases across supported providers.
+
+Exit criteria: the supported evaluation suite passes against at least two model
+providers without application-level changes.
+
+### Phase 9: Developer Experience & Ecosystem
+
+1. Publish a versioned documentation site with generated API references, guides,
+   architecture decisions, and migration notes.
+2. Add a CLI for generating, validating, inspecting, replaying, and executing
+   AST programs.
+3. Publish reusable downstream testing fixtures, fake transports, and provider
+   contract suites.
+4. Distribute the supported JSON Schema and add editor-validation examples.
+5. Expand cookbooks into tested end-to-end tutorials and document extension and
+   provider contribution workflows.
+
+Exit criteria: a new user can install Treelang, execute and inspect a validated
+program, build a provider, and reproduce benchmarks using documented workflows.

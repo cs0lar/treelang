@@ -59,6 +59,26 @@ Security fixes will be released as:
 - Tagged releases (when applicable)
 - GitHub Security Advisories
 
+## Automated Security Controls
+
+- CodeQL scans Python changes on pull requests and protected branches, with a
+  weekly scheduled scan for newly disclosed query coverage.
+- The frozen uv environment is exported with hashes and checked by `pip-audit`
+  on pull requests, protected branches, and a weekly schedule.
+- Dependabot monitors uv and GitHub Actions dependencies weekly and targets
+  maintenance pull requests to `dev`.
+- Release artifacts are built once, provenance-attested, smoke-tested in clean
+  environments, and published through PyPI Trusted Publishing.
+
+Repository owners must also enable Dependabot security updates, secret scanning,
+push protection, CodeQL, and required security checks in GitHub settings. These
+server-side controls cannot be enabled by repository files alone.
+
+Secret-scanning validity checks are not required for this repository and are not
+available for a public repository owned by a personal GitHub account. If the
+repository is transferred to an organization, owners may enable validity checks
+when the organization's plan includes GitHub Secret Protection.
+
 ---
 
 ## Thanks

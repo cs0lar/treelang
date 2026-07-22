@@ -44,3 +44,10 @@ def test_release_identity_requires_changelog_section(tmp_path):
 def test_current_package_passes_public_api_smoke_test():
     metadata = tomllib.loads(Path("pyproject.toml").read_text(encoding="utf-8"))
     smoke_release(metadata["project"]["version"])
+
+
+def test_github_release_command_has_explicit_repository_context():
+    workflow = Path(".github/workflows/release.yml").read_text(encoding="utf-8")
+
+    assert 'gh release create "$GITHUB_REF_NAME"' in workflow
+    assert '--repo "$GITHUB_REPOSITORY"' in workflow

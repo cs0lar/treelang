@@ -16,15 +16,19 @@ from treelang.exceptions import (
 
 
 class ToolOutput(BaseModel):
+    """Provider-neutral value returned by one successful tool invocation."""
+
     content: Any
 
 
 class ToolProvider(ABC):
+    """Provider-neutral interface for tool discovery and invocation."""
+
     def __init__(self) -> None:
         self.tools: dict[str, ToolDefinition] | None = None
 
     async def get_tool_definition(self, name: str) -> ToolDefinition:
-        """Method to provide the definition of a tool."""
+        """Return normalized metadata for one named tool."""
         if self.tools is None:
             await self.list_tools()
 
@@ -38,16 +42,18 @@ class ToolProvider(ABC):
 
     @abstractmethod
     async def call_tool(self, name: str, arguments: dict[str, Any]) -> ToolOutput:
-        """Method to provide the name of the tool."""
+        """Invoke a named tool with validated keyword arguments."""
         raise NotImplementedError
 
     @abstractmethod
     async def list_tools(self) -> list[ToolDefinition]:
-        """Method to list all tools."""
+        """Return normalized metadata for every available tool."""
         raise NotImplementedError
 
 
 class MCPToolProvider(ToolProvider):
+    """Tool provider backed by an initialized MCP client session."""
+
     def __init__(self, session: ClientSession) -> None:
         super().__init__()
         self.session = session

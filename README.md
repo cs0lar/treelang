@@ -114,6 +114,9 @@ Use `response.jsontree` with `AST.parse()` or `AST.repr()` if you want to log, c
 
 ## Resources & examples
 
+- **Documentation** (`docs/`) contains the [supported API reference](docs/api.md),
+  [architecture decisions](docs/README.md), and the
+  [0.10 migration guide](docs/migration-0.10.md).
 - **Cookbook notebooks** (`cookbook/`) walk through building trees, call patterns, and evaluation strategies.
 - **Reproducible benchmark** (`evaluation/eval.py`) runs versioned deterministic
   cases without credentials, records machine-readable quality and resource
@@ -130,6 +133,12 @@ the repository root:
 uv sync --frozen --all-groups
 uv run jupyter notebook cookbook/
 ```
+
+The calculator and game-stat notebooks call the configured OpenAI model and
+therefore require `OPENAI_API_KEY`. Normal CI does not make live model calls: it
+validates that every notebook is clean and compilable, then starts the cookbook
+MCP servers and exercises their deterministic tools. Run the same checks locally
+with `make cookbooks` and `uv run pytest tests/test_cookbooks.py`.
 
 ## Contributing & local development
 
