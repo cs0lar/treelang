@@ -55,12 +55,12 @@ jobs:
           uv run python evaluation/eval.py
           --output evaluation-results/offline.json
           --comparison-output evaluation-results/comparison.json
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: matrix.python-version == '3.12'
         with:
           name: coverage
           path: coverage.xml
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: matrix.python-version == '3.12'
         with:
           name: offline-evaluation
