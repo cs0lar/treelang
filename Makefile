@@ -1,6 +1,6 @@
 PYTHON_PATHS = treelang tests evaluation scripts cookbook/*.py
 
-.PHONY: install format lint typecheck test docs build check clean
+.PHONY: install format lint typecheck test docs cookbooks build check clean
 
 install:
 	uv sync --frozen --all-groups
@@ -22,11 +22,15 @@ test:
 docs:
 	uv run python scripts/generate_api_docs.py
 
+cookbooks:
+	uv run python scripts/check_cookbooks.py
+
 build:
 	uv build
 
 check: lint typecheck test
 	uv run python scripts/generate_api_docs.py --check
+	$(MAKE) cookbooks
 	$(MAKE) build
 
 clean:

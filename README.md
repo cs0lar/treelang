@@ -134,6 +134,12 @@ uv sync --frozen --all-groups
 uv run jupyter notebook cookbook/
 ```
 
+The calculator and game-stat notebooks call the configured OpenAI model and
+therefore require `OPENAI_API_KEY`. Normal CI does not make live model calls: it
+validates that every notebook is clean and compilable, then starts the cookbook
+MCP servers and exercises their deterministic tools. Run the same checks locally
+with `make cookbooks` and `uv run pytest tests/test_cookbooks.py`.
+
 ## Contributing & local development
 
 We actively welcome contributions—see [CONTRIBUTING.md](CONTRIBUTING.md) for the full workflow.
