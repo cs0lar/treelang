@@ -37,7 +37,7 @@ jobs:
       INPUT_COST_PER_MILLION: ${{ inputs.input_cost_per_million }}
       OUTPUT_COST_PER_MILLION: ${{ inputs.output_cost_per_million }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: astral-sh/setup-uv@v7
         with:
           enable-cache: true
