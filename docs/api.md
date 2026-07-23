@@ -387,7 +387,7 @@ Base class for errors raised by Treelang.
 
 **Constant** · `treelang`
 
-Current value: `'0.10.1'`
+Current value: `'0.10.2'`
 
 ## `ast_examples`
 

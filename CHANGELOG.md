@@ -1,5 +1,36 @@
 # Changelog
 
+## [0.10.2] - 2026-07-23
+
+### Added
+
+- Added CodeQL, locked dependency auditing, Dependabot policy, generated API
+  documentation, architecture decisions, and executable cookbook checks.
+- Added enforced pull-request, review, CI, security, and `dev`-only promotion
+  policies for protected branches.
+- Added live evaluation dataset 2.0 with an explicit country-to-currency lookup
+  contract.
+
+### Changed
+
+- Added compatibility with OpenAI Python SDK 2 while retaining SDK 1 support.
+- Updated GitHub Actions to their current Node.js 24 releases and updated
+  JupyterLab to 4.6.2.
+
+### Fixed
+
+- Fixed GitHub release creation by providing an explicit repository context when
+  downloaded artifacts are processed outside a Git checkout.
+- Fixed the live USD-to-JPY evaluation repeatedly passing a country or currency
+  name to a tool that requires a three-letter currency code.
+
+### Security
+
+- Updated JupyterLab to address two high-, two moderate-, and one low-severity
+  advisory.
+- Added mandatory CodeQL and dependency-audit checks to the protected release
+  path.
+
 ## [0.10.1] - 2026-07-21
 
 ### Added
