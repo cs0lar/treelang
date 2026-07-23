@@ -71,12 +71,16 @@ committed regression baselines, CI comparison enforcement, and an owner-only
 manual live-evaluation workflow with comparable quality, latency, token, and cost
 evidence.
 
-Phase 6 closure is in progress. Release v0.10.1 proved tag-validated automation,
-isolated wheel/sdist smoke tests, provenance, generated notes, and PyPI Trusted
-Publishing. Security gates, generated API documentation and architecture
-decisions, executable cookbook CI, and migration guidance are merged through PR
-#93. The remaining closure work is complete branch-policy enforcement. Before
-new work, update `dev` and run:
+Phase 6 is complete and promoted to `main` through PR #105. Release v0.10.1
+proved tag-validated automation, isolated wheel/sdist smoke tests, provenance,
+generated notes, and PyPI Trusted Publishing. Security gates, dependency policy,
+generated API documentation and architecture decisions, executable cookbook CI,
+migration guidance, and enforced `dev`/`main` branch policies are active.
+
+Phase 7 is now active. Begin with configurable execution budgets for AST node
+count, nesting depth, tool calls, concurrency, and wall-clock duration, preserving
+existing behavior when budgets are not configured. Before new work, update `dev`
+and run:
 
 ```sh
 git fetch origin
