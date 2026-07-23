@@ -5,7 +5,11 @@ import asyncio
 import logging
 from pathlib import Path
 
-from evaluation.dataset import DEFAULT_LIVE_DATASET_PATH, load_live_dataset
+from evaluation.dataset import (
+    DEFAULT_LIVE_DATASET_PATH,
+    DEFAULT_LIVE_DATASET_VERSION,
+    load_live_dataset,
+)
 from evaluation.live import LiveBenchmarkRunner
 from evaluation.offline import OfflineToolProvider
 from treelang.ai.arborist import OpenAIArborist
@@ -16,7 +20,7 @@ from treelang.ai.transport import OpenAITransport
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--dataset", type=Path, default=DEFAULT_LIVE_DATASET_PATH)
-    parser.add_argument("--dataset-version", default="1.0")
+    parser.add_argument("--dataset-version", default=DEFAULT_LIVE_DATASET_VERSION)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--model")
     parser.add_argument("--input-cost-per-million", type=float, default=0.0)
