@@ -16,8 +16,12 @@ definition.
 
 Datasets live under versioned directories in `evaluation/data/`. Add or change a
 case by creating a new dataset version so benchmark results remain comparable.
-The credentialed questions in `data/v1/live.jsonl` are excluded from normal CI.
-Each case has a stable ID so results remain comparable across runs.
+The current credentialed questions in `data/v2/live.jsonl` are excluded from
+normal CI. Each case has a stable ID so results remain comparable across runs.
+
+Live dataset 2.0 clarifies that currency exchange tools consume three-letter
+currency codes and requires the country-to-currency lookup in `usd-jpy-rate`.
+Version 1 remains committed so earlier published results stay reproducible.
 
 ## Live evaluation
 
