@@ -101,7 +101,11 @@ def get_country_population(country):
 
 
 def get_exchange_rate(from_currency, to_currency):
-    """Get the exchange rate between two currencies."""
+    """Get the exchange rate from one three-letter currency code to another.
+
+    Both arguments must be currency codes such as ``USD``, ``EUR``, or ``JPY``.
+    Use ``get_country_currency`` first when only a country name is known.
+    """
     from_currency_upper = from_currency.upper()
     to_currency_upper = to_currency.upper()
     if from_currency_upper == "USD" and to_currency_upper == "EUR":
@@ -117,7 +121,7 @@ def get_exchange_rate(from_currency, to_currency):
 
 
 def get_country_currency(country):
-    """Get the currency used in a given country."""
+    """Get the three-letter currency code used in a given country."""
     country_lower = country.lower()
     if country_lower == "france":
         return "EUR"
