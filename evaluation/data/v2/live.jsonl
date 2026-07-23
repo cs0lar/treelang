@@ -1,0 +1,10 @@
+{"id":"weather-capital-france","q":"What's the weather like in the capital of France?","a":"Sunny, 25°C","must_use":[]}
+{"id":"books-by-orwell","q":"How many books has the author of '1984' written?","a":9,"must_use":[]}
+{"id":"largest-city-brazil","q":"What's the population of the largest city in Brazil?","a":12330000,"must_use":[]}
+{"id":"usd-jpy-rate","q":"What's the current exchange rate from USD to the currency used in Japan?","a":110.0,"must_use":["get_country_currency","get_exchange_rate"]}
+{"id":"kangaroo-country-gdp-per-capita","q":"What's the GDP per capita of the country whose national animal is the kangaroo?","a":54210.98,"must_use":[]}
+{"id":"conditional-gdp-brazil","q":"If the GDP of Brazil is negative, give me its GDP per capita otherwise return its GDP.","a":1839.76,"must_use":["conditional"]}
+{"id":"coffee-country-capital-rainfall","q":"What's the average annual rainfall in the capital city of the country that produces the most coffee in the world?","a":1.43,"must_use":[]}
+{"id":"map-australian-populations","q":"What are the populations of the three largest cities in Australia?","a":[5312000,5078000,2514000],"must_use":["map","lambda"]}
+{"id":"filter-australian-rainfall","q":"What are the cities in Australia with average rainfall less than 1mm?","a":["Sydney", "Melbourne"],"must_use":["filter","lambda"]}
+{"id":"reduce-australian-population","q":"What is the total population of all cities in Australia?","a":12904000,"must_use":["reduce","lambda"]}

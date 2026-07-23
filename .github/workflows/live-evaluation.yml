@@ -37,11 +37,11 @@ jobs:
       INPUT_COST_PER_MILLION: ${{ inputs.input_cost_per_million }}
       OUTPUT_COST_PER_MILLION: ${{ inputs.output_cost_per_million }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: astral-sh/setup-uv@v7
         with:
           enable-cache: true
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
       - run: uv sync --frozen --all-groups
@@ -52,7 +52,7 @@ jobs:
           --model "$OPENAI_MODEL"
           --input-cost-per-million "$INPUT_COST_PER_MILLION"
           --output-cost-per-million "$OUTPUT_COST_PER_MILLION"
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: live-evaluation-${{ github.run_id }}

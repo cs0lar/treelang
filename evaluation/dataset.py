@@ -9,7 +9,8 @@ from evaluation.models import (
 )
 
 DEFAULT_DATASET_PATH = Path(__file__).parent / "data" / "v1" / "offline.json"
-DEFAULT_LIVE_DATASET_PATH = Path(__file__).parent / "data" / "v1" / "live.jsonl"
+DEFAULT_LIVE_DATASET_VERSION = "2.0"
+DEFAULT_LIVE_DATASET_PATH = Path(__file__).parent / "data" / "v2" / "live.jsonl"
 
 
 def load_dataset(path: Path = DEFAULT_DATASET_PATH) -> EvaluationDataset:
@@ -18,7 +19,9 @@ def load_dataset(path: Path = DEFAULT_DATASET_PATH) -> EvaluationDataset:
 
 
 def load_live_dataset(
-    path: Path = DEFAULT_LIVE_DATASET_PATH, *, version: str = "1.0"
+    path: Path = DEFAULT_LIVE_DATASET_PATH,
+    *,
+    version: str = DEFAULT_LIVE_DATASET_VERSION,
 ) -> LiveEvaluationDataset:
     """Load a versioned JSON Lines dataset for credentialed model evaluation."""
     cases = []

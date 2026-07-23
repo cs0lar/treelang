@@ -79,9 +79,30 @@ def runner(responses, **kwargs):
 def test_live_dataset_has_stable_case_identifiers():
     dataset = load_live_dataset()
 
-    assert dataset.version == "1.0"
+    assert dataset.version == "2.0"
     assert len(dataset.cases) == 10
     assert len({case.id for case in dataset.cases}) == 10
+
+
+@pytest.mark.asyncio
+async def test_currency_case_requires_documented_code_lookup_composition():
+    dataset = load_live_dataset()
+    case = next(case for case in dataset.cases if case.id == "usd-jpy-rate")
+    provider = OfflineToolProvider()
+    definitions = {
+        definition["name"]: definition for definition in await provider.list_tools()
+    }
+
+    assert case.must_use == ["get_country_currency", "get_exchange_rate"]
+    assert "three-letter currency code" in (
+        definitions["get_exchange_rate"]["description"] or ""
+    )
+    assert "get_country_currency" in (
+        definitions["get_exchange_rate"]["description"] or ""
+    )
+    assert "three-letter currency code" in (
+        definitions["get_country_currency"]["description"] or ""
+    )
 
 
 @pytest.mark.asyncio
