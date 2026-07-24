@@ -77,10 +77,11 @@ generated notes, and PyPI Trusted Publishing. Security gates, dependency policy,
 generated API documentation and architecture decisions, executable cookbook CI,
 migration guidance, and enforced `dev`/`main` branch policies are active.
 
-Phase 7 is now active. Begin with configurable execution budgets for AST node
-count, nesting depth, tool calls, concurrency, and wall-clock duration, preserving
-existing behavior when budgets are not configured. Before new work, update `dev`
-and run:
+Phase 7 is now active. Configurable version 1 execution budgets for AST node
+count, nesting depth, tool calls, concurrency, and wall-clock duration are merged
+through PR #110. The next slice defines the recursive version 2 language contract
+and validation model before adding an explicit-stack interpreter. Before new
+work, update `dev` and run:
 
 ```sh
 git fetch origin
@@ -148,14 +149,20 @@ documentation matches the released API.
 ### Phase 7: Runtime Reliability & Safety
 
 1. Add configurable execution budgets for AST nodes, nesting depth, tool calls,
-   concurrency, and wall-clock duration.
-2. Use provider-supported strict structured output with validated repair as a
+   concurrency, and wall-clock duration. Complete through PR #110.
+2. Define an opt-in version 2 schema for user function declarations, variable
+   references, user calls, lexical scope, and recursion while preserving version
+   1 compatibility.
+3. Implement version 2 evaluation with an explicit stack and a separate
+   user-call-depth budget; support direct recursion before mutual recursion and
+   model generation.
+4. Use provider-supported strict structured output with validated repair as a
    capability-aware fallback.
-3. Validate complete tool input schemas, including required fields, types, and
+5. Validate complete tool input schemas, including required fields, types, and
    constraints, before execution.
-4. Add property-based and fuzz tests for parsing, traversal, conditionals,
-   lambdas, maps, filters, reductions, and concurrent execution.
-5. Define retry, idempotency, cancellation, and partial-failure semantics for
+6. Add property-based and fuzz tests for parsing, traversal, conditionals,
+   lambdas, maps, filters, reductions, recursion, and concurrent execution.
+7. Define retry, idempotency, cancellation, and partial-failure semantics for
    sequential and parallel programs. Add deterministic model/tool replay.
 
 Exit criteria: malformed or adversarial ASTs fail safely, configured budgets
