@@ -3,11 +3,17 @@
 import asyncio
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
+from functools import partial
 from typing import Any, Mapping
 
 from treelang.ai.provider import ToolProvider
 from treelang.ai.tool import normalize_tool_definition
-from treelang.exceptions import ASTValidationError, ProviderResponseError
+from treelang.exceptions import (
+    ASTValidationError,
+    ExecutionLimitError,
+    ProviderResponseError,
+)
+from treelang.trees.budget import ExecutionBudget, ExecutionLimits
 from treelang.trees.schemas.v1 import (
     TreeConditional,
     TreeFilter,
@@ -34,12 +40,38 @@ class ExecutionContext:
 
     names: Mapping[str, Any] = field(default_factory=dict)
     nodes: Mapping[int, Any] = field(default_factory=dict)
+    budget: ExecutionBudget = field(default_factory=ExecutionBudget)
+    depth: int = 0
+
+    @classmethod
+    def with_limits(cls, limits: ExecutionLimits | None = None) -> "ExecutionContext":
+        return cls(budget=ExecutionBudget(limits or ExecutionLimits()))
 
     def bind_names(self, values: Mapping[str, Any]) -> "ExecutionContext":
-        return ExecutionContext(names={**self.names, **values}, nodes=self.nodes)
+        return ExecutionContext(
+            names={**self.names, **values},
+            nodes=self.nodes,
+            budget=self.budget,
+            depth=self.depth,
+        )
 
     def bind_nodes(self, values: Mapping[int, Any]) -> "ExecutionContext":
-        return ExecutionContext(names=self.names, nodes={**self.nodes, **values})
+        return ExecutionContext(
+            names=self.names,
+            nodes={**self.nodes, **values},
+            budget=self.budget,
+            depth=self.depth,
+        )
+
+    def enter_node(self) -> "ExecutionContext":
+        depth = self.depth + 1
+        self.budget.consume_node(depth)
+        return ExecutionContext(
+            names=self.names,
+            nodes=self.nodes,
+            budget=self.budget,
+            depth=depth,
+        )
 
     def value_for(self, node: object, name: str, default: Any) -> Any:
         if id(node) in self.nodes:
@@ -53,6 +85,7 @@ async def evaluate(
     context: ExecutionContext | None = None,
 ) -> Any:
     """Evaluate one AST node without mutating its schema model."""
+    context = (context or ExecutionContext()).enter_node()
     if isinstance(node, TreeValue):
         return _evaluate_value(node, context)
     if isinstance(node, TreeFunction):
@@ -70,6 +103,27 @@ async def evaluate(
     if isinstance(node, TreeReduce):
         return await _evaluate_reduce(node, provider, context)
     raise NotImplementedError(f"Unsupported AST node: {type(node).__name__}")
+
+
+async def execute(
+    node: TreeNode,
+    provider: ToolProvider,
+    limits: ExecutionLimits | None = None,
+    context: ExecutionContext | None = None,
+) -> Any:
+    """Evaluate a root node with one shared budget and wall-clock deadline."""
+    runtime_context = context or ExecutionContext.with_limits(limits)
+    timeout = runtime_context.budget.limits.timeout_seconds
+    if timeout is None:
+        return await node.eval(provider, runtime_context)
+    deadline = asyncio.timeout(timeout)
+    try:
+        async with deadline:
+            return await node.eval(provider, runtime_context)
+    except TimeoutError:
+        if deadline.expired():
+            raise ExecutionLimitError("wall_clock_seconds", timeout) from None
+        raise
 
 
 def _evaluate_value(node: TreeValue, context: ExecutionContext | None) -> Any:
@@ -96,10 +150,13 @@ async def _evaluate_function(
             f"got {len(node.params)}"
         )
 
-    results = await asyncio.gather(
-        *[param.eval(provider, context) for param in node.params]
+    if context is None:  # pragma: no cover - evaluate() always supplies a context
+        context = ExecutionContext()
+    results = await context.budget.run_all(
+        [partial(param.eval, provider, context) for param in node.params]
     )
     arguments = dict(zip(property_names, results, strict=True))
+    context.budget.consume_tool_call()
     output = await provider.call_tool(tool_name, arguments)
     return output.content
 
@@ -109,8 +166,10 @@ async def _evaluate_program(
     provider: ToolProvider,
     context: ExecutionContext | None,
 ) -> Any:
-    results = await asyncio.gather(
-        *[child.eval(provider, context) for child in node.body]
+    if context is None:  # pragma: no cover - evaluate() always supplies a context
+        context = ExecutionContext()
+    results = await context.budget.run_all(
+        [partial(child.eval, provider, context) for child in node.body]
     )
     return results[0] if len(results) == 1 else results
 

@@ -17,11 +17,11 @@ Represents an Abstract Syntax Tree (AST) for a very simple programming language.
 Methods:
 
 - `parse(cls, ast: Union[Dict[str, Any], List[Dict[str, Any]]]) -> treelang.trees.schemas.v1.TreeNode | list[treelang.trees.schemas.v1.TreeNode]` — Parses the given dictionary or list into a TreeNode.
-- `eval(cls, ast: treelang.trees.schemas.v1.TreeNode, provider: treelang.ai.provider.ToolProvider) -> Any` — Evaluates the given AST.
+- `eval(cls, ast: treelang.trees.schemas.v1.TreeNode, provider: treelang.ai.provider.ToolProvider, *, limits: treelang.trees.budget.ExecutionLimits | None = None) -> Any` — Evaluates the given AST.
 - `visit(cls, ast: treelang.trees.schemas.v1.TreeNode, op: collections.abc.Callable[[treelang.trees.schemas.v1.TreeNode], None]) -> None` — Performs a depth-first visit of the AST and applies the given operation to each node.
 - `avisit(cls, ast: treelang.trees.schemas.v1.TreeNode, op: collections.abc.Callable[[treelang.trees.schemas.v1.TreeNode], None]) -> None` — Performs an asynchronous depth-first visit of the AST and applies the given operation to each node.
 - `repr(cls, ast: treelang.trees.schemas.v1.TreeNode) -> str` — Returns a string representation of the AST.
-- `tool(ast: treelang.trees.schemas.v1.TreeNode, provider: treelang.ai.provider.ToolProvider) -> collections.abc.Callable[..., typing.Any]` — Converts the given AST into a callable function that can be added as a tool.
+- `tool(ast: treelang.trees.schemas.v1.TreeNode, provider: treelang.ai.provider.ToolProvider, *, limits: treelang.trees.budget.ExecutionLimits | None = None) -> collections.abc.Callable[..., typing.Any]` — Converts the given AST into a callable function that can be added as a tool.
 
 ## `ASTCompilationError`
 
@@ -33,7 +33,7 @@ Raised when an AST cannot be compiled into a callable tool.
 
 **Class** · `treelang.exceptions`
 
-Raised when a compiled AST fails during execution.
+Raised when an AST fails during execution.
 
 ## `ASTValidationError`
 
@@ -46,6 +46,29 @@ Raised when an AST violates a runtime tool contract.
 **Constant** · `treelang`
 
 Current value: `'1.0'`
+
+## `ExecutionLimitError`
+
+**Class** · `treelang.exceptions`
+
+```python
+ExecutionLimitError(resource: str, limit: int | float) -> None
+```
+
+Raised when an AST invocation exceeds a configured resource limit.
+
+## `ExecutionLimits`
+
+**Class** · `treelang.trees.budget`
+
+```python
+ExecutionLimits(max_nodes: 'int | None' = None, max_depth: 'int | None' = None, max_tool_calls: 'int | None' = None, max_concurrency: 'int | None' = None, timeout_seconds: 'float | None' = None) -> None
+```
+
+Optional resource limits for one AST invocation.
+
+``None`` leaves a resource unlimited. Positive values enforce an inclusive
+maximum, preserving historical behavior when no limits are supplied.
 
 ## `MCPToolProvider`
 

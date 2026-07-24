@@ -16,7 +16,8 @@ from treelang.ai.memory import ChatMessage, Memory
 from treelang.ai.provider import ToolOutput, ToolProvider
 from treelang.ai.responses import TreeDescription
 from treelang.ai.transport import OpenAITransport
-from treelang.exceptions import ProviderResponseError
+from treelang.exceptions import ExecutionLimitError, ProviderResponseError
+from treelang.trees.budget import ExecutionLimits
 from treelang.trees.schemas.v1 import TreeProgram, TreeValue
 
 
@@ -145,6 +146,21 @@ async def test_arborist_walk_mode_executes_generated_tree():
     assert response.type == EvalType.WALK
     assert response.content == 7
     assert "temperature" not in transport.requests[0]
+
+
+@pytest.mark.asyncio
+async def test_arborist_walk_mode_enforces_execution_limits():
+    arborist = OpenAIArborist(
+        model="model",
+        provider=FakeProvider(),
+        transport=FakeTransport(
+            program_json([{"type": "value", "name": "answer", "value": 42}])
+        ),
+        execution_limits=ExecutionLimits(max_nodes=1),
+    )
+
+    with pytest.raises(ExecutionLimitError, match="nodes"):
+        await arborist.eval("question")
 
 
 @pytest.mark.asyncio
