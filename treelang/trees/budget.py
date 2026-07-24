@@ -27,6 +27,7 @@ class ExecutionLimits:
 
     max_nodes: int | None = None
     max_depth: int | None = None
+    max_call_depth: int | None = None
     max_tool_calls: int | None = None
     max_concurrency: int | None = None
     timeout_seconds: float | None = None
@@ -35,6 +36,7 @@ class ExecutionLimits:
         for name in (
             "max_nodes",
             "max_depth",
+            "max_call_depth",
             "max_tool_calls",
             "max_concurrency",
         ):
@@ -84,6 +86,14 @@ class ExecutionBudget:
             and self.tool_calls > self.limits.max_tool_calls
         ):
             raise ExecutionLimitError("tool_calls", self.limits.max_tool_calls)
+
+    def check_call_depth(self, depth: int) -> None:
+        """Reject a user-function call stack deeper than its configured maximum."""
+        if (
+            self.limits.max_call_depth is not None
+            and depth > self.limits.max_call_depth
+        ):
+            raise ExecutionLimitError("call_depth", self.limits.max_call_depth)
 
     async def run_all(self, operations: Sequence[AsyncOperation]) -> list[Any]:
         """Run sibling operations while respecting the invocation concurrency cap."""
