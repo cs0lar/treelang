@@ -45,6 +45,11 @@ cancellation is never translated. Separate invocations never share counters.
 When concurrency is bounded, nested sibling operations inside an active budget
 slot execute sequentially to prevent permit deadlock.
 
+Version 2 additionally limits active user-function frames with
+`max_call_depth`. This is independent of structural `max_depth`: repeated
+evaluation of the same declared body retains its static program-relative depth,
+while each recursive call increases call depth.
+
 ## Consequences
 
 - The same tree can be invoked concurrently without corrupting later calls.

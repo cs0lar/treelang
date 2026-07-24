@@ -62,7 +62,7 @@ Raised when an AST invocation exceeds a configured resource limit.
 **Class** · `treelang.trees.budget`
 
 ```python
-ExecutionLimits(max_nodes: 'int | None' = None, max_depth: 'int | None' = None, max_tool_calls: 'int | None' = None, max_concurrency: 'int | None' = None, timeout_seconds: 'float | None' = None) -> None
+ExecutionLimits(max_nodes: 'int | None' = None, max_depth: 'int | None' = None, max_call_depth: 'int | None' = None, max_tool_calls: 'int | None' = None, max_concurrency: 'int | None' = None, timeout_seconds: 'float | None' = None) -> None
 ```
 
 Optional resource limits for one AST invocation.

@@ -50,9 +50,10 @@ evaluation depth. Node, tool-call, concurrency, cancellation, and wall-clock
 budgets remain shared across the complete invocation. Recursive execution must
 not ship until call depth is enforceable.
 
-The initial version 2 module validates and emits JSON Schema only. It is not
-accepted by `treelang.AST.parse`, executed by `treelang.AST.eval`, sent to model
-providers, or exported as the current root API.
+Version 2 execution is available through the opt-in
+`treelang.trees.execution_v2.execute_v2` API. It is not accepted by
+`treelang.AST.parse` or `treelang.AST.eval`, sent to model providers, or exported
+as the current root API.
 
 ## Consequences
 

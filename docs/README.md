@@ -2,6 +2,8 @@
 
 - [Supported API reference](api.md) — generated from `treelang.__all__`.
 - [Migration guide](migration-0.10.md) — compatibility guidance for the 0.10 series.
+- [Experimental recursive programs](recursive-programs.md) — validate and execute
+  opt-in schema version 2 programs with explicit safety budgets.
 - Architecture decisions:
   - [ADR 0001: Version the serialized AST schema](adr/0001-schema-versioning.md)
   - [ADR 0002: Execute ASTs with isolated async contexts](adr/0002-execution-semantics.md)

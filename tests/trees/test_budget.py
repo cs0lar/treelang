@@ -45,6 +45,7 @@ def value_program(value=42):
     [
         ("max_nodes", 0),
         ("max_depth", -1),
+        ("max_call_depth", 0),
         ("max_tool_calls", True),
         ("max_concurrency", 1.5),
         ("timeout_seconds", 0),

@@ -126,6 +126,9 @@ Pass `execution_limits=...` to `OpenAIArborist` to enforce the policy whenever
 `EvalType.WALK` executes a generated tree; `EvalType.TREE` only returns the tree
 for inspection.
 
+Experimental schema v2 recursion additionally supports `max_call_depth`; see the
+[recursive-program guide](docs/recursive-programs.md).
+
 ## Tree-first workflow
 
 1. **Generate** – `OpenAIArborist` assembles an AST using your available tools.

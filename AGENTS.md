@@ -77,11 +77,10 @@ generated notes, and PyPI Trusted Publishing. Security gates, dependency policy,
 generated API documentation and architecture decisions, executable cookbook CI,
 migration guidance, and enforced `dev`/`main` branch policies are active.
 
-Phase 7 is now active. Configurable version 1 execution budgets for AST node
-count, nesting depth, tool calls, concurrency, and wall-clock duration are merged
-through PR #110. The next slice defines the recursive version 2 language contract
-and validation model before adding an explicit-stack interpreter. Before new
-work, update `dev` and run:
+Phase 7 is now active. Configurable version 1 execution budgets are merged through
+PR #110, and the recursive version 2 language contract and validation model are
+merged through PR #111. The next slice adds the explicit-stack interpreter and
+separate call-depth enforcement. Before new work, update `dev` and run:
 
 ```sh
 git fetch origin
@@ -152,7 +151,7 @@ documentation matches the released API.
    concurrency, and wall-clock duration. Complete through PR #110.
 2. Define an opt-in version 2 schema for user function declarations, variable
    references, user calls, lexical scope, and recursion while preserving version
-   1 compatibility.
+   1 compatibility. Complete through PR #111.
 3. Implement version 2 evaluation with an explicit stack and a separate
    user-call-depth budget; support direct recursion before mutual recursion and
    model generation.
