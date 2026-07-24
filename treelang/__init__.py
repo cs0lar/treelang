@@ -8,12 +8,14 @@ from treelang.exceptions import (
     ASTCompilationError,
     ASTExecutionError,
     ASTValidationError,
+    ExecutionLimitError,
     ProviderResponseError,
     ToolExecutionError,
     ToolNotFoundError,
     TreelangError,
 )
 from treelang.observability import NoOpTraceSink, Observability, TraceSink
+from treelang.trees.budget import ExecutionLimits
 from treelang.trees.schemas import CURRENT_SCHEMA_VERSION, ast_examples, ast_json_schema
 from treelang.trees.schemas.v1 import (
     TreeConditional,
@@ -39,6 +41,8 @@ __all__ = [
     "ASTExecutionError",
     "ASTValidationError",
     "CURRENT_SCHEMA_VERSION",
+    "ExecutionLimitError",
+    "ExecutionLimits",
     "MCPToolProvider",
     "NoOpTraceSink",
     "Observability",

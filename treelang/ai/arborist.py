@@ -15,6 +15,7 @@ from treelang.ai.transport import (
     complete_with_timeout,
 )
 from treelang.observability import Observability
+from treelang.trees.budget import ExecutionLimits
 from treelang.trees.schemas import ast_examples, ast_json_schema
 from treelang.trees.schemas.v1 import TreeNode
 from treelang.trees.tree import AST
@@ -30,12 +31,14 @@ class BaseArborist:
         user_prompt_template: str,
         provider: ToolProvider,
         selector: BaseToolSelector | None = None,
+        execution_limits: ExecutionLimits | None = None,
     ) -> None:
         self.model = model
         self.system_prompt = system_prompt
         self.user_prompt_template = user_prompt_template
         self.provider = provider
         self.selector = selector or AllToolsSelector()
+        self.execution_limits = execution_limits
 
     def prune(self, tree: TreeNode) -> TreeNode:
         return tree
@@ -44,7 +47,7 @@ class BaseArborist:
         raise NotImplementedError()
 
     async def walk(self, tree: TreeNode) -> Any:
-        return await AST.eval(tree, self.provider)
+        return await AST.eval(tree, self.provider, limits=self.execution_limits)
 
     async def eval(self, query: str, type: EvalType = EvalType.WALK) -> EvalResponse:
         raise NotImplementedError()
@@ -63,6 +66,7 @@ class OpenAIArborist(BaseArborist):
         config: ArboristConfig | None = None,
         transport: ModelTransport | None = None,
         observability: Observability | None = None,
+        execution_limits: ExecutionLimits | None = None,
     ) -> None:
         runtime_config = config or ArboristConfig.from_env(model)
         super().__init__(
@@ -73,6 +77,7 @@ class OpenAIArborist(BaseArborist):
             "",
             provider,
             selector,
+            execution_limits,
         )
         self.config = runtime_config
         self.transport = transport or OpenAITransport(

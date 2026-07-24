@@ -98,6 +98,34 @@ if __name__ == "__main__":
 
 Use `response.jsontree` with `AST.parse()` or `AST.repr()` if you want to log, cache, or transform the raw tree.
 
+### Bound execution resources
+
+Evaluation remains unlimited by default for compatibility. Applications that
+execute generated or untrusted trees can apply one shared budget per invocation:
+
+```python
+from treelang import AST, ExecutionLimits
+
+result = await AST.eval(
+    tree,
+    provider,
+    limits=ExecutionLimits(
+        max_nodes=1_000,
+        max_depth=50,
+        max_tool_calls=100,
+        max_concurrency=10,
+        timeout_seconds=30,
+    ),
+)
+```
+
+Exceeding any configured maximum raises `ExecutionLimitError`. External task
+cancellation still propagates normally. Pass the same `limits` argument to
+`AST.tool()` to apply a fresh budget to every invocation of a compiled tool.
+Pass `execution_limits=...` to `OpenAIArborist` to enforce the policy whenever
+`EvalType.WALK` executes a generated tree; `EvalType.TREE` only returns the tree
+for inspection.
+
 ## Tree-first workflow
 
 1. **Generate** – `OpenAIArborist` assembles an AST using your available tools.

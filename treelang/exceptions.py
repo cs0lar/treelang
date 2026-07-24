@@ -26,4 +26,13 @@ class ASTValidationError(TreelangError, ValueError):
 
 
 class ASTExecutionError(TreelangError, RuntimeError):
-    """Raised when a compiled AST fails during execution."""
+    """Raised when an AST fails during execution."""
+
+
+class ExecutionLimitError(ASTExecutionError):
+    """Raised when an AST invocation exceeds a configured resource limit."""
+
+    def __init__(self, resource: str, limit: int | float) -> None:
+        self.resource = resource
+        self.limit = limit
+        super().__init__(f"Execution {resource} limit exceeded ({limit})")
