@@ -89,9 +89,46 @@ async def test_list_tools_is_cached_and_always_returns_a_list(session):
     second = await provider.list_tools()
 
     assert (
-        first == second == [{"name": "ping", "description": "Ping", "properties": {}}]
+        first
+        == second
+        == [
+            {
+                "name": "ping",
+                "description": "Ping",
+                "properties": {},
+                "input_schema": {"type": "object", "properties": {}},
+            }
+        ]
     )
     session.list_tools.assert_awaited_once()
+
+
+@pytest.mark.asyncio
+async def test_mcp_provider_preserves_complete_nested_input_schema(session):
+    provider = MCPToolProvider(session)
+    schema = {
+        "type": "object",
+        "properties": {
+            "profile": {
+                "type": "object",
+                "properties": {
+                    "age": {"type": "integer", "minimum": 18},
+                },
+                "required": ["age"],
+                "additionalProperties": False,
+            }
+        },
+        "required": ["profile"],
+        "additionalProperties": False,
+    }
+    session.list_tools.return_value = ListToolsResult(
+        tools=[Tool(name="register", inputSchema=schema)]
+    )
+
+    definition = (await provider.list_tools())[0]
+
+    assert definition["input_schema"] == schema
+    assert definition["properties"]["profile"]["properties"]["age"]["minimum"] == 18
 
 
 @pytest.mark.asyncio

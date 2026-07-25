@@ -292,7 +292,7 @@ async def test_validates_tool_argument_names_before_calling():
         ],
     )
 
-    with pytest.raises(ASTValidationError, match="expects arguments"):
+    with pytest.raises(ASTValidationError, match="required.*constraint"):
         await execute_v2(program, ArithmeticProvider())
 
 

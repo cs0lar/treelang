@@ -102,7 +102,7 @@ class MCPToolProvider(ToolProvider):
                         {
                             "name": tool.name,
                             "description": tool.description,
-                            "properties": tool.inputSchema.get("properties", {}),
+                            "input_schema": tool.inputSchema,
                         },
                         expected_name=tool.name,
                     )

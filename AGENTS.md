@@ -81,9 +81,10 @@ Phase 7 is now active. Configurable version 1 execution budgets are merged throu
 PR #110, and the recursive version 2 language contract and validation model are
 merged through PR #111. The explicit-stack interpreter and separate call-depth
 enforcement are merged through PR #112. Opt-in schema v2 model generation and
-deterministic recursive evaluation coverage are merged through PR #113. The next
-slice adds capability-aware strict structured output with validated compatibility
-fallback. Before new work, update `dev` and run:
+deterministic recursive evaluation coverage are merged through PR #113.
+Capability-aware strict structured output with validated compatibility fallback
+is merged through PR #114. The next slice validates complete tool input schemas
+before provider invocation. Before new work, update `dev` and run:
 
 ```sh
 git fetch origin
@@ -159,7 +160,7 @@ documentation matches the released API.
    user-call-depth budget; support direct recursion before mutual recursion and
    model generation. Complete through PR #113.
 4. Use provider-supported strict structured output with validated repair as a
-   capability-aware fallback.
+   capability-aware fallback. Complete through PR #114.
 5. Validate complete tool input schemas, including required fields, types, and
    constraints, before execution.
 6. Add property-based and fuzz tests for parsing, traversal, conditionals,
