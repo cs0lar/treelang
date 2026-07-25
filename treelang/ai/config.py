@@ -2,8 +2,11 @@
 
 import os
 from dataclasses import dataclass
+from typing import Literal
 
 from dotenv import load_dotenv
+
+type SchemaVersion = Literal["1.0", "2.0"]
 
 
 @dataclass(frozen=True, slots=True)
@@ -15,10 +18,13 @@ class ArboristConfig:
     temperature: float = 0.0
     timeout: float | None = None
     validation_retries: int = 2
+    schema_version: SchemaVersion = "1.0"
 
     def __post_init__(self) -> None:
         if self.validation_retries < 0:
             raise ValueError("validation_retries must be non-negative")
+        if self.schema_version not in ("1.0", "2.0"):
+            raise ValueError("schema_version must be '1.0' or '2.0'")
 
     @classmethod
     def from_env(cls, model: str | None = None) -> "ArboristConfig":

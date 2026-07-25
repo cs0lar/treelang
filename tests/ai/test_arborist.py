@@ -19,6 +19,7 @@ from treelang.ai.transport import OpenAITransport
 from treelang.exceptions import ExecutionLimitError, ProviderResponseError
 from treelang.trees.budget import ExecutionLimits
 from treelang.trees.schemas.v1 import TreeProgram, TreeValue
+from treelang.trees.schemas.v2 import TreeProgram as TreeProgramV2
 
 
 def program_json(body):
@@ -56,13 +57,94 @@ class FakeProvider(ToolProvider):
                 "name": "identity",
                 "description": "Return a value",
                 "properties": {"value": {"type": "integer"}},
-            }
+            },
+            {
+                "name": "greater_than",
+                "description": "Compare two values",
+                "properties": {
+                    "value": {"type": "integer"},
+                    "threshold": {"type": "integer"},
+                },
+            },
+            {
+                "name": "add",
+                "description": "Add two values",
+                "properties": {
+                    "x": {"type": "integer"},
+                    "y": {"type": "integer"},
+                },
+            },
         ]
         self.tools = {tool["name"]: tool for tool in tools}
         return tools
 
     async def call_tool(self, name, arguments):
+        if name == "greater_than":
+            return ToolOutput(content=arguments["value"] > arguments["threshold"])
+        if name == "add":
+            return ToolOutput(content=arguments["x"] + arguments["y"])
         return ToolOutput(content=arguments["value"])
+
+
+def recursive_program_json() -> str:
+    return json.dumps(
+        {
+            "type": "program",
+            "schema_version": "2.0",
+            "mode": "single",
+            "definitions": [
+                {
+                    "type": "function_definition",
+                    "name": "sum_to_three",
+                    "params": ["n", "acc"],
+                    "body": {
+                        "type": "conditional",
+                        "condition": {
+                            "type": "tool_call",
+                            "tool": "greater_than",
+                            "arguments": {
+                                "value": {"type": "variable", "name": "n"},
+                                "threshold": {"type": "literal", "value": 3},
+                            },
+                        },
+                        "true_branch": {"type": "variable", "name": "acc"},
+                        "false_branch": {
+                            "type": "call",
+                            "function": "sum_to_three",
+                            "arguments": [
+                                {
+                                    "type": "tool_call",
+                                    "tool": "add",
+                                    "arguments": {
+                                        "x": {"type": "variable", "name": "n"},
+                                        "y": {"type": "literal", "value": 1},
+                                    },
+                                },
+                                {
+                                    "type": "tool_call",
+                                    "tool": "add",
+                                    "arguments": {
+                                        "x": {"type": "variable", "name": "acc"},
+                                        "y": {"type": "variable", "name": "n"},
+                                    },
+                                },
+                            ],
+                        },
+                    },
+                }
+            ],
+            "body": [
+                {
+                    "type": "call",
+                    "function": "sum_to_three",
+                    "arguments": [
+                        {"type": "literal", "value": 1},
+                        {"type": "literal", "value": 0},
+                    ],
+                }
+            ],
+        }
+    )
 
 
 class FakeMemory(Memory):
@@ -161,6 +243,80 @@ async def test_arborist_walk_mode_enforces_execution_limits():
 
     with pytest.raises(ExecutionLimitError, match="nodes"):
         await arborist.eval("question")
+
+
+@pytest.mark.asyncio
+async def test_arborist_generates_and_walks_opt_in_recursive_schema():
+    transport = FakeTransport(recursive_program_json())
+    arborist = OpenAIArborist(
+        model="model",
+        provider=FakeProvider(),
+        config=ArboristConfig(model="model", schema_version="2.0"),
+        transport=transport,
+        execution_limits=ExecutionLimits(
+            max_nodes=100,
+            max_call_depth=10,
+            timeout_seconds=1,
+        ),
+    )
+
+    response = await arborist.eval("sum one through three")
+
+    assert response.content == 6
+    assert response.jsontree["schema_version"] == "2.0"
+    assert '"function_definition"' in transport.requests[0]["messages"][0]["content"]
+
+
+@pytest.mark.asyncio
+async def test_arborist_returns_typed_recursive_tree_without_walking():
+    arborist = OpenAIArborist(
+        model="model",
+        provider=FakeProvider(),
+        config=ArboristConfig(model="model", schema_version="2.0"),
+        transport=FakeTransport(recursive_program_json()),
+    )
+
+    response = await arborist.eval("sum one through three", EvalType.TREE)
+
+    assert isinstance(response.content, TreeProgramV2)
+
+
+@pytest.mark.asyncio
+async def test_arborist_requires_safety_limits_to_walk_generated_v2_program():
+    arborist = OpenAIArborist(
+        model="model",
+        provider=FakeProvider(),
+        config=ArboristConfig(model="model", schema_version="2.0"),
+        transport=FakeTransport(recursive_program_json()),
+        execution_limits=ExecutionLimits(max_call_depth=10),
+    )
+
+    with pytest.raises(ValueError, match="max_call_depth, max_nodes"):
+        await arborist.eval("sum one through three")
+
+
+@pytest.mark.asyncio
+async def test_arborist_repairs_invalid_recursive_model_output():
+    invalid = json.loads(recursive_program_json())
+    invalid["definitions"][0]["body"]["true_branch"] = {
+        "type": "variable",
+        "name": "missing",
+    }
+    transport = FakeTransport(json.dumps(invalid), recursive_program_json())
+    arborist = OpenAIArborist(
+        model="model",
+        provider=FakeProvider(),
+        config=ArboristConfig(
+            model="model", schema_version="2.0", validation_retries=1
+        ),
+        transport=transport,
+    )
+
+    response = await arborist.eval("sum one through three", EvalType.TREE)
+
+    assert isinstance(response.content, TreeProgramV2)
+    assert len(transport.requests) == 2
+    assert "Unbound variable" in transport.requests[1]["messages"][-1]["content"]
 
 
 @pytest.mark.asyncio
@@ -263,6 +419,11 @@ async def test_arborist_repairs_an_unbound_lambda_placeholder():
 def test_arborist_config_rejects_negative_validation_retries():
     with pytest.raises(ValueError, match="non-negative"):
         ArboristConfig(model="model", validation_retries=-1)
+
+
+def test_arborist_config_rejects_unknown_schema_version():
+    with pytest.raises(ValueError, match="schema_version"):
+        ArboristConfig(model="model", schema_version="3.0")  # type: ignore[arg-type]
 
 
 @pytest.mark.asyncio
