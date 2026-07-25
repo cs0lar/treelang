@@ -16,6 +16,11 @@ from evaluation.models import (
 )
 from treelang.ai.provider import ToolProvider
 from treelang.observability import Observability
+from treelang.trees.budget import ExecutionLimits
+from treelang.trees.execution_v2 import execute_v2
+from treelang.trees.schemas.v1 import TreeNode
+from treelang.trees.schemas.v2 import AST as ASTV2
+from treelang.trees.schemas.v2 import TreeProgram as TreeProgramV2
 from treelang.trees.tree import AST
 
 
@@ -100,13 +105,30 @@ class OfflineBenchmarkRunner:
             )
 
         try:
-            tree = AST.parse(parsed_json)
+            schema_version = parsed_json.get("schema_version", "1.0")
+            tree: TreeNode | TreeProgramV2
+            if schema_version == "2.0":
+                tree = ASTV2.model_validate(parsed_json).root
+            else:
+                tree = AST.parse(parsed_json)
             values["schema_valid"] = True
-        except ValueError as error:
+        except (ValueError, TypeError) as error:
             return self._failure(values, started, FailureCategory.SCHEMA, error)
 
         try:
-            actual = await AST.eval(tree, self.provider)
+            if isinstance(tree, TreeProgramV2):
+                actual = await execute_v2(
+                    tree,
+                    self.provider,
+                    limits=ExecutionLimits(
+                        max_nodes=10_000,
+                        max_call_depth=1_000,
+                        max_tool_calls=10_000,
+                        timeout_seconds=10,
+                    ),
+                )
+            else:
+                actual = await AST.eval(tree, self.provider)
             values["actual"] = actual
             values["execution_success"] = True
         except Exception as error:

@@ -5,7 +5,10 @@ from typing import Any
 
 from treelang.ai.config import ArboristConfig
 from treelang.ai.memory import Memory
-from treelang.ai.prompt import ARBORIST_SYSTEM_PROMPT
+from treelang.ai.prompt import (
+    ARBORIST_SYSTEM_PROMPT,
+    RECURSIVE_ARBORIST_SYSTEM_PROMPT,
+)
 from treelang.ai.provider import ToolProvider
 from treelang.ai.responses import EvalResponse, EvalType, TreeDescription
 from treelang.ai.selector import AllToolsSelector, BaseToolSelector
@@ -16,9 +19,19 @@ from treelang.ai.transport import (
 )
 from treelang.observability import Observability
 from treelang.trees.budget import ExecutionLimits
-from treelang.trees.schemas import ast_examples, ast_json_schema
+from treelang.trees.execution_v2 import execute_v2
+from treelang.trees.schemas import (
+    ast_examples,
+    ast_json_schema,
+    ast_v2_json_schema,
+    recursive_ast_examples,
+)
 from treelang.trees.schemas.v1 import TreeNode
+from treelang.trees.schemas.v2 import AST as ASTV2
+from treelang.trees.schemas.v2 import TreeProgram as TreeProgramV2
 from treelang.trees.tree import AST
+
+type GeneratedTree = TreeNode | TreeProgramV2
 
 
 class BaseArborist:
@@ -40,13 +53,26 @@ class BaseArborist:
         self.selector = selector or AllToolsSelector()
         self.execution_limits = execution_limits
 
-    def prune(self, tree: TreeNode) -> TreeNode:
+    def prune(self, tree: GeneratedTree) -> GeneratedTree:
         return tree
 
     def grow(self) -> None:
         raise NotImplementedError()
 
-    async def walk(self, tree: TreeNode) -> Any:
+    async def walk(self, tree: GeneratedTree) -> Any:
+        if isinstance(tree, TreeProgramV2):
+            limits = self.execution_limits
+            if (
+                limits is None
+                or limits.max_call_depth is None
+                or limits.max_nodes is None
+                or limits.timeout_seconds is None
+            ):
+                raise ValueError(
+                    "Schema v2 WALK requires execution limits for max_call_depth, "
+                    "max_nodes, and timeout_seconds"
+                )
+            return await execute_v2(tree, self.provider, limits=limits)
         return await AST.eval(tree, self.provider, limits=self.execution_limits)
 
     async def eval(self, query: str, type: EvalType = EvalType.WALK) -> EvalResponse:
@@ -69,11 +95,17 @@ class OpenAIArborist(BaseArborist):
         execution_limits: ExecutionLimits | None = None,
     ) -> None:
         runtime_config = config or ArboristConfig.from_env(model)
+        if runtime_config.schema_version == "2.0":
+            prompt = RECURSIVE_ARBORIST_SYSTEM_PROMPT.format(
+                schema=ast_v2_json_schema(), examples=recursive_ast_examples()
+            )
+        else:
+            prompt = ARBORIST_SYSTEM_PROMPT.format(
+                schema=ast_json_schema(), examples=ast_examples()
+            )
         super().__init__(
             runtime_config.model,
-            ARBORIST_SYSTEM_PROMPT.format(
-                schema=ast_json_schema(), examples=ast_examples()
-            ),
+            prompt,
             "",
             provider,
             selector,
@@ -140,6 +172,7 @@ class OpenAIArborist(BaseArborist):
 
         content = ""
         jsontree: dict[str, Any]
+        tree: GeneratedTree
         for attempt in range(self.config.validation_retries + 1):
             content = await complete_with_timeout(
                 self.transport,
@@ -152,7 +185,10 @@ class OpenAIArborist(BaseArborist):
                 if not isinstance(parsed, dict):
                     raise ValueError("Model response must contain a JSON object AST")
                 jsontree = parsed
-                tree = AST.parse(jsontree)
+                if self.config.schema_version == "2.0":
+                    tree = ASTV2.model_validate(jsontree).root
+                else:
+                    tree = AST.parse(jsontree)
                 break
             except (json.JSONDecodeError, ValueError) as error:
                 if attempt == self.config.validation_retries:

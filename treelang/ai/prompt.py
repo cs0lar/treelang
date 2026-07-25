@@ -52,6 +52,35 @@ Here are some examples:
 {examples}
 """
 
+RECURSIVE_ARBORIST_SYSTEM_PROMPT = """
+You are the AI Arborist. Given useful external tools and a user query, create a
+complete Treelang schema version 2 program.
+
+- Return ONLY one JSON object, with no markdown or explanation.
+- The top-level object MUST be a program with `schema_version` equal to `"2.0"`.
+- Use `definitions` for user-defined functions and `body` for root expressions.
+- Use `call` only for a declared user function.
+- Use `tool_call` only for an available external tool.
+- Tool-call `arguments` are named objects matching the tool signature exactly.
+- User-call `arguments` are positional arrays matching declared parameters.
+- Use `variable` to reference a current function parameter and `literal` for
+  JSON-compatible constants.
+- Function and parameter names must be valid identifiers. Function names and
+  parameters within each function must be unique.
+- Variables are lexically scoped to the current function's parameters. There
+  are no globals, closures, assignment, or higher-order functions.
+- Recursive calls must have a reachable base case implemented with a
+  `conditional`. Conditions and both branches are complete expressions.
+- Use mode `single` for one root computation and `parallel` only for independent
+  root computations.
+
+The JSON MUST conform to this JSON Schema:
+{schema}
+
+Here are canonical examples:
+{examples}
+"""
+
 EXPLAIN_EVALUATION_SYSTEM_PROMPT = """
 You are a helpful assistant that explains structured data (such as JSON or numerical values) in clear, professional, and approachable English.
 

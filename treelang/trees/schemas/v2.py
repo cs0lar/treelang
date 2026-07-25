@@ -1,13 +1,12 @@
 """Opt-in schema models for recursive Treelang programs.
 
-Version 2 is validation-only until the explicit-stack interpreter is added.
-Importing and validating these models does not change the executable version 1
-public API.
+Importing and validating these models does not change the version 1 root API.
+Version 2 execution and model generation remain explicitly selected features.
 """
 
 from __future__ import annotations
 
-from typing import Annotated, Literal
+from typing import Annotated, Literal, TypedDict
 
 from pydantic import BaseModel, ConfigDict, Field, RootModel, model_validator
 
@@ -153,6 +152,64 @@ class AST(RootModel[TreeProgram]):
         return self
 
 
+class ASTExample(TypedDict):
+    """One question and canonical serialized version 2 AST example."""
+
+    q: str
+    a: str
+
+
+def ast_v2_examples() -> list[ASTExample]:
+    """Return canonical examples for model prompts."""
+    factorial = AST(
+        root=TreeProgram(
+            definitions=[
+                TreeFunctionDefinition(
+                    name="factorial",
+                    params=["n"],
+                    body=TreeConditional(
+                        condition=TreeToolCall(
+                            tool="less_than_or_equal",
+                            arguments={
+                                "a": TreeVariable(name="n"),
+                                "b": TreeLiteral(value=1),
+                            },
+                        ),
+                        true_branch=TreeLiteral(value=1),
+                        false_branch=TreeToolCall(
+                            tool="multiply",
+                            arguments={
+                                "a": TreeVariable(name="n"),
+                                "b": TreeCall(
+                                    function="factorial",
+                                    arguments=[
+                                        TreeToolCall(
+                                            tool="subtract",
+                                            arguments={
+                                                "a": TreeVariable(name="n"),
+                                                "b": TreeLiteral(value=1),
+                                            },
+                                        )
+                                    ],
+                                ),
+                            },
+                        ),
+                    ),
+                )
+            ],
+            body=[TreeCall(function="factorial", arguments=[TreeLiteral(value=5)])],
+            name="Factorial",
+            description="Calculate factorial recursively.",
+        )
+    )
+    return [
+        {
+            "q": "Calculate 5 factorial recursively.",
+            "a": factorial.model_dump_json(exclude_unset=False),
+        }
+    ]
+
+
 __all__ = [
     "AST",
     "Expression",
@@ -163,4 +220,5 @@ __all__ = [
     "TreeProgram",
     "TreeToolCall",
     "TreeVariable",
+    "ast_v2_examples",
 ]

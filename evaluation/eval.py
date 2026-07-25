@@ -33,7 +33,10 @@ async def main(
     comparison_output_path: Path | None = None,
 ) -> int:
     dataset = load_dataset(dataset_path)
-    result = await OfflineBenchmarkRunner(OfflineToolProvider()).run(dataset)
+    model = f"curated-ast-v{dataset.version.split('.', maxsplit=1)[0]}"
+    result = await OfflineBenchmarkRunner(OfflineToolProvider(), model=model).run(
+        dataset
+    )
     payload = result.model_dump_json(indent=2)
     if output_path is not None:
         output_path.parent.mkdir(parents=True, exist_ok=True)

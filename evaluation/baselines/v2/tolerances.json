@@ -1,0 +1,15 @@
+{
+  "max_pass_rate_drop": 0.0,
+  "max_parse_rate_drop": 0.0,
+  "max_schema_rate_drop": 0.0,
+  "max_execution_rate_drop": 0.0,
+  "max_correctness_rate_drop": 0.0,
+  "max_required_tools_rate_drop": 0.0,
+  "latency_ratio": 0.5,
+  "mean_latency_absolute_ms": 25.0,
+  "max_latency_absolute_ms": 50.0,
+  "token_ratio": 0.0,
+  "token_absolute": 0,
+  "cost_ratio": 0.0,
+  "cost_absolute_usd": 0.0
+}
