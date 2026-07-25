@@ -6,6 +6,8 @@
   opt-in schema version 2 programs with explicit safety budgets.
 - [Structured model output](structured-output.md) — strict JSON Schema capability
   negotiation, fallback policy, and compatibility mode.
+- [Tool input validation](tool-input-validation.md) — full pre-invocation JSON
+  Schema enforcement for v1 and v2 execution.
 - Architecture decisions:
   - [ADR 0001: Version the serialized AST schema](adr/0001-schema-versioning.md)
   - [ADR 0002: Execute ASTs with isolated async contexts](adr/0002-execution-semantics.md)

@@ -14,7 +14,7 @@ from treelang.ai.provider import ToolProvider
 from treelang.ai.responses import EvalResponse, EvalType, TreeDescription
 from treelang.ai.selector import AllToolsSelector, BaseToolSelector
 from treelang.ai.structured_output import strict_response_format
-from treelang.ai.tool import ToolDefinition
+from treelang.ai.tool import ToolDefinition, tool_input_schema
 from treelang.ai.transport import (
     ModelTransport,
     OpenAITransport,
@@ -164,10 +164,7 @@ class OpenAIArborist(BaseArborist):
                     "function": {
                         "name": tool["name"],
                         "description": tool.get("description"),
-                        "parameters": {
-                            "type": "object",
-                            "properties": tool["properties"],
-                        },
+                        "parameters": tool_input_schema(tool),
                     },
                 }
                 for tool in available_tools

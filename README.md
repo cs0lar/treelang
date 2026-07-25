@@ -135,6 +135,11 @@ transport declares support, while retaining validated JSON-mode fallback. Use
 `"compatibility"` to force the legacy path. See the
 [structured-output guide](docs/structured-output.md).
 
+Evaluated tool arguments are validated against each provider's complete JSON
+Schema before invocation. MCP schemas retain required fields, nested constraints,
+formats, and additional-property rules; see the
+[tool-input validation guide](docs/tool-input-validation.md).
+
 ## Tree-first workflow
 
 1. **Generate** – `OpenAIArborist` assembles an AST using your available tools.

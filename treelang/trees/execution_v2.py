@@ -7,8 +7,8 @@ from dataclasses import dataclass, field
 from typing import Any, Mapping
 
 from treelang.ai.provider import ToolProvider
-from treelang.ai.tool import normalize_tool_definition
-from treelang.exceptions import ASTValidationError, ExecutionLimitError
+from treelang.ai.tool import normalize_tool_definition, validate_tool_arguments
+from treelang.exceptions import ExecutionLimitError
 from treelang.trees.budget import ExecutionBudget, ExecutionLimits
 from treelang.trees.schemas.v2 import (
     AST,
@@ -242,13 +242,7 @@ class _Interpreter:
     async def _call_tool(self, name: str, arguments: dict[str, Any]) -> Any:
         raw_tool = await self.provider.get_tool_definition(name)
         tool = normalize_tool_definition(raw_tool, expected_name=name)
-        expected = set(tool["properties"])
-        actual = set(arguments)
-        if actual != expected:
-            raise ASTValidationError(
-                f"Tool '{name}' expects arguments {sorted(expected)}, "
-                f"got {sorted(actual)}"
-            )
+        validate_tool_arguments(tool, arguments)
         self.budget.consume_tool_call()
         return (await self.provider.call_tool(name, arguments)).content
 

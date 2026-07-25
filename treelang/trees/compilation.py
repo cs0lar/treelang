@@ -86,7 +86,7 @@ async def compile_tool(
                 Parameter.KEYWORD_ONLY,
                 annotation=(
                     JSON_TYPE_ANNOTATIONS.get(property_type, Any)
-                    if property_type is not None
+                    if isinstance(property_type, str)
                     else Any
                 ),
             )

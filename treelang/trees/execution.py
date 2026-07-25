@@ -7,7 +7,7 @@ from functools import partial
 from typing import Any, Mapping
 
 from treelang.ai.provider import ToolProvider
-from treelang.ai.tool import normalize_tool_definition
+from treelang.ai.tool import normalize_tool_definition, validate_tool_arguments
 from treelang.exceptions import (
     ASTValidationError,
     ExecutionLimitError,
@@ -144,9 +144,14 @@ async def _evaluate_function(
     tool = normalize_tool_definition(raw_tool, expected_name=tool_name)
     properties = tool["properties"]
     property_names = list(properties)
-    if len(property_names) != len(node.params):
+    if "input_schema" not in tool and len(node.params) != len(property_names):
         raise ASTValidationError(
             f"Function '{tool_name}' expects {len(property_names)} parameters, "
+            f"got {len(node.params)}"
+        )
+    if len(node.params) > len(property_names):
+        raise ASTValidationError(
+            f"Function '{tool_name}' accepts at most {len(property_names)} parameters, "
             f"got {len(node.params)}"
         )
 
@@ -155,7 +160,8 @@ async def _evaluate_function(
     results = await context.budget.run_all(
         [partial(param.eval, provider, context) for param in node.params]
     )
-    arguments = dict(zip(property_names, results, strict=True))
+    arguments = dict(zip(property_names[: len(results)], results, strict=True))
+    validate_tool_arguments(tool, arguments)
     context.budget.consume_tool_call()
     output = await provider.call_tool(tool_name, arguments)
     return output.content

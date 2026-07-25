@@ -146,6 +146,7 @@ Fields:
 - `name: Required[str]`
 - `properties: Required[dict[str, treelang.ai.tool.ToolProperty]]`
 - `description: NotRequired[str | None]`
+- `input_schema: NotRequired[dict[str, Any]]`
 
 ## `ToolNotFoundError`
 
@@ -177,10 +178,29 @@ JSON Schema metadata used for one tool argument.
 
 Fields:
 
-- `type: str`
+- `type: str | list[str]`
 - `description: str`
 - `enum: list[Any]`
 - `default: Any`
+- `const: Any`
+- `minimum: int | float`
+- `maximum: int | float`
+- `exclusiveMinimum: int | float`
+- `exclusiveMaximum: int | float`
+- `multipleOf: int | float`
+- `minLength: int`
+- `maxLength: int`
+- `pattern: str`
+- `format: str`
+- `minItems: int`
+- `maxItems: int`
+- `uniqueItems: bool`
+- `items: Any`
+- `minProperties: int`
+- `maxProperties: int`
+- `properties: dict[str, Any]`
+- `required: list[str]`
+- `additionalProperties: bool | dict[str, Any]`
 
 ## `ToolProvider`
 
