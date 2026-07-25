@@ -2,6 +2,7 @@
 
 - Status: Accepted
 - Date: 2026-07-21
+- Amended: 2026-07-25
 
 ## Context
 
@@ -21,6 +22,20 @@ transport and immutable `ArboristConfig`, builds requests, validates model outpu
 and optionally retries only invalid JSON or AST responses. Cancellation, timeouts,
 and provider failures are not treated as validation retries.
 
+Transports may implement the separate `CapabilityAwareTransport` protocol to
+declare model-specific features without coupling negotiation to orchestration.
+Strict structured output has three policies: `auto` selects strict JSON Schema
+when declared and otherwise uses compatibility JSON mode; `required` refuses an
+incapable transport; and `compatibility` always uses JSON mode. An `auto` request
+may downgrade after `StructuredOutputUnsupportedError`, but unrelated provider
+errors never trigger fallback.
+
+Strict output uses a closed projection of the runtime AST schema. Unsupported
+schema annotations and free-form JSON objects are excluded, optional fields are
+required but nullable, and version 2 external calls are specialized to the tools
+selected for that request. Runtime Pydantic validation still runs on every model
+response, including strict responses and repaired compatibility responses.
+
 Structured observability wraps both boundaries and redacts prompts, model output,
 tool arguments, results, and credential-shaped values by default.
 
@@ -29,5 +44,6 @@ tool arguments, results, and credential-shaped values by default.
 - Core orchestration and evaluation can use deterministic fake transports and
   providers without network credentials.
 - New providers must implement the same typed behavior and error expectations.
-- Provider capability negotiation remains future work and must not leak into AST
-  execution semantics.
+- Legacy transports remain compatible and conservatively advertise no optional
+  capabilities.
+- Capability negotiation does not change AST execution semantics.

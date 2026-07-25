@@ -7,9 +7,13 @@ from dataclasses import dataclass
 from time import perf_counter
 from typing import Any, Protocol, cast, runtime_checkable
 
-from openai import AsyncOpenAI
+from openai import AsyncOpenAI, BadRequestError
 
-from treelang.exceptions import ProviderResponseError
+from treelang.ai.capabilities import ModelCapabilities
+from treelang.exceptions import (
+    ProviderResponseError,
+    StructuredOutputUnsupportedError,
+)
 from treelang.observability import Observability
 
 ModelRequest = Mapping[str, Any]
@@ -114,15 +118,36 @@ class OpenAITransport:
         api_key: str | None = None,
         timeout: float | None = None,
         client: AsyncOpenAI | None = None,
+        strict_json_schema: bool | None = None,
     ) -> None:
         self.client = client or AsyncOpenAI(api_key=api_key, timeout=timeout)
         self._usage: ContextVar[ModelUsage] = ContextVar(
             "openai_completion_usage", default=ModelUsage()
         )
+        self.strict_json_schema = strict_json_schema
+
+    def capabilities(self, model: str) -> ModelCapabilities:
+        """Report strict output support, allowing an explicit deployment override."""
+        supported = self.strict_json_schema
+        if supported is None:
+            supported = model.startswith(
+                ("gpt-4o", "gpt-4.1", "gpt-5", "o1", "o3", "o4")
+            )
+        return ModelCapabilities(strict_json_schema=supported)
 
     async def complete(self, request: ModelRequest) -> str:
         create = cast(Any, self.client.chat.completions.create)
-        completion = await create(**dict(request))
+        try:
+            completion = await create(**dict(request))
+        except BadRequestError as error:
+            response_format = request.get("response_format", {})
+            if (
+                isinstance(response_format, Mapping)
+                and response_format.get("type") == "json_schema"
+                and _is_structured_output_rejection(error)
+            ):
+                raise StructuredOutputUnsupportedError(str(error)) from error
+            raise
         usage = getattr(completion, "usage", None)
         self._usage.set(
             ModelUsage(
@@ -151,3 +176,14 @@ class OpenAITransport:
                 content = choice.delta.content
                 if content:
                     yield content
+
+
+def _is_structured_output_rejection(error: BadRequestError) -> bool:
+    body = getattr(error, "body", None)
+    code = body.get("code") if isinstance(body, Mapping) else None
+    parameter = body.get("param") if isinstance(body, Mapping) else None
+    message = str(error).lower()
+    return parameter == "response_format" or (
+        code in {"invalid_parameter", "unsupported_value"}
+        and ("json_schema" in message or "response_format" in message)
+    )

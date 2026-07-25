@@ -80,9 +80,10 @@ migration guidance, and enforced `dev`/`main` branch policies are active.
 Phase 7 is now active. Configurable version 1 execution budgets are merged through
 PR #110, and the recursive version 2 language contract and validation model are
 merged through PR #111. The explicit-stack interpreter and separate call-depth
-enforcement are merged through PR #112. The next slice adds opt-in schema v2
-model generation and deterministic recursive evaluation coverage. Before new
-work, update `dev` and run:
+enforcement are merged through PR #112. Opt-in schema v2 model generation and
+deterministic recursive evaluation coverage are merged through PR #113. The next
+slice adds capability-aware strict structured output with validated compatibility
+fallback. Before new work, update `dev` and run:
 
 ```sh
 git fetch origin
@@ -156,8 +157,7 @@ documentation matches the released API.
    1 compatibility. Complete through PR #111.
 3. Implement version 2 evaluation with an explicit stack and a separate
    user-call-depth budget; support direct recursion before mutual recursion and
-   model generation. Direct and mutual recursion are complete through PR #112;
-   model generation is the active slice.
+   model generation. Complete through PR #113.
 4. Use provider-supported strict structured output with validated repair as a
    capability-aware fallback.
 5. Validate complete tool input schemas, including required fields, types, and

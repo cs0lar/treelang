@@ -7,6 +7,10 @@ def test_public_api_exports_core_types():
     assert treelang.ToolProvider is not None
     assert treelang.ExecutionLimits is not None
     assert issubclass(treelang.ExecutionLimitError, treelang.ASTExecutionError)
+    assert issubclass(
+        treelang.StructuredOutputUnsupportedError,
+        treelang.ProviderResponseError,
+    )
     assert treelang.CURRENT_SCHEMA_VERSION == "1.0"
     assert treelang.__version__
     assert isinstance(treelang.ast_json_schema(), str)
