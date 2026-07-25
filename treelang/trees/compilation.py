@@ -13,6 +13,7 @@ from treelang.exceptions import (
 )
 from treelang.trees.budget import ExecutionLimits
 from treelang.trees.execution import ExecutionContext, execute
+from treelang.trees.policy import ExecutionPolicy
 from treelang.trees.schemas.v1 import (
     TreeFunction,
     TreeLambda,
@@ -39,6 +40,7 @@ async def compile_tool(
     ast: TreeNode,
     provider: ToolProvider,
     limits: ExecutionLimits | None = None,
+    policy: ExecutionPolicy | None = None,
 ) -> CompiledTool:
     """Compile a program AST into a keyword-only async callable."""
     if not isinstance(ast, TreeProgram):
@@ -115,7 +117,7 @@ async def compile_tool(
             ) from error
 
         try:
-            context = ExecutionContext.with_limits(limits).bind_nodes(
+            context = ExecutionContext.with_limits(limits, policy).bind_nodes(
                 {
                     id(node): bound_args.arguments[parameter_name]
                     for parameter_name, node in bindings

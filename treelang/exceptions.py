@@ -17,6 +17,10 @@ class ProviderResponseError(TreelangError, RuntimeError):
     """Raised when a provider returns an invalid response."""
 
 
+class ReplayMismatchError(ProviderResponseError):
+    """Raised when runtime activity diverges from a deterministic replay."""
+
+
 class StructuredOutputUnsupportedError(ProviderResponseError):
     """Raised when a provider rejects strict structured-output configuration."""
 

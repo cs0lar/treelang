@@ -99,9 +99,17 @@ class ExecutionBudget:
         """Run sibling operations while respecting the invocation concurrency cap."""
         semaphore = self._semaphore
         if semaphore is None:
-            return list(
-                await asyncio.gather(*(operation() for operation in operations))
-            )
+            tasks: list[asyncio.Future[Any]] = [
+                asyncio.ensure_future(operation()) for operation in operations
+            ]
+            try:
+                return list(await asyncio.gather(*tasks))
+            except BaseException:
+                for task in tasks:
+                    if not task.done():
+                        task.cancel()
+                await asyncio.gather(*tasks, return_exceptions=True)
+                raise
         if _active_budget.get() is self:
             return [await operation() for operation in operations]
 
@@ -113,4 +121,12 @@ class ExecutionBudget:
                 finally:
                     _active_budget.reset(token)
 
-        return list(await asyncio.gather(*(run(operation) for operation in operations)))
+        tasks = [asyncio.ensure_future(run(operation)) for operation in operations]
+        try:
+            return list(await asyncio.gather(*tasks))
+        except BaseException:
+            for task in tasks:
+                if not task.done():
+                    task.cancel()
+            await asyncio.gather(*tasks, return_exceptions=True)
+            raise

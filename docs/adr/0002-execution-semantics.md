@@ -2,7 +2,7 @@
 
 - Status: Accepted
 - Date: 2026-07-21
-- Amended: 2026-07-24
+- Amended: 2026-07-25
 
 ## Context
 
@@ -59,3 +59,14 @@ while each recursive call increases call depth.
 - Generated or untrusted trees can be constrained without changing their schema.
 - Resource limits are runtime policy and are not serialized into version 1 ASTs.
 - Future execution optimizations must preserve these observable semantics.
+
+Retries are opt-in and only apply to tools explicitly declared idempotent by the
+caller. Arguments are evaluated once, every physical attempt consumes the
+tool-call budget, retry backoff is cancellable, and cancellation itself is never
+retried. The default parallel failure mode cancels and awaits unfinished siblings
+before raising. An opt-in collection mode returns ordered success/failure outcomes
+and is rejected for single-mode programs.
+
+Deterministic replay fixtures are ordered and validate complete model requests or
+tool arguments. Drift and unconsumed entries are errors. Fixture persistence is an
+application concern because request and response content may be sensitive.
