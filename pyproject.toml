@@ -23,6 +23,7 @@ Issues = "https://github.com/cs0lar/treelang/issues"
 [dependency-groups]
 dev = [
     "build>=1.4,<2",
+    "hypothesis>=6.135,<7",
     "ipykernel>=6.29,<8",
     "mcp[cli]>=1.28.1,<2",
     "mypy>=1.19,<3",
