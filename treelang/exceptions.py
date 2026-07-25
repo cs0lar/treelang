@@ -17,6 +17,10 @@ class ProviderResponseError(TreelangError, RuntimeError):
     """Raised when a provider returns an invalid response."""
 
 
+class StructuredOutputUnsupportedError(ProviderResponseError):
+    """Raised when a provider rejects strict structured-output configuration."""
+
+
 class ASTCompilationError(TreelangError, ValueError):
     """Raised when an AST cannot be compiled into a callable tool."""
 

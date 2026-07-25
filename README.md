@@ -129,6 +129,12 @@ for inspection.
 Experimental schema v2 recursion and opt-in model generation additionally support
 `max_call_depth`; see the [recursive-program guide](docs/recursive-programs.md).
 
+Arborist automatically uses provider-native strict JSON Schema output when the
+transport declares support, while retaining validated JSON-mode fallback. Use
+`ArboristConfig(structured_output_mode="required")` to prohibit fallback or
+`"compatibility"` to force the legacy path. See the
+[structured-output guide](docs/structured-output.md).
+
 ## Tree-first workflow
 
 1. **Generate** – `OpenAIArborist` assembles an AST using your available tools.

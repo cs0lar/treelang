@@ -122,6 +122,12 @@ Methods:
 
 Raised when a provider returns an invalid response.
 
+## `StructuredOutputUnsupportedError`
+
+**Class** · `treelang.exceptions`
+
+Raised when a provider rejects strict structured-output configuration.
+
 ## `ToolExecutionError`
 
 **Class** · `treelang.exceptions`

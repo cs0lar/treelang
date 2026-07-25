@@ -3,6 +3,7 @@
 import json
 from typing import Any
 
+from treelang.ai.capabilities import capabilities_for
 from treelang.ai.config import ArboristConfig
 from treelang.ai.memory import Memory
 from treelang.ai.prompt import (
@@ -12,11 +13,14 @@ from treelang.ai.prompt import (
 from treelang.ai.provider import ToolProvider
 from treelang.ai.responses import EvalResponse, EvalType, TreeDescription
 from treelang.ai.selector import AllToolsSelector, BaseToolSelector
+from treelang.ai.structured_output import strict_response_format
+from treelang.ai.tool import ToolDefinition
 from treelang.ai.transport import (
     ModelTransport,
     OpenAITransport,
     complete_with_timeout,
 )
+from treelang.exceptions import StructuredOutputUnsupportedError
 from treelang.observability import Observability
 from treelang.trees.budget import ExecutionLimits
 from treelang.trees.execution_v2 import execute_v2
@@ -148,7 +152,6 @@ class OpenAIArborist(BaseArborist):
         request: dict[str, Any] = {
             "model": self.config.model,
             "messages": messages,
-            "response_format": {"type": "json_object"},
         }
         if self.supports_temperature(self.config.model):
             request["temperature"] = self.config.temperature
@@ -169,17 +172,38 @@ class OpenAIArborist(BaseArborist):
                 }
                 for tool in available_tools
             ]
+        self._configure_structured_output(request, available_tools)
 
         content = ""
         jsontree: dict[str, Any]
         tree: GeneratedTree
         for attempt in range(self.config.validation_retries + 1):
-            content = await complete_with_timeout(
-                self.transport,
-                request,
-                self.config.timeout,
-                self.observability,
-            )
+            try:
+                content = await complete_with_timeout(
+                    self.transport,
+                    request,
+                    self.config.timeout,
+                    self.observability,
+                )
+            except StructuredOutputUnsupportedError as error:
+                if (
+                    self.config.structured_output_mode != "auto"
+                    or request["response_format"]["type"] != "json_schema"
+                ):
+                    raise
+                request["response_format"] = {"type": "json_object"}
+                self.observability.emit(
+                    "model.structured_output.fallback",
+                    model=self.config.model,
+                    reason="provider_rejected",
+                    error_type=error.__class__.__name__,
+                )
+                content = await complete_with_timeout(
+                    self.transport,
+                    request,
+                    self.config.timeout,
+                    self.observability,
+                )
             try:
                 parsed = json.loads(content)
                 if not isinstance(parsed, dict):
@@ -225,6 +249,42 @@ class OpenAIArborist(BaseArborist):
             config=self.config,
             transport=self.transport,
             observability=self.observability,
+        )
+
+    def _configure_structured_output(
+        self,
+        request: dict[str, Any],
+        tools: list[ToolDefinition],
+    ) -> None:
+        mode = self.config.structured_output_mode
+        capabilities = capabilities_for(self.transport, self.config.model)
+        if mode == "compatibility":
+            request["response_format"] = {"type": "json_object"}
+            selected = "compatibility"
+        elif capabilities.strict_json_schema:
+            request["response_format"] = strict_response_format(
+                self.config.schema_version, tools
+            )
+            selected = "strict"
+        elif mode == "required":
+            raise StructuredOutputUnsupportedError(
+                f"Model '{self.config.model}' does not declare strict JSON Schema "
+                "support"
+            )
+        else:
+            request["response_format"] = {"type": "json_object"}
+            selected = "compatibility"
+            self.observability.emit(
+                "model.structured_output.fallback",
+                model=self.config.model,
+                reason="capability_unavailable",
+            )
+        self.observability.emit(
+            "model.structured_output.selected",
+            model=self.config.model,
+            mode=selected,
+            configured_mode=mode,
+            schema_version=self.config.schema_version,
         )
 
 
