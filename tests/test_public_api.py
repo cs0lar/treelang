@@ -6,7 +6,13 @@ def test_public_api_exports_core_types():
     assert treelang.TreeProgram is not None
     assert treelang.ToolProvider is not None
     assert treelang.ExecutionLimits is not None
+    assert treelang.ExecutionPolicy is not None
+    assert treelang.RetryPolicy is not None
+    assert treelang.BranchOutcome is not None
+    assert treelang.ToolReplayProvider is not None
+    assert treelang.ModelReplayTransport is not None
     assert issubclass(treelang.ExecutionLimitError, treelang.ASTExecutionError)
+    assert issubclass(treelang.ReplayMismatchError, treelang.ProviderResponseError)
     assert issubclass(
         treelang.StructuredOutputUnsupportedError,
         treelang.ProviderResponseError,

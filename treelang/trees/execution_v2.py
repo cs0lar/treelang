@@ -10,6 +10,7 @@ from treelang.ai.provider import ToolProvider
 from treelang.ai.tool import normalize_tool_definition, validate_tool_arguments
 from treelang.exceptions import ExecutionLimitError
 from treelang.trees.budget import ExecutionBudget, ExecutionLimits
+from treelang.trees.policy import ExecutionPolicy, call_tool, run_program
 from treelang.trees.schemas.v2 import (
     AST,
     Expression,
@@ -71,12 +72,14 @@ class _Interpreter:
         program: TreeProgram,
         provider: ToolProvider,
         budget: ExecutionBudget,
+        policy: ExecutionPolicy,
     ) -> None:
         self.definitions = {
             definition.name: definition for definition in program.definitions
         }
         self.provider = provider
         self.budget = budget
+        self.policy = policy
 
     async def evaluate(self, expression: Expression, *, depth: int = 2) -> Any:
         """Evaluate one expression without growing the Python call stack."""
@@ -243,8 +246,9 @@ class _Interpreter:
         raw_tool = await self.provider.get_tool_definition(name)
         tool = normalize_tool_definition(raw_tool, expected_name=name)
         validate_tool_arguments(tool, arguments)
-        self.budget.consume_tool_call()
-        return (await self.provider.call_tool(name, arguments)).content
+        return (
+            await call_tool(self.provider, name, arguments, self.budget, self.policy)
+        ).content
 
 
 async def execute_v2(
@@ -252,19 +256,23 @@ async def execute_v2(
     provider: ToolProvider,
     *,
     limits: ExecutionLimits | None = None,
+    policy: ExecutionPolicy | None = None,
 ) -> Any:
     """Validate and execute a version 2 program with one shared budget."""
     program = ast.root if isinstance(ast, AST) else AST(root=ast).root
     budget = ExecutionBudget(limits or ExecutionLimits())
+    execution_policy = policy or ExecutionPolicy()
     budget.consume_node(1)
-    interpreter = _Interpreter(program, provider, budget)
+    interpreter = _Interpreter(program, provider, budget, execution_policy)
 
     async def run() -> Any:
         operations = [
             lambda expression=expression: interpreter.evaluate(expression)
             for expression in program.body
         ]
-        results = await budget.run_all(operations)
+        results = await run_program(operations, program.mode, budget, execution_policy)
+        if execution_policy.parallel_failures == "collect":
+            return results
         return results[0] if len(results) == 1 else results
 
     timeout = budget.limits.timeout_seconds

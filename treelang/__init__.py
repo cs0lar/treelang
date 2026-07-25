@@ -10,13 +10,21 @@ from treelang.exceptions import (
     ASTValidationError,
     ExecutionLimitError,
     ProviderResponseError,
+    ReplayMismatchError,
     StructuredOutputUnsupportedError,
     ToolExecutionError,
     ToolNotFoundError,
     TreelangError,
 )
 from treelang.observability import NoOpTraceSink, Observability, TraceSink
+from treelang.replay import (
+    ModelReplayEntry,
+    ModelReplayTransport,
+    ToolReplayEntry,
+    ToolReplayProvider,
+)
 from treelang.trees.budget import ExecutionLimits
+from treelang.trees.policy import BranchOutcome, ExecutionPolicy, RetryPolicy
 from treelang.trees.schemas import CURRENT_SCHEMA_VERSION, ast_examples, ast_json_schema
 from treelang.trees.schemas.v1 import (
     TreeConditional,
@@ -41,13 +49,19 @@ __all__ = [
     "ASTCompilationError",
     "ASTExecutionError",
     "ASTValidationError",
+    "BranchOutcome",
     "CURRENT_SCHEMA_VERSION",
     "ExecutionLimitError",
     "ExecutionLimits",
+    "ExecutionPolicy",
     "MCPToolProvider",
+    "ModelReplayEntry",
+    "ModelReplayTransport",
     "NoOpTraceSink",
     "Observability",
     "ProviderResponseError",
+    "ReplayMismatchError",
+    "RetryPolicy",
     "StructuredOutputUnsupportedError",
     "ToolExecutionError",
     "ToolDefinition",
@@ -55,6 +69,8 @@ __all__ = [
     "ToolOutput",
     "ToolProperty",
     "ToolProvider",
+    "ToolReplayEntry",
+    "ToolReplayProvider",
     "TraceSink",
     "TreeConditional",
     "TreeFilter",

@@ -5,6 +5,7 @@ from treelang.ai.provider import ToolProvider
 from treelang.trees.budget import ExecutionLimits
 from treelang.trees.compilation import compile_tool
 from treelang.trees.execution import execute
+from treelang.trees.policy import ExecutionPolicy
 from treelang.trees.schemas.v1 import AST as ASTSchema
 from treelang.trees.schemas.v1 import TreeNode
 from treelang.trees.traversal import avisit, visit
@@ -53,6 +54,7 @@ class AST:
         provider: ToolProvider,
         *,
         limits: ExecutionLimits | None = None,
+        policy: ExecutionPolicy | None = None,
     ) -> Any:
         """
         Evaluates the given AST.
@@ -65,7 +67,7 @@ class AST:
         Returns:
             Any: The result of evaluating the AST.
         """
-        return await execute(ast, provider, limits)
+        return await execute(ast, provider, limits, policy=policy)
 
     @classmethod
     def visit(cls, ast: TreeNode, op: Callable[[TreeNode], None]) -> None:
@@ -114,6 +116,7 @@ class AST:
         provider: ToolProvider,
         *,
         limits: ExecutionLimits | None = None,
+        policy: ExecutionPolicy | None = None,
     ) -> Callable[..., Any]:
         """
         Converts the given AST into a callable function that can be added as a tool.
@@ -126,4 +129,4 @@ class AST:
         Returns:
             AnyFunction: The callable function representation of the AST.
         """
-        return await compile_tool(ast, provider, limits)
+        return await compile_tool(ast, provider, limits, policy)

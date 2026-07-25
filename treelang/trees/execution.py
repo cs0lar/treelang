@@ -14,6 +14,7 @@ from treelang.exceptions import (
     ProviderResponseError,
 )
 from treelang.trees.budget import ExecutionBudget, ExecutionLimits
+from treelang.trees.policy import ExecutionPolicy, call_tool, run_program
 from treelang.trees.schemas.v1 import (
     TreeConditional,
     TreeFilter,
@@ -41,17 +42,26 @@ class ExecutionContext:
     names: Mapping[str, Any] = field(default_factory=dict)
     nodes: Mapping[int, Any] = field(default_factory=dict)
     budget: ExecutionBudget = field(default_factory=ExecutionBudget)
+    policy: ExecutionPolicy = field(default_factory=ExecutionPolicy)
     depth: int = 0
 
     @classmethod
-    def with_limits(cls, limits: ExecutionLimits | None = None) -> "ExecutionContext":
-        return cls(budget=ExecutionBudget(limits or ExecutionLimits()))
+    def with_limits(
+        cls,
+        limits: ExecutionLimits | None = None,
+        policy: ExecutionPolicy | None = None,
+    ) -> "ExecutionContext":
+        return cls(
+            budget=ExecutionBudget(limits or ExecutionLimits()),
+            policy=policy or ExecutionPolicy(),
+        )
 
     def bind_names(self, values: Mapping[str, Any]) -> "ExecutionContext":
         return ExecutionContext(
             names={**self.names, **values},
             nodes=self.nodes,
             budget=self.budget,
+            policy=self.policy,
             depth=self.depth,
         )
 
@@ -60,6 +70,7 @@ class ExecutionContext:
             names=self.names,
             nodes={**self.nodes, **values},
             budget=self.budget,
+            policy=self.policy,
             depth=self.depth,
         )
 
@@ -70,6 +81,7 @@ class ExecutionContext:
             names=self.names,
             nodes=self.nodes,
             budget=self.budget,
+            policy=self.policy,
             depth=depth,
         )
 
@@ -110,9 +122,10 @@ async def execute(
     provider: ToolProvider,
     limits: ExecutionLimits | None = None,
     context: ExecutionContext | None = None,
+    policy: ExecutionPolicy | None = None,
 ) -> Any:
     """Evaluate a root node with one shared budget and wall-clock deadline."""
-    runtime_context = context or ExecutionContext.with_limits(limits)
+    runtime_context = context or ExecutionContext.with_limits(limits, policy)
     timeout = runtime_context.budget.limits.timeout_seconds
     if timeout is None:
         return await node.eval(provider, runtime_context)
@@ -162,8 +175,9 @@ async def _evaluate_function(
     )
     arguments = dict(zip(property_names[: len(results)], results, strict=True))
     validate_tool_arguments(tool, arguments)
-    context.budget.consume_tool_call()
-    output = await provider.call_tool(tool_name, arguments)
+    output = await call_tool(
+        provider, tool_name, arguments, context.budget, context.policy
+    )
     return output.content
 
 
@@ -174,9 +188,14 @@ async def _evaluate_program(
 ) -> Any:
     if context is None:  # pragma: no cover - evaluate() always supplies a context
         context = ExecutionContext()
-    results = await context.budget.run_all(
-        [partial(child.eval, provider, context) for child in node.body]
+    results = await run_program(
+        [partial(child.eval, provider, context) for child in node.body],
+        node.mode,
+        context.budget,
+        context.policy,
     )
+    if context.policy.parallel_failures == "collect":
+        return results
     return results[0] if len(results) == 1 else results
 
 

@@ -17,11 +17,11 @@ Represents an Abstract Syntax Tree (AST) for a very simple programming language.
 Methods:
 
 - `parse(cls, ast: Union[Dict[str, Any], List[Dict[str, Any]]]) -> treelang.trees.schemas.v1.TreeNode | list[treelang.trees.schemas.v1.TreeNode]` — Parses the given dictionary or list into a TreeNode.
-- `eval(cls, ast: treelang.trees.schemas.v1.TreeNode, provider: treelang.ai.provider.ToolProvider, *, limits: treelang.trees.budget.ExecutionLimits | None = None) -> Any` — Evaluates the given AST.
+- `eval(cls, ast: treelang.trees.schemas.v1.TreeNode, provider: treelang.ai.provider.ToolProvider, *, limits: treelang.trees.budget.ExecutionLimits | None = None, policy: treelang.trees.policy.ExecutionPolicy | None = None) -> Any` — Evaluates the given AST.
 - `visit(cls, ast: treelang.trees.schemas.v1.TreeNode, op: collections.abc.Callable[[treelang.trees.schemas.v1.TreeNode], None]) -> None` — Performs a depth-first visit of the AST and applies the given operation to each node.
 - `avisit(cls, ast: treelang.trees.schemas.v1.TreeNode, op: collections.abc.Callable[[treelang.trees.schemas.v1.TreeNode], None]) -> None` — Performs an asynchronous depth-first visit of the AST and applies the given operation to each node.
 - `repr(cls, ast: treelang.trees.schemas.v1.TreeNode) -> str` — Returns a string representation of the AST.
-- `tool(ast: treelang.trees.schemas.v1.TreeNode, provider: treelang.ai.provider.ToolProvider, *, limits: treelang.trees.budget.ExecutionLimits | None = None) -> collections.abc.Callable[..., typing.Any]` — Converts the given AST into a callable function that can be added as a tool.
+- `tool(ast: treelang.trees.schemas.v1.TreeNode, provider: treelang.ai.provider.ToolProvider, *, limits: treelang.trees.budget.ExecutionLimits | None = None, policy: treelang.trees.policy.ExecutionPolicy | None = None) -> collections.abc.Callable[..., typing.Any]` — Converts the given AST into a callable function that can be added as a tool.
 
 ## `ASTCompilationError`
 
@@ -40,6 +40,22 @@ Raised when an AST fails during execution.
 **Class** · `treelang.exceptions`
 
 Raised when an AST violates a runtime tool contract.
+
+## `BranchOutcome`
+
+**Class** · `treelang.trees.policy`
+
+```python
+BranchOutcome(success: 'bool', value: 'Any' = None, error_type: 'str | None' = None, error_message: 'str | None' = None) -> None
+```
+
+Serializable outcome for one parallel branch in collection mode.
+
+
+Methods:
+
+- `succeeded(cls, value: 'Any') -> 'BranchOutcome'`
+- `failed(cls, error: 'Exception') -> 'BranchOutcome'`
 
 ## `CURRENT_SCHEMA_VERSION`
 
@@ -70,6 +86,16 @@ Optional resource limits for one AST invocation.
 ``None`` leaves a resource unlimited. Positive values enforce an inclusive
 maximum, preserving historical behavior when no limits are supplied.
 
+## `ExecutionPolicy`
+
+**Class** · `treelang.trees.policy`
+
+```python
+ExecutionPolicy(retry: 'RetryPolicy' = <factory>, parallel_failures: "Literal['raise', 'collect']" = 'raise') -> None
+```
+
+Opt-in retry and parallel partial-failure behavior.
+
 ## `MCPToolProvider`
 
 **Class** · `treelang.ai.provider`
@@ -85,6 +111,33 @@ Methods:
 
 - `call_tool(self, name: str, arguments: dict[str, typing.Any]) -> treelang.ai.provider.ToolOutput` — Invoke a named tool with validated keyword arguments.
 - `list_tools(self) -> list[treelang.ai.tool.ToolDefinition]` — Return normalized metadata for every available tool.
+
+## `ModelReplayEntry`
+
+**Class** · `treelang.replay`
+
+```python
+ModelReplayEntry(request: 'dict[str, Any]', response: 'str | tuple[str, ...]', kind: "Literal['complete', 'stream']" = 'complete') -> None
+```
+
+One expected model request and completion or stream response.
+
+## `ModelReplayTransport`
+
+**Class** · `treelang.replay`
+
+```python
+ModelReplayTransport(entries: 'Sequence[ModelReplayEntry]') -> 'None'
+```
+
+Replay ordered model requests without credentials or network access.
+
+
+Methods:
+
+- `complete(self, request: 'ModelRequest') -> 'str'`
+- `stream(self, request: 'ModelRequest') -> 'AsyncIterator[str]'`
+- `assert_consumed(self) -> 'None'` — Raise when expected requests remain unconsumed.
 
 ## `NoOpTraceSink`
 
@@ -121,6 +174,22 @@ Methods:
 **Class** · `treelang.exceptions`
 
 Raised when a provider returns an invalid response.
+
+## `ReplayMismatchError`
+
+**Class** · `treelang.exceptions`
+
+Raised when runtime activity diverges from a deterministic replay.
+
+## `RetryPolicy`
+
+**Class** · `treelang.trees.policy`
+
+```python
+RetryPolicy(max_attempts: 'int' = 1, delay_seconds: 'float' = 0, idempotent_tools: 'frozenset[str]' = <factory>, retryable_exceptions: 'tuple[type[Exception], ...]' = (<class 'treelang.exceptions.ToolExecutionError'>, <class 'TimeoutError'>)) -> None
+```
+
+Retry transient failures only for tools declared safe to repeat.
 
 ## `StructuredOutputUnsupportedError`
 
@@ -218,6 +287,33 @@ Methods:
 - `get_tool_definition(self, name: str) -> treelang.ai.tool.ToolDefinition` — Return normalized metadata for one named tool.
 - `call_tool(self, name: str, arguments: dict[str, typing.Any]) -> treelang.ai.provider.ToolOutput` — Invoke a named tool with validated keyword arguments.
 - `list_tools(self) -> list[treelang.ai.tool.ToolDefinition]` — Return normalized metadata for every available tool.
+
+## `ToolReplayEntry`
+
+**Class** · `treelang.replay`
+
+```python
+ToolReplayEntry(name: 'str', arguments: 'dict[str, Any]', output: 'Any') -> None
+```
+
+One expected provider invocation and its deterministic output.
+
+## `ToolReplayProvider`
+
+**Class** · `treelang.replay`
+
+```python
+ToolReplayProvider(tools: 'Sequence[ToolDefinition]', entries: 'Sequence[ToolReplayEntry]') -> 'None'
+```
+
+Replay an ordered sequence of tool calls and reject any drift.
+
+
+Methods:
+
+- `list_tools(self) -> 'list[ToolDefinition]'` — Return normalized metadata for every available tool.
+- `call_tool(self, name: 'str', arguments: 'dict[str, Any]') -> 'ToolOutput'` — Invoke a named tool with validated keyword arguments.
+- `assert_consumed(self) -> 'None'` — Raise when expected calls remain unconsumed.
 
 ## `TraceSink`
 
