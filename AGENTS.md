@@ -83,8 +83,9 @@ merged through PR #111. The explicit-stack interpreter and separate call-depth
 enforcement are merged through PR #112. Opt-in schema v2 model generation and
 deterministic recursive evaluation coverage are merged through PR #113.
 Capability-aware strict structured output with validated compatibility fallback
-is merged through PR #114. The next slice validates complete tool input schemas
-before provider invocation. Before new work, update `dev` and run:
+is merged through PR #114, and complete pre-execution tool input validation is
+merged through PR #115. The next slice adds property-based and fuzz coverage for
+language and runtime invariants. Before new work, update `dev` and run:
 
 ```sh
 git fetch origin
@@ -162,7 +163,7 @@ documentation matches the released API.
 4. Use provider-supported strict structured output with validated repair as a
    capability-aware fallback. Complete through PR #114.
 5. Validate complete tool input schemas, including required fields, types, and
-   constraints, before execution.
+   constraints, before execution. Complete through PR #115.
 6. Add property-based and fuzz tests for parsing, traversal, conditionals,
    lambdas, maps, filters, reductions, recursion, and concurrent execution.
 7. Define retry, idempotency, cancellation, and partial-failure semantics for
