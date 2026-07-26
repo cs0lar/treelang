@@ -29,6 +29,10 @@ and provider failures are not treated as validation retries.
 
 Transports may implement the separate `CapabilityAwareTransport` protocol to
 declare model-specific features without coupling negotiation to orchestration.
+An injectable `ModelCapabilityNegotiator` converts those declarations into
+request features and structured-output selections. Arborist applies the result
+but contains no provider/model capability heuristics. OpenAI model-name knowledge
+remains within `OpenAITransport`.
 Strict structured output has three policies: `auto` selects strict JSON Schema
 when declared and otherwise uses compatibility JSON mode; `required` refuses an
 incapable transport; and `compatibility` always uses JSON mode. An `auto` request

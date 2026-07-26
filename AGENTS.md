@@ -77,16 +77,20 @@ generated notes, and PyPI Trusted Publishing. Security gates, dependency policy,
 generated API documentation and architecture decisions, executable cookbook CI,
 migration guidance, and enforced `dev`/`main` branch policies are active.
 
-Phase 7 is now active. Configurable version 1 execution budgets are merged through
-PR #110, and the recursive version 2 language contract and validation model are
-merged through PR #111. The explicit-stack interpreter and separate call-depth
-enforcement are merged through PR #112. Opt-in schema v2 model generation and
-deterministic recursive evaluation coverage are merged through PR #113.
+Phase 7 is complete through PR #117. Configurable version 1 execution budgets are
+merged through PR #110, and the recursive version 2 language contract and
+validation model are merged through PR #111. The explicit-stack interpreter and
+separate call-depth enforcement are merged through PR #112. Opt-in schema v2
+model generation and deterministic recursive evaluation coverage are merged
+through PR #113.
 Capability-aware strict structured output with validated compatibility fallback
 is merged through PR #114, complete pre-execution tool input validation through
 PR #115, and property-based and fuzz coverage for language and runtime invariants
-through PR #116. The final Phase 7 slice defines execution resilience and
-deterministic replay semantics. Before new work, update `dev` and run:
+through PR #116. Execution resilience and deterministic replay semantics are
+merged through PR #117.
+
+Phase 8 is now active. The first slice separates model capability negotiation
+from Arborist orchestration. Before new work, update `dev` and run:
 
 ```sh
 git fetch origin
@@ -170,6 +174,7 @@ documentation matches the released API.
    Complete through PR #116.
 7. Define retry, idempotency, cancellation, and partial-failure semantics for
    sequential and parallel programs. Add deterministic model/tool replay.
+   Complete through PR #117.
 
 Exit criteria: malformed or adversarial ASTs fail safely, configured budgets
 cannot be exceeded, and generative tests preserve execution invariants.

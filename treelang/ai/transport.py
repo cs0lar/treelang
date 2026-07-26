@@ -19,6 +19,19 @@ from treelang.observability import Observability
 ModelRequest = Mapping[str, Any]
 
 
+def openai_model_capabilities(
+    model: str, *, strict_json_schema: bool | None = None
+) -> ModelCapabilities:
+    """Return OpenAI adapter capabilities for one model or deployment."""
+    strict = strict_json_schema
+    if strict is None:
+        strict = model.startswith(("gpt-4o", "gpt-4.1", "gpt-5", "o1", "o3", "o4"))
+    return ModelCapabilities(
+        strict_json_schema=strict,
+        temperature=model.startswith(("gpt-4o", "gpt-4.1", "o1")),
+    )
+
+
 @dataclass(frozen=True)
 class ModelUsage:
     """Token usage reported for one model completion."""
@@ -128,12 +141,10 @@ class OpenAITransport:
 
     def capabilities(self, model: str) -> ModelCapabilities:
         """Report strict output support, allowing an explicit deployment override."""
-        supported = self.strict_json_schema
-        if supported is None:
-            supported = model.startswith(
-                ("gpt-4o", "gpt-4.1", "gpt-5", "o1", "o3", "o4")
-            )
-        return ModelCapabilities(strict_json_schema=supported)
+        return openai_model_capabilities(
+            model,
+            strict_json_schema=self.strict_json_schema,
+        )
 
     async def complete(self, request: ModelRequest) -> str:
         create = cast(Any, self.client.chat.completions.create)

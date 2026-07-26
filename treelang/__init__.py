@@ -2,6 +2,13 @@
 
 from importlib.metadata import PackageNotFoundError, version
 
+from treelang.ai.capabilities import (
+    CapabilityAwareTransport,
+    DefaultModelCapabilityNegotiator,
+    ModelCapabilities,
+    ModelCapabilityNegotiator,
+    StructuredOutputSelection,
+)
 from treelang.ai.provider import MCPToolProvider, ToolOutput, ToolProvider
 from treelang.ai.tool import ToolDefinition, ToolProperty
 from treelang.exceptions import (
@@ -50,19 +57,24 @@ __all__ = [
     "ASTExecutionError",
     "ASTValidationError",
     "BranchOutcome",
+    "CapabilityAwareTransport",
     "CURRENT_SCHEMA_VERSION",
+    "DefaultModelCapabilityNegotiator",
     "ExecutionLimitError",
     "ExecutionLimits",
     "ExecutionPolicy",
     "MCPToolProvider",
     "ModelReplayEntry",
     "ModelReplayTransport",
+    "ModelCapabilities",
+    "ModelCapabilityNegotiator",
     "NoOpTraceSink",
     "Observability",
     "ProviderResponseError",
     "ReplayMismatchError",
     "RetryPolicy",
     "StructuredOutputUnsupportedError",
+    "StructuredOutputSelection",
     "ToolExecutionError",
     "ToolDefinition",
     "ToolNotFoundError",

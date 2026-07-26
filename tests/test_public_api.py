@@ -11,6 +11,9 @@ def test_public_api_exports_core_types():
     assert treelang.BranchOutcome is not None
     assert treelang.ToolReplayProvider is not None
     assert treelang.ModelReplayTransport is not None
+    assert treelang.ModelCapabilities is not None
+    assert treelang.ModelCapabilityNegotiator is not None
+    assert treelang.CapabilityAwareTransport is not None
     assert issubclass(treelang.ExecutionLimitError, treelang.ASTExecutionError)
     assert issubclass(treelang.ReplayMismatchError, treelang.ProviderResponseError)
     assert issubclass(

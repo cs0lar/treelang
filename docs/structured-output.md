@@ -41,5 +41,7 @@ literals can select compatibility mode.
 
 Custom transports can implement `CapabilityAwareTransport.capabilities(model)`.
 Transports without that optional protocol are treated as compatibility-only.
-Selection and fallback events are emitted through the normal redacted
-observability hooks.
+`ModelCapabilityNegotiator` owns selection and fallback policy and can be
+injected for provider-specific deployments. Selection and fallback events are
+emitted through the normal redacted observability hooks. See
+[Model capability negotiation](provider-capabilities.md).

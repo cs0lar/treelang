@@ -3,7 +3,12 @@
 import json
 from typing import Any
 
-from treelang.ai.capabilities import capabilities_for
+from treelang.ai.capabilities import (
+    DefaultModelCapabilityNegotiator,
+    ModelCapabilities,
+    ModelCapabilityNegotiator,
+    StructuredOutputSelection,
+)
 from treelang.ai.config import ArboristConfig
 from treelang.ai.memory import Memory
 from treelang.ai.prompt import (
@@ -13,12 +18,12 @@ from treelang.ai.prompt import (
 from treelang.ai.provider import ToolProvider
 from treelang.ai.responses import EvalResponse, EvalType, TreeDescription
 from treelang.ai.selector import AllToolsSelector, BaseToolSelector
-from treelang.ai.structured_output import strict_response_format
 from treelang.ai.tool import ToolDefinition, tool_input_schema
 from treelang.ai.transport import (
     ModelTransport,
     OpenAITransport,
     complete_with_timeout,
+    openai_model_capabilities,
 )
 from treelang.exceptions import StructuredOutputUnsupportedError
 from treelang.observability import Observability
@@ -97,6 +102,7 @@ class OpenAIArborist(BaseArborist):
         transport: ModelTransport | None = None,
         observability: Observability | None = None,
         execution_limits: ExecutionLimits | None = None,
+        capability_negotiator: ModelCapabilityNegotiator | None = None,
     ) -> None:
         runtime_config = config or ArboristConfig.from_env(model)
         if runtime_config.schema_version == "2.0":
@@ -123,21 +129,17 @@ class OpenAIArborist(BaseArborist):
         self.openai = getattr(self.transport, "client", None)
         self.memory = memory
         self.observability = observability or Observability()
+        self.capability_negotiator = (
+            capability_negotiator or DefaultModelCapabilityNegotiator()
+        )
 
     def grow(self) -> None:
         return None
 
     @staticmethod
     def supports_temperature(model_name: str) -> bool:
-        chat_models = (
-            "gpt-4o",
-            "gpt-4o-mini",
-            "gpt-4.1",
-            "gpt-4.1-mini",
-            "o1",
-            "o1-mini",
-        )
-        return model_name.startswith(chat_models)
+        """Compatibility helper delegated to the OpenAI transport adapter."""
+        return openai_model_capabilities(model_name).temperature
 
     async def eval(self, query: str, type: EvalType = EvalType.WALK) -> EvalResponse:
         messages: list[dict[str, str]] = [
@@ -153,7 +155,10 @@ class OpenAIArborist(BaseArborist):
             "model": self.config.model,
             "messages": messages,
         }
-        if self.supports_temperature(self.config.model):
+        capabilities = self.capability_negotiator.capabilities(
+            self.transport, self.config.model
+        )
+        if capabilities.temperature:
             request["temperature"] = self.config.temperature
 
         available_tools = await self.selector.select(self.provider, query)
@@ -169,7 +174,9 @@ class OpenAIArborist(BaseArborist):
                 }
                 for tool in available_tools
             ]
-        self._configure_structured_output(request, available_tools)
+        output_selection = self._configure_structured_output(
+            request, available_tools, capabilities
+        )
 
         content = ""
         jsontree: dict[str, Any]
@@ -183,18 +190,21 @@ class OpenAIArborist(BaseArborist):
                     self.observability,
                 )
             except StructuredOutputUnsupportedError as error:
-                if (
-                    self.config.structured_output_mode != "auto"
-                    or request["response_format"]["type"] != "json_schema"
-                ):
+                fallback = self.capability_negotiator.fallback_after_rejection(
+                    output_selection,
+                    self.config.structured_output_mode,
+                )
+                if fallback is None:
                     raise
-                request["response_format"] = {"type": "json_object"}
+                output_selection = fallback
+                request["response_format"] = fallback.response_format
                 self.observability.emit(
                     "model.structured_output.fallback",
                     model=self.config.model,
-                    reason="provider_rejected",
+                    reason=fallback.fallback_reason,
                     error_type=error.__class__.__name__,
                 )
+                self._observe_structured_output(fallback)
                 content = await complete_with_timeout(
                     self.transport,
                     request,
@@ -252,35 +262,32 @@ class OpenAIArborist(BaseArborist):
         self,
         request: dict[str, Any],
         tools: list[ToolDefinition],
-    ) -> None:
+        capabilities: ModelCapabilities,
+    ) -> StructuredOutputSelection:
         mode = self.config.structured_output_mode
-        capabilities = capabilities_for(self.transport, self.config.model)
-        if mode == "compatibility":
-            request["response_format"] = {"type": "json_object"}
-            selected = "compatibility"
-        elif capabilities.strict_json_schema:
-            request["response_format"] = strict_response_format(
-                self.config.schema_version, tools
-            )
-            selected = "strict"
-        elif mode == "required":
-            raise StructuredOutputUnsupportedError(
-                f"Model '{self.config.model}' does not declare strict JSON Schema "
-                "support"
-            )
-        else:
-            request["response_format"] = {"type": "json_object"}
-            selected = "compatibility"
+        selection = self.capability_negotiator.structured_output(
+            capabilities,
+            model=self.config.model,
+            configured_mode=mode,
+            schema_version=self.config.schema_version,
+            tools=tools,
+        )
+        request["response_format"] = selection.response_format
+        if selection.fallback_reason is not None:
             self.observability.emit(
                 "model.structured_output.fallback",
                 model=self.config.model,
-                reason="capability_unavailable",
+                reason=selection.fallback_reason,
             )
+        self._observe_structured_output(selection)
+        return selection
+
+    def _observe_structured_output(self, selection: StructuredOutputSelection) -> None:
         self.observability.emit(
             "model.structured_output.selected",
             model=self.config.model,
-            mode=selected,
-            configured_mode=mode,
+            mode=selection.mode,
+            configured_mode=self.config.structured_output_mode,
             schema_version=self.config.schema_version,
         )
 

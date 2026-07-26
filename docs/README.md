@@ -10,6 +10,8 @@
   Schema enforcement for v1 and v2 execution.
 - [Execution resilience and replay](execution-resilience.md) — configure safe
   retries, parallel partial failures, cancellation, and offline replay.
+- [Model capability negotiation](provider-capabilities.md) — declare transport
+  features and customize provider-neutral request policy.
 - Architecture decisions:
   - [ADR 0001: Version the serialized AST schema](adr/0001-schema-versioning.md)
   - [ADR 0002: Execute ASTs with isolated async contexts](adr/0002-execution-semantics.md)
