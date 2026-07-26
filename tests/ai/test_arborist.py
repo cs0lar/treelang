@@ -15,7 +15,7 @@ from treelang.ai.arborist import (
     EvalType,
     OpenAIArborist,
 )
-from treelang.ai.capabilities import ModelCapabilities
+from treelang.ai.capabilities import ModelCapabilities, StructuredOutputSelection
 from treelang.ai.memory import ChatMessage, Memory
 from treelang.ai.provider import ToolOutput, ToolProvider
 from treelang.ai.responses import TreeDescription
@@ -36,15 +36,25 @@ def program_json(body):
 
 
 class FakeTransport:
-    def __init__(self, *responses, stream_parts=(), strict_json_schema=False):
+    def __init__(
+        self,
+        *responses,
+        stream_parts=(),
+        strict_json_schema=False,
+        temperature=False,
+    ):
         self.responses = list(responses)
         self.stream_parts = list(stream_parts)
         self.requests = []
         self.stream_requests = []
         self.strict_json_schema = strict_json_schema
+        self.temperature = temperature
 
     def capabilities(self, model):
-        return ModelCapabilities(strict_json_schema=self.strict_json_schema)
+        return ModelCapabilities(
+            strict_json_schema=self.strict_json_schema,
+            temperature=self.temperature,
+        )
 
     async def complete(self, request):
         self.requests.append(deepcopy(request))
@@ -190,7 +200,8 @@ def test_config_reads_environment_once(monkeypatch):
 @pytest.mark.asyncio
 async def test_arborist_tree_mode_builds_typed_request_with_memory_and_tools():
     transport = FakeTransport(
-        program_json([{"type": "value", "name": "answer", "value": 42}])
+        program_json([{"type": "value", "name": "answer", "value": 42}]),
+        temperature=True,
     )
     arborist = OpenAIArborist(
         model="gpt-4o-test",
@@ -318,6 +329,65 @@ async def test_compatibility_mode_ignores_strict_capability():
     await arborist.eval("question", EvalType.TREE)
 
     assert transport.requests[0]["response_format"] == {"type": "json_object"}
+
+
+@pytest.mark.asyncio
+async def test_arborist_delegates_request_features_to_injected_negotiator():
+    class Negotiator:
+        def __init__(self):
+            self.calls = []
+
+        def capabilities(self, transport, model):
+            self.calls.append(("capabilities", transport, model))
+            return ModelCapabilities(temperature=True)
+
+        def structured_output(
+            self,
+            capabilities,
+            *,
+            model,
+            configured_mode,
+            schema_version,
+            tools,
+        ):
+            self.calls.append(
+                (
+                    "structured_output",
+                    capabilities,
+                    model,
+                    configured_mode,
+                    schema_version,
+                    tools,
+                )
+            )
+            return StructuredOutputSelection(
+                response_format={"type": "json_object"},
+                mode="compatibility",
+            )
+
+        def fallback_after_rejection(self, selection, configured_mode):
+            self.calls.append(("fallback", selection, configured_mode))
+            return None
+
+    transport = FakeTransport(
+        program_json([{"type": "value", "name": "answer", "value": 42}])
+    )
+    negotiator = Negotiator()
+    arborist = OpenAIArborist(
+        model="provider-specific-model",
+        provider=FakeProvider(),
+        transport=transport,
+        capability_negotiator=negotiator,
+    )
+
+    await arborist.eval("question", EvalType.TREE)
+
+    assert transport.requests[0]["temperature"] == 0.0
+    assert transport.requests[0]["response_format"] == {"type": "json_object"}
+    assert [call[0] for call in negotiator.calls] == [
+        "capabilities",
+        "structured_output",
+    ]
 
 
 @pytest.mark.asyncio
@@ -720,7 +790,9 @@ async def test_openai_transport_complete_and_stream_without_network():
 
     assert await transport.complete({"model": "model", "messages": []}) == "complete"
     assert transport.capabilities("gpt-4o").strict_json_schema is True
+    assert transport.capabilities("gpt-4o").temperature is True
     assert transport.capabilities("unknown-model").strict_json_schema is False
+    assert transport.capabilities("unknown-model").temperature is False
     assert transport.consume_usage().prompt_tokens == 12
     assert transport.consume_usage().prompt_tokens == 0
     assert [

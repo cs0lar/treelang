@@ -57,11 +57,43 @@ Methods:
 - `succeeded(cls, value: 'Any') -> 'BranchOutcome'`
 - `failed(cls, error: 'Exception') -> 'BranchOutcome'`
 
+## `CapabilityAwareTransport`
+
+**Class** · `treelang.ai.capabilities`
+
+```python
+CapabilityAwareTransport(*args, **kwargs)
+```
+
+Optional transport extension for model-specific capability discovery.
+
+
+Methods:
+
+- `capabilities(self, model: 'str') -> 'ModelCapabilities'`
+
 ## `CURRENT_SCHEMA_VERSION`
 
 **Constant** · `treelang`
 
 Current value: `'1.0'`
+
+## `DefaultModelCapabilityNegotiator`
+
+**Class** · `treelang.ai.capabilities`
+
+```python
+DefaultModelCapabilityNegotiator()
+```
+
+Conservative capability and structured-output policy.
+
+
+Methods:
+
+- `capabilities(self, transport: 'object', model: 'str') -> 'ModelCapabilities'`
+- `structured_output(self, capabilities: 'ModelCapabilities', *, model: 'str', configured_mode: 'StructuredOutputMode', schema_version: 'SchemaVersion', tools: 'list[ToolDefinition]') -> 'StructuredOutputSelection'`
+- `fallback_after_rejection(self, selection: 'StructuredOutputSelection', configured_mode: 'StructuredOutputMode') -> 'StructuredOutputSelection | None'`
 
 ## `ExecutionLimitError`
 
@@ -139,6 +171,33 @@ Methods:
 - `stream(self, request: 'ModelRequest') -> 'AsyncIterator[str]'`
 - `assert_consumed(self) -> 'None'` — Raise when expected requests remain unconsumed.
 
+## `ModelCapabilities`
+
+**Class** · `treelang.ai.capabilities`
+
+```python
+ModelCapabilities(strict_json_schema: 'bool' = False, temperature: 'bool' = False) -> None
+```
+
+Features supported by one model through a transport.
+
+## `ModelCapabilityNegotiator`
+
+**Class** · `treelang.ai.capabilities`
+
+```python
+ModelCapabilityNegotiator(*args, **kwargs)
+```
+
+Policy boundary between model features and request orchestration.
+
+
+Methods:
+
+- `capabilities(self, transport: 'object', model: 'str') -> 'ModelCapabilities'`
+- `structured_output(self, capabilities: 'ModelCapabilities', *, model: 'str', configured_mode: 'StructuredOutputMode', schema_version: 'SchemaVersion', tools: 'list[ToolDefinition]') -> 'StructuredOutputSelection'`
+- `fallback_after_rejection(self, selection: 'StructuredOutputSelection', configured_mode: 'StructuredOutputMode') -> 'StructuredOutputSelection | None'`
+
 ## `NoOpTraceSink`
 
 **Class** · `treelang.observability`
@@ -196,6 +255,16 @@ Retry transient failures only for tools declared safe to repeat.
 **Class** · `treelang.exceptions`
 
 Raised when a provider rejects strict structured-output configuration.
+
+## `StructuredOutputSelection`
+
+**Class** · `treelang.ai.capabilities`
+
+```python
+StructuredOutputSelection(response_format: 'dict[str, Any]', mode: 'SelectedOutputMode', fallback_reason: 'str | None' = None) -> None
+```
+
+Negotiated response format and the reason for compatibility fallback.
 
 ## `ToolExecutionError`
 
