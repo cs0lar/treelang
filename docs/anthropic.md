@@ -41,7 +41,8 @@ model request contract into the Messages API:
 
 The adapter captures input/output token usage through `consume_usage()`, streams
 text through the common `ModelTransport` protocol, rejects truncated or refused
-responses, and preserves cancellation and unrelated SDK errors.
+responses, preserves cancellation, and translates SDK failures through the
+[normalized transport contract](transport-contracts.md).
 
 Structured-output support is declared conservatively for currently documented
 Claude 4.5+ models. Private deployments or newly released models can override

@@ -10,6 +10,7 @@ from typing import Any, Protocol, cast, runtime_checkable
 from openai import AsyncOpenAI, BadRequestError
 
 from treelang.ai.capabilities import ModelCapabilities
+from treelang.ai.errors import translate_model_error
 from treelang.exceptions import (
     ProviderResponseError,
     StructuredOutputUnsupportedError,
@@ -47,6 +48,13 @@ class ModelTransport(Protocol):
     async def complete(self, request: ModelRequest) -> str: ...
 
     def stream(self, request: ModelRequest) -> AsyncIterator[str]: ...
+
+
+@runtime_checkable
+class UsageAwareTransport(Protocol):
+    """Optional transport contract for normalized per-context token usage."""
+
+    def consume_usage(self) -> ModelUsage: ...
 
 
 async def complete_with_timeout(
@@ -147,18 +155,23 @@ class OpenAITransport:
         )
 
     async def complete(self, request: ModelRequest) -> str:
+        self._usage.set(ModelUsage())
         create = cast(Any, self.client.chat.completions.create)
         try:
             completion = await create(**dict(request))
-        except BadRequestError as error:
+        except Exception as error:
             response_format = request.get("response_format", {})
             if (
-                isinstance(response_format, Mapping)
+                isinstance(error, BadRequestError)
+                and isinstance(response_format, Mapping)
                 and response_format.get("type") == "json_schema"
                 and _is_structured_output_rejection(error)
             ):
                 raise StructuredOutputUnsupportedError(str(error)) from error
-            raise
+            translated = translate_model_error("openai", error)
+            if translated is error:
+                raise
+            raise translated from error
         usage = getattr(completion, "usage", None)
         self._usage.set(
             ModelUsage(
@@ -168,7 +181,10 @@ class OpenAITransport:
                 ),
             )
         )
-        content = completion.choices[0].message.content
+        choices = getattr(completion, "choices", None)
+        if not isinstance(choices, list) or not choices:
+            raise ProviderResponseError("Model response contained no choices")
+        content = getattr(getattr(choices[0], "message", None), "content", None)
         if not isinstance(content, str):
             raise ProviderResponseError("Model response contained no text content")
         return content
@@ -180,13 +196,36 @@ class OpenAITransport:
         return usage
 
     async def stream(self, request: ModelRequest) -> AsyncIterator[str]:
+        self._usage.set(ModelUsage())
         create = cast(Any, self.client.chat.completions.create)
-        response = await create(**{**request, "stream": True})
-        async for chunk in response:
-            for choice in chunk.choices:
-                content = choice.delta.content
-                if content:
-                    yield content
+        try:
+            response = await create(
+                **{
+                    **request,
+                    "stream": True,
+                    "stream_options": {"include_usage": True},
+                }
+            )
+            async for chunk in response:
+                usage = getattr(chunk, "usage", None)
+                if usage is not None:
+                    self._usage.set(
+                        ModelUsage(
+                            prompt_tokens=getattr(usage, "prompt_tokens", 0) or 0,
+                            completion_tokens=(
+                                getattr(usage, "completion_tokens", 0) or 0
+                            ),
+                        )
+                    )
+                for choice in getattr(chunk, "choices", ()):
+                    content = getattr(getattr(choice, "delta", None), "content", None)
+                    if content:
+                        yield content
+        except Exception as error:
+            translated = translate_model_error("openai", error)
+            if translated is error:
+                raise
+            raise translated from error
 
 
 def _is_structured_output_rejection(error: BadRequestError) -> bool:

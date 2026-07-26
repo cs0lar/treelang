@@ -22,6 +22,7 @@ from treelang.ai.responses import TreeDescription
 from treelang.ai.transport import OpenAITransport
 from treelang.exceptions import (
     ExecutionLimitError,
+    ModelTransportError,
     ProviderResponseError,
     StructuredOutputUnsupportedError,
 )
@@ -772,7 +773,10 @@ async def test_openai_transport_complete_and_stream_without_network():
         SimpleNamespace(
             choices=[SimpleNamespace(delta=SimpleNamespace(content="part"))]
         ),
-        SimpleNamespace(choices=[SimpleNamespace(delta=SimpleNamespace(content=None))]),
+        SimpleNamespace(
+            choices=[SimpleNamespace(delta=SimpleNamespace(content=None))],
+            usage=SimpleNamespace(prompt_tokens=20, completion_tokens=4),
+        ),
     ]
 
     async def stream_chunks():
@@ -798,6 +802,9 @@ async def test_openai_transport_complete_and_stream_without_network():
     assert [
         part async for part in transport.stream({"model": "model", "messages": []})
     ] == ["part"]
+    assert transport.consume_usage().completion_tokens == 4
+    stream_request = client.chat.completions.create.await_args_list[1].kwargs
+    assert stream_request["stream_options"] == {"include_usage": True}
 
 
 @pytest.mark.asyncio
@@ -854,5 +861,5 @@ async def test_openai_transport_translates_only_structured_output_rejections():
 
     with pytest.raises(StructuredOutputUnsupportedError):
         await transport.complete(strict_request)
-    with pytest.raises(BadRequestError, match="invalid temperature"):
+    with pytest.raises(ModelTransportError, match="invalid temperature"):
         await transport.complete(strict_request)

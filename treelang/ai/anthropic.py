@@ -7,6 +7,7 @@ from contextvars import ContextVar
 from typing import Any, cast
 
 from treelang.ai.capabilities import ModelCapabilities
+from treelang.ai.errors import translate_model_error
 from treelang.ai.transport import ModelRequest, ModelUsage
 from treelang.exceptions import (
     ProviderResponseError,
@@ -77,6 +78,7 @@ class AnthropicTransport:
         )
 
     async def complete(self, request: ModelRequest) -> str:
+        self._usage.set(ModelUsage())
         arguments = self._translate_request(request)
         create = cast(Any, self.client.messages.create)
         try:
@@ -84,7 +86,10 @@ class AnthropicTransport:
         except Exception as error:
             if "output_config" in arguments and _is_structured_output_rejection(error):
                 raise StructuredOutputUnsupportedError(str(error)) from error
-            raise
+            translated = translate_model_error("anthropic", error)
+            if translated is error:
+                raise
+            raise translated from error
 
         stop_reason = getattr(message, "stop_reason", None)
         if stop_reason in {"max_tokens", "refusal"}:
@@ -92,14 +97,7 @@ class AnthropicTransport:
                 f"Anthropic response stopped with reason '{stop_reason}'"
             )
         usage = getattr(message, "usage", None)
-        self._usage.set(
-            ModelUsage(
-                prompt_tokens=(getattr(usage, "input_tokens", 0) or 0) if usage else 0,
-                completion_tokens=(getattr(usage, "output_tokens", 0) or 0)
-                if usage
-                else 0,
-            )
-        )
+        self._set_usage(usage)
         text = _message_text(message)
         if not text:
             raise ProviderResponseError("Anthropic response contained no text content")
@@ -112,12 +110,33 @@ class AnthropicTransport:
         return usage
 
     async def stream(self, request: ModelRequest) -> AsyncIterator[str]:
+        self._usage.set(ModelUsage())
         arguments = self._translate_request(request)
         stream_factory = cast(Any, self.client.messages.stream)
-        async with stream_factory(**arguments) as stream:
-            async for text in stream.text_stream:
-                if text:
-                    yield text
+        try:
+            async with stream_factory(**arguments) as stream:
+                async for text in stream.text_stream:
+                    if text:
+                        yield text
+                message = await stream.get_final_message()
+                self._set_usage(getattr(message, "usage", None))
+        except Exception as error:
+            if "output_config" in arguments and _is_structured_output_rejection(error):
+                raise StructuredOutputUnsupportedError(str(error)) from error
+            translated = translate_model_error("anthropic", error)
+            if translated is error:
+                raise
+            raise translated from error
+
+    def _set_usage(self, usage: Any) -> None:
+        self._usage.set(
+            ModelUsage(
+                prompt_tokens=(getattr(usage, "input_tokens", 0) or 0) if usage else 0,
+                completion_tokens=(getattr(usage, "output_tokens", 0) or 0)
+                if usage
+                else 0,
+            )
+        )
 
     def _translate_request(self, request: ModelRequest) -> dict[str, Any]:
         model = request.get("model")

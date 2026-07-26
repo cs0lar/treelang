@@ -14,6 +14,8 @@
   features and customize provider-neutral request policy.
 - [Anthropic transport](anthropic.md) — install and use the optional Claude
   Messages API adapter.
+- [Normalized transport contracts](transport-contracts.md) — common usage,
+  errors, timeout, cancellation, and fallback semantics.
 - Architecture decisions:
   - [ADR 0001: Version the serialized AST schema](adr/0001-schema-versioning.md)
   - [ADR 0002: Execute ASTs with isolated async contexts](adr/0002-execution-semantics.md)

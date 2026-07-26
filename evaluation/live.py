@@ -5,7 +5,7 @@ import logging
 from collections.abc import Callable
 from datetime import UTC, datetime
 from time import perf_counter
-from typing import Any, Protocol
+from typing import Any
 
 from evaluation.models import (
     BenchmarkResult,
@@ -16,14 +16,10 @@ from evaluation.models import (
 )
 from treelang.ai.arborist import OpenAIArborist
 from treelang.ai.responses import EvalType
-from treelang.ai.transport import ModelUsage
+from treelang.ai.transport import UsageAwareTransport
 from treelang.observability import Observability
 from treelang.trees.schemas.v1 import TreeProgram
 from treelang.trees.tree import AST
-
-
-class UsageReporter(Protocol):
-    def consume_usage(self) -> ModelUsage: ...
 
 
 class LiveBenchmarkRunner:
@@ -32,7 +28,7 @@ class LiveBenchmarkRunner:
     def __init__(
         self,
         arborist: OpenAIArborist,
-        usage_reporter: UsageReporter,
+        usage_reporter: UsageAwareTransport,
         *,
         provider_name: str = "openai",
         input_cost_per_million: float = 0.0,

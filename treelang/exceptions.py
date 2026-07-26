@@ -17,6 +17,39 @@ class ProviderResponseError(TreelangError, RuntimeError):
     """Raised when a provider returns an invalid response."""
 
 
+class ModelTransportError(ProviderResponseError):
+    """Normalized failure returned by a model transport SDK."""
+
+    def __init__(
+        self,
+        message: str,
+        *,
+        provider: str,
+        status_code: int | None = None,
+        retry_after: float | None = None,
+    ) -> None:
+        self.provider = provider
+        self.status_code = status_code
+        self.retry_after = retry_after
+        super().__init__(message)
+
+
+class ModelAuthenticationError(ModelTransportError):
+    """Raised when a model provider rejects authentication or authorization."""
+
+
+class ModelRateLimitError(ModelTransportError):
+    """Raised when a model provider reports exhausted request capacity."""
+
+
+class ModelTimeoutError(ModelTransportError, TimeoutError):
+    """Raised when the provider SDK times out a model request."""
+
+
+class ModelConnectionError(ModelTransportError, ConnectionError):
+    """Raised when the provider SDK cannot reach its model service."""
+
+
 class ReplayMismatchError(ProviderResponseError):
     """Raised when runtime activity diverges from a deterministic replay."""
 

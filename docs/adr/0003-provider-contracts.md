@@ -36,6 +36,11 @@ remains within `OpenAITransport`.
 `AnthropicTransport` implements the same model contract through the Messages API,
 translating system prompts, tools, strict output configuration, streaming text,
 and usage fields at the adapter boundary. Its SDK dependency is optional.
+Both adapters expose context-local normalized usage and translate authentication,
+rate-limit, SDK timeout, connection, and other provider failures into a public
+transport exception hierarchy. Cancellation remains unmodified. Treelang
+deadlines remain plain `TimeoutError`; provider SDK timeouts are
+`ModelTimeoutError`, which is also a `TimeoutError`.
 Strict structured output has three policies: `auto` selects strict JSON Schema
 when declared and otherwise uses compatibility JSON mode; `required` refuses an
 incapable transport; and `compatibility` always uses JSON mode. An `auto` request
