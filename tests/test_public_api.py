@@ -15,6 +15,10 @@ def test_public_api_exports_core_types():
     assert treelang.ModelCapabilities is not None
     assert treelang.ModelCapabilityNegotiator is not None
     assert treelang.CapabilityAwareTransport is not None
+    assert treelang.ModelTransport is not None
+    assert treelang.UsageAwareTransport is not None
+    assert issubclass(treelang.ModelTransportError, treelang.ProviderResponseError)
+    assert issubclass(treelang.ModelTimeoutError, TimeoutError)
     assert issubclass(treelang.ExecutionLimitError, treelang.ASTExecutionError)
     assert issubclass(treelang.ReplayMismatchError, treelang.ProviderResponseError)
     assert issubclass(

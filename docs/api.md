@@ -162,32 +162,15 @@ Methods:
 - `call_tool(self, name: str, arguments: dict[str, typing.Any]) -> treelang.ai.provider.ToolOutput` — Invoke a named tool with validated keyword arguments.
 - `list_tools(self) -> list[treelang.ai.tool.ToolDefinition]` — Return normalized metadata for every available tool.
 
-## `ModelReplayEntry`
+## `ModelAuthenticationError`
 
-**Class** · `treelang.replay`
-
-```python
-ModelReplayEntry(request: 'dict[str, Any]', response: 'str | tuple[str, ...]', kind: "Literal['complete', 'stream']" = 'complete') -> None
-```
-
-One expected model request and completion or stream response.
-
-## `ModelReplayTransport`
-
-**Class** · `treelang.replay`
+**Class** · `treelang.exceptions`
 
 ```python
-ModelReplayTransport(entries: 'Sequence[ModelReplayEntry]') -> 'None'
+ModelAuthenticationError(message: str, *, provider: str, status_code: int | None = None, retry_after: float | None = None) -> None
 ```
 
-Replay ordered model requests without credentials or network access.
-
-
-Methods:
-
-- `complete(self, request: 'ModelRequest') -> 'str'`
-- `stream(self, request: 'ModelRequest') -> 'AsyncIterator[str]'`
-- `assert_consumed(self) -> 'None'` — Raise when expected requests remain unconsumed.
+Raised when a model provider rejects authentication or authorization.
 
 ## `ModelCapabilities`
 
@@ -215,6 +198,99 @@ Methods:
 - `capabilities(self, transport: 'object', model: 'str') -> 'ModelCapabilities'`
 - `structured_output(self, capabilities: 'ModelCapabilities', *, model: 'str', configured_mode: 'StructuredOutputMode', schema_version: 'SchemaVersion', tools: 'list[ToolDefinition]') -> 'StructuredOutputSelection'`
 - `fallback_after_rejection(self, selection: 'StructuredOutputSelection', configured_mode: 'StructuredOutputMode') -> 'StructuredOutputSelection | None'`
+
+## `ModelConnectionError`
+
+**Class** · `treelang.exceptions`
+
+```python
+ModelConnectionError(message: str, *, provider: str, status_code: int | None = None, retry_after: float | None = None) -> None
+```
+
+Raised when the provider SDK cannot reach its model service.
+
+## `ModelRateLimitError`
+
+**Class** · `treelang.exceptions`
+
+```python
+ModelRateLimitError(message: str, *, provider: str, status_code: int | None = None, retry_after: float | None = None) -> None
+```
+
+Raised when a model provider reports exhausted request capacity.
+
+## `ModelReplayEntry`
+
+**Class** · `treelang.replay`
+
+```python
+ModelReplayEntry(request: 'dict[str, Any]', response: 'str | tuple[str, ...]', kind: "Literal['complete', 'stream']" = 'complete') -> None
+```
+
+One expected model request and completion or stream response.
+
+## `ModelReplayTransport`
+
+**Class** · `treelang.replay`
+
+```python
+ModelReplayTransport(entries: 'Sequence[ModelReplayEntry]') -> 'None'
+```
+
+Replay ordered model requests without credentials or network access.
+
+
+Methods:
+
+- `complete(self, request: 'ModelRequest') -> 'str'`
+- `stream(self, request: 'ModelRequest') -> 'AsyncIterator[str]'`
+- `assert_consumed(self) -> 'None'` — Raise when expected requests remain unconsumed.
+
+## `ModelTimeoutError`
+
+**Class** · `treelang.exceptions`
+
+```python
+ModelTimeoutError(message: str, *, provider: str, status_code: int | None = None, retry_after: float | None = None) -> None
+```
+
+Raised when the provider SDK times out a model request.
+
+## `ModelTransport`
+
+**Class** · `treelang.ai.transport`
+
+```python
+ModelTransport(*args, **kwargs)
+```
+
+Minimal model interface required by Arborist orchestration.
+
+
+Methods:
+
+- `complete(self, request: collections.abc.Mapping[str, typing.Any]) -> str`
+- `stream(self, request: collections.abc.Mapping[str, typing.Any]) -> collections.abc.AsyncIterator[str]`
+
+## `ModelTransportError`
+
+**Class** · `treelang.exceptions`
+
+```python
+ModelTransportError(message: str, *, provider: str, status_code: int | None = None, retry_after: float | None = None) -> None
+```
+
+Normalized failure returned by a model transport SDK.
+
+## `ModelUsage`
+
+**Class** · `treelang.ai.transport`
+
+```python
+ModelUsage(prompt_tokens: int = 0, completion_tokens: int = 0) -> None
+```
+
+Token usage reported for one model completion.
 
 ## `NoOpTraceSink`
 
@@ -614,6 +690,21 @@ Methods:
 **Class** · `treelang.exceptions`
 
 Base class for errors raised by Treelang.
+
+## `UsageAwareTransport`
+
+**Class** · `treelang.ai.transport`
+
+```python
+UsageAwareTransport(*args, **kwargs)
+```
+
+Optional transport contract for normalized per-context token usage.
+
+
+Methods:
+
+- `consume_usage(self) -> treelang.ai.transport.ModelUsage`
 
 ## `__version__`
 

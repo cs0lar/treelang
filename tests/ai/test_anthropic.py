@@ -7,6 +7,7 @@ from treelang.ai.arborist import OpenAIArborist
 from treelang.ai.provider import ToolOutput, ToolProvider
 from treelang.ai.responses import EvalType
 from treelang.exceptions import (
+    ModelTransportError,
     ProviderResponseError,
     StructuredOutputUnsupportedError,
 )
@@ -30,6 +31,7 @@ class FakeMessages:
     def stream(self, **request):
         self.stream_requests.append(request)
         parts = self.stream_parts
+        response = self.response
 
         class Stream:
             async def __aenter__(self):
@@ -42,6 +44,11 @@ class FakeMessages:
 
             async def __aexit__(self, exc_type, exc, traceback):
                 return False
+
+            async def get_final_message(self):
+                return response or SimpleNamespace(
+                    usage=SimpleNamespace(input_tokens=0, output_tokens=0)
+                )
 
         return Stream()
 
@@ -198,12 +205,16 @@ async def test_strict_output_uses_anthropic_output_config_format():
 
 @pytest.mark.asyncio
 async def test_stream_translates_request_and_yields_text():
-    messages = FakeMessages(stream_parts=("one", "", "two"))
+    messages = FakeMessages(
+        response=message(input_tokens=20, output_tokens=4),
+        stream_parts=("one", "", "two"),
+    )
     transport = AnthropicTransport(client=SimpleNamespace(messages=messages))
 
     assert [part async for part in transport.stream(request())] == ["one", "two"]
     assert messages.stream_requests[0]["system"] == "system"
     assert "response_format" not in messages.stream_requests[0]
+    assert transport.consume_usage().prompt_tokens == 20
 
 
 @pytest.mark.asyncio
@@ -256,7 +267,7 @@ async def test_only_strict_output_rejections_are_translated():
             messages=FakeMessages(error=BadRequest("authentication failed"))
         )
     )
-    with pytest.raises(BadRequest, match="authentication"):
+    with pytest.raises(ModelTransportError, match="authentication"):
         await transport.complete(request(strict))
 
 
