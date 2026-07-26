@@ -163,8 +163,9 @@ formats, and additional-property rules; see the
 - **Reproducible benchmark** (`evaluation/eval.py`) runs versioned deterministic
   cases without credentials, records machine-readable quality and resource
   metrics, and checks them against committed regression baselines. A separate
-  manual/scheduled live workflow records comparable model quality, latency,
-  token, and cost evidence without exposing credentials to pull requests. See
+  owner-only manual live workflow records comparable OpenAI and Anthropic model
+  quality, latency, token, and cost evidence without exposing credentials to
+  pull requests. See
   [`evaluation/README.md`](evaluation/README.md) for commands and baseline policy.
 - **Unit tests** (`tests/`) cover the AST core and are a good reference for expected behavior when extending nodes.
 

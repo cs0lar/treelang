@@ -52,3 +52,20 @@ def test_main_promotion_policy_only_accepts_the_repository_dev_branch():
     assert '"$HEAD_REPOSITORY" != "$REPOSITORY"' in content
     assert '"$HEAD_REF" != "dev"' in content
     assert "pull_request_target" not in content
+
+
+def test_live_evaluation_is_owner_only_manual_and_provider_selectable():
+    content = workflow("live-evaluation.yml")
+
+    assert "workflow_dispatch:" in content
+    assert "schedule:" not in content
+    assert "if: github.actor == github.repository_owner" in content
+    assert "environment: live-evaluation" in content
+    assert "provider:" in content
+    assert "- openai" in content
+    assert "- anthropic" in content
+    assert "- all" in content
+    assert "secrets.OPENAI_API_KEY" in content
+    assert "secrets.ANTHROPIC_API_KEY" in content
+    assert '--provider "$PROVIDER"' in content
+    assert "live-evaluation-${{ matrix.provider }}" in content
