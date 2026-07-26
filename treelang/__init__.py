@@ -2,6 +2,7 @@
 
 from importlib.metadata import PackageNotFoundError, version
 
+from treelang.ai.anthropic import AnthropicTransport
 from treelang.ai.capabilities import (
     CapabilityAwareTransport,
     DefaultModelCapabilityNegotiator,
@@ -56,6 +57,7 @@ __all__ = [
     "ASTCompilationError",
     "ASTExecutionError",
     "ASTValidationError",
+    "AnthropicTransport",
     "BranchOutcome",
     "CapabilityAwareTransport",
     "CURRENT_SCHEMA_VERSION",

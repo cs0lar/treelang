@@ -89,8 +89,9 @@ PR #115, and property-based and fuzz coverage for language and runtime invariant
 through PR #116. Execution resilience and deterministic replay semantics are
 merged through PR #117.
 
-Phase 8 is now active. The first slice separates model capability negotiation
-from Arborist orchestration. Before new work, update `dev` and run:
+Phase 8 is now active. Model capability negotiation is separated from Arborist
+orchestration through PR #118. The next slice adds a contract-tested Anthropic
+adapter. Before new work, update `dev` and run:
 
 ```sh
 git fetch origin
@@ -181,7 +182,8 @@ cannot be exceeded, and generative tests preserve execution invariants.
 
 ### Phase 8: Provider Portability
 
-1. Separate model capability negotiation from Arborist orchestration.
+1. Separate model capability negotiation from Arborist orchestration. Complete
+   through PR #118.
 2. Add contract-tested adapters for at least one additional model provider.
 3. Normalize structured-output support, token accounting, rate limits, timeout,
    cancellation, and provider-error translation.

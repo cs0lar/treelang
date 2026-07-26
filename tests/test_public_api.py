@@ -3,6 +3,7 @@ import treelang
 
 def test_public_api_exports_core_types():
     assert treelang.AST is not None
+    assert treelang.AnthropicTransport is not None
     assert treelang.TreeProgram is not None
     assert treelang.ToolProvider is not None
     assert treelang.ExecutionLimits is not None

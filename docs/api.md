@@ -41,6 +41,24 @@ Raised when an AST fails during execution.
 
 Raised when an AST violates a runtime tool contract.
 
+## `AnthropicTransport`
+
+**Class** · `treelang.ai.anthropic`
+
+```python
+AnthropicTransport(*, api_key: 'str | None' = None, timeout: 'float | None' = None, max_tokens: 'int' = 4096, client: 'Any | None' = None, strict_json_schema: 'bool | None' = None) -> 'None'
+```
+
+Translate provider-neutral model requests to Anthropic Messages.
+
+
+Methods:
+
+- `capabilities(self, model: 'str') -> 'ModelCapabilities'` — Report Claude features, allowing an explicit deployment override.
+- `complete(self, request: 'ModelRequest') -> 'str'`
+- `consume_usage(self) -> 'ModelUsage'` — Return and clear usage for the latest completion in this async context.
+- `stream(self, request: 'ModelRequest') -> 'AsyncIterator[str]'`
+
 ## `BranchOutcome`
 
 **Class** · `treelang.trees.policy`

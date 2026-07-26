@@ -16,12 +16,16 @@ dependencies = [
     "python-dotenv>=1.0,<2",
 ]
 
+[project.optional-dependencies]
+anthropic = ["anthropic>=0.104,<1"]
+
 [project.urls]
 Homepage = "https://github.com/cs0lar/treelang"
 Issues = "https://github.com/cs0lar/treelang/issues"
 
 [dependency-groups]
 dev = [
+    "anthropic>=0.104,<1",
     "build>=1.4,<2",
     "hypothesis>=6.135,<7",
     "ipykernel>=6.29,<8",
