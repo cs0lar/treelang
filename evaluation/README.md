@@ -25,13 +25,21 @@ Version 1 remains committed so earlier published results stay reproducible.
 
 ## Live evaluation
 
-Run the credentialed benchmark locally with explicit pricing for the selected
-model:
+Run the same credentialed benchmark dataset locally against either supported
+provider, with explicit pricing for the selected model:
 
 ```sh
 OPENAI_API_KEY=... uv run python evaluation/live_eval.py \
-  --output evaluation-results/live.json \
+  --provider openai \
+  --output evaluation-results/live-openai.json \
   --model gpt-4o-2024-11-20 \
+  --input-cost-per-million 0 \
+  --output-cost-per-million 0
+
+ANTHROPIC_API_KEY=... uv run python evaluation/live_eval.py \
+  --provider anthropic \
+  --output evaluation-results/live-anthropic.json \
+  --model claude-sonnet-4-6 \
   --input-cost-per-million 0 \
   --output-cost-per-million 0
 ```
@@ -42,17 +50,21 @@ is required. The result records the exact model, provider, dataset version,
 case-level quality, latency, token usage, and estimated cost.
 
 The `Live evaluation` GitHub Actions workflow runs only on manual dispatch. It
-reads `OPENAI_API_KEY` from the protected `live-evaluation` environment, never
-runs for pull requests, has a 30-minute timeout, and retains the machine-readable
-result artifact for 90 days. Runs are restricted to the repository owner;
-attempts by other actors are skipped before the environment or its secrets are
-accessed. Configure environment approval rules if live spend requires an
-additional review. Manual runs require model and pricing inputs; absent pricing
-deliberately produces zero estimated cost rather than silently applying a stale
-price.
+reads `OPENAI_API_KEY` and `ANTHROPIC_API_KEY` from the protected
+`live-evaluation` environment. Select OpenAI, Anthropic, or `all`; the latter
+runs the identical versioned dataset once per provider and uploads a separate
+machine-readable artifact for each. The workflow never runs for pull requests,
+has a 30-minute timeout, and retains artifacts for 90 days. Runs are restricted
+to the repository owner; attempts by other actors are skipped before the
+environment or its secrets are accessed. Each matrix job receives only its
+selected provider's secret. Configure environment approval rules if live spend
+requires an additional review. Manual runs require model and pricing inputs;
+zero pricing deliberately produces zero estimated cost rather than silently
+applying a stale price.
 
-Compare only artifacts with identical dataset version, ordered case IDs, model,
-and provider. Use the metric definitions and explicit tolerances in
+Cross-provider comparisons require identical dataset versions and ordered case
+IDs; longitudinal comparisons also require the same model and provider. Use the
+metric definitions and explicit tolerances in
 `baselines/v1/tolerances.json`; investigate quality decreases before accepting a
 new result. Latency, tokens, and cost must be interpreted using the recorded model
 and pricing inputs. Promote a live result as published evidence only after

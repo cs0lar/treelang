@@ -17,6 +17,7 @@ selected through declared capabilities; **unsupported** is rejected or omitted.
 | Streaming Usage | supported | supported |
 | Normalized Errors | supported | supported |
 | Cancellation | supported | supported |
+| Live Evaluation | supported | supported |
 
 ## Adapter details
 

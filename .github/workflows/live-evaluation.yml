@@ -3,18 +3,42 @@ name: Live evaluation
 on:
   workflow_dispatch:
     inputs:
-      model:
+      provider:
+        description: Provider(s) to evaluate
+        required: true
+        default: openai
+        type: choice
+        options:
+          - openai
+          - anthropic
+          - all
+      openai_model:
         description: OpenAI model identifier
         required: true
         default: gpt-4o-2024-11-20
         type: string
-      input_cost_per_million:
-        description: Input-token price in USD per million tokens
+      anthropic_model:
+        description: Anthropic model identifier
+        required: true
+        default: claude-sonnet-4-6
+        type: string
+      openai_input_cost_per_million:
+        description: OpenAI input-token USD price per million
         required: true
         default: "0"
         type: string
-      output_cost_per_million:
-        description: Output-token price in USD per million tokens
+      openai_output_cost_per_million:
+        description: OpenAI output-token USD price per million
+        required: true
+        default: "0"
+        type: string
+      anthropic_input_cost_per_million:
+        description: Anthropic input-token USD price per million
+        required: true
+        default: "0"
+        type: string
+      anthropic_output_cost_per_million:
+        description: Anthropic output-token USD price per million
         required: true
         default: "0"
         type: string
@@ -31,11 +55,17 @@ jobs:
     runs-on: ubuntu-latest
     environment: live-evaluation
     timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        provider: ${{ fromJSON(inputs.provider == 'all' && '["openai","anthropic"]' || format('["{0}"]', inputs.provider)) }}
     env:
-      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-      OPENAI_MODEL: ${{ inputs.model }}
-      INPUT_COST_PER_MILLION: ${{ inputs.input_cost_per_million }}
-      OUTPUT_COST_PER_MILLION: ${{ inputs.output_cost_per_million }}
+      OPENAI_API_KEY: ${{ matrix.provider == 'openai' && secrets.OPENAI_API_KEY || '' }}
+      ANTHROPIC_API_KEY: ${{ matrix.provider == 'anthropic' && secrets.ANTHROPIC_API_KEY || '' }}
+      PROVIDER: ${{ matrix.provider }}
+      MODEL: ${{ matrix.provider == 'openai' && inputs.openai_model || inputs.anthropic_model }}
+      INPUT_COST_PER_MILLION: ${{ matrix.provider == 'openai' && inputs.openai_input_cost_per_million || inputs.anthropic_input_cost_per_million }}
+      OUTPUT_COST_PER_MILLION: ${{ matrix.provider == 'openai' && inputs.openai_output_cost_per_million || inputs.anthropic_output_cost_per_million }}
     steps:
       - uses: actions/checkout@v7
       - uses: astral-sh/setup-uv@v7
@@ -48,14 +78,15 @@ jobs:
       - name: Run credentialed live benchmark
         run: >-
           uv run python evaluation/live_eval.py
-          --output evaluation-results/live.json
-          --model "$OPENAI_MODEL"
+          --output "evaluation-results/live-$PROVIDER.json"
+          --provider "$PROVIDER"
+          --model "$MODEL"
           --input-cost-per-million "$INPUT_COST_PER_MILLION"
           --output-cost-per-million "$OUTPUT_COST_PER_MILLION"
       - uses: actions/upload-artifact@v7
         if: always()
         with:
-          name: live-evaluation-${{ github.run_id }}
+          name: live-evaluation-${{ matrix.provider }}-${{ github.run_id }}
           path: evaluation-results/
           if-no-files-found: warn
           retention-days: 90
