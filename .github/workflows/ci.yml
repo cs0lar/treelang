@@ -29,6 +29,7 @@ jobs:
       - run: uv run ruff format --check treelang tests evaluation scripts cookbook/*.py
       - run: uv run mypy
       - run: uv run python scripts/generate_api_docs.py --check
+      - run: uv run python scripts/generate_provider_matrix.py --check
       - name: Validate cookbook notebooks
         run: uv run python scripts/check_cookbooks.py
       - run: uv build

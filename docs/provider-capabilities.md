@@ -41,3 +41,7 @@ policy. A negotiator must:
 
 OpenAI model-name heuristics are confined to `OpenAITransport`. They are not part
 of provider-neutral Arborist orchestration.
+
+The generated [provider compatibility matrix](provider-matrix.md) publishes these
+claims from a machine-readable manifest. Normal CI checks every representative
+model profile against the adapter capability functions and rejects stale output.

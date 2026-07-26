@@ -1,0 +1,82 @@
+{
+  "schema_version": "1.0",
+  "features": [
+    "completion",
+    "streaming",
+    "tool_definitions",
+    "strict_json_schema",
+    "temperature",
+    "completion_usage",
+    "streaming_usage",
+    "normalized_errors",
+    "cancellation"
+  ],
+  "providers": [
+    {
+      "id": "openai",
+      "name": "OpenAI",
+      "adapter": "treelang.ai.transport.OpenAITransport",
+      "capability_function": "treelang.ai.transport.openai_model_capabilities",
+      "installation": "treelang",
+      "documentation": "docs/provider-capabilities.md",
+      "contract_test": "tests/ai/test_arborist.py",
+      "features": {
+        "completion": "supported",
+        "streaming": "supported",
+        "tool_definitions": "supported",
+        "strict_json_schema": "model-dependent",
+        "temperature": "model-dependent",
+        "completion_usage": "supported",
+        "streaming_usage": "supported",
+        "normalized_errors": "supported",
+        "cancellation": "supported"
+      },
+      "model_profiles": [
+        {
+          "model": "gpt-4o",
+          "strict_json_schema": true,
+          "temperature": true
+        },
+        {
+          "model": "unknown-model",
+          "strict_json_schema": false,
+          "temperature": false
+        }
+      ],
+      "official_documentation": "https://platform.openai.com/docs/guides/structured-outputs"
+    },
+    {
+      "id": "anthropic",
+      "name": "Anthropic",
+      "adapter": "treelang.ai.anthropic.AnthropicTransport",
+      "capability_function": "treelang.ai.anthropic.anthropic_model_capabilities",
+      "installation": "treelang[anthropic]",
+      "documentation": "docs/anthropic.md",
+      "contract_test": "tests/ai/test_anthropic.py",
+      "features": {
+        "completion": "supported",
+        "streaming": "supported",
+        "tool_definitions": "supported",
+        "strict_json_schema": "model-dependent",
+        "temperature": "model-dependent",
+        "completion_usage": "supported",
+        "streaming_usage": "supported",
+        "normalized_errors": "supported",
+        "cancellation": "supported"
+      },
+      "model_profiles": [
+        {
+          "model": "claude-sonnet-4-6",
+          "strict_json_schema": true,
+          "temperature": true
+        },
+        {
+          "model": "claude-3-5-sonnet",
+          "strict_json_schema": false,
+          "temperature": true
+        }
+      ],
+      "official_documentation": "https://platform.claude.com/docs/en/build-with-claude/structured-outputs"
+    }
+  ]
+}

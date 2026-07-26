@@ -91,9 +91,10 @@ merged through PR #117.
 
 Phase 8 is now active. Model capability negotiation is separated from Arborist
 orchestration through PR #118, and the contract-tested Anthropic adapter is merged
-through PR #119. The next slice normalizes cross-provider structured output,
-usage, failure, timeout, and cancellation behavior. Before new work, update `dev`
-and run:
+through PR #119. Cross-provider structured output, usage, failure, timeout, and
+cancellation behavior is normalized through PR #120. The next slice publishes
+and continuously validates the provider capability and compatibility matrix.
+Before new work, update `dev` and run:
 
 ```sh
 git fetch origin
@@ -189,7 +190,7 @@ cannot be exceeded, and generative tests preserve execution invariants.
 2. Add contract-tested adapters for at least one additional model provider.
    Complete through PR #119.
 3. Normalize structured-output support, token accounting, rate limits, timeout,
-   cancellation, and provider-error translation.
+   cancellation, and provider-error translation. Complete through PR #120.
 4. Publish and continuously test a provider capability and compatibility matrix.
 5. Run the same versioned live-evaluation cases across supported providers.
 
