@@ -60,6 +60,8 @@ nav:
       - Command-line interface: cli.md
       - Downstream testing kit: testing.md
       - JSON Schema and editor validation: json-schema.md
+      - End-to-end cookbooks: cookbooks.md
+      - Extensions and provider contributions: extensions.md
       - Recursive programs: recursive-programs.md
       - Structured model output: structured-output.md
       - Tool input validation: tool-input-validation.md

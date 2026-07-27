@@ -178,7 +178,9 @@ formats, and additional-property rules; see the
 - **Documentation** ([published site](https://csolar.github.io/treelang/)) contains the [supported API reference](docs/api.md),
   [architecture decisions](docs/README.md), and the
   [0.10 migration guide](docs/migration-0.10.md).
-- **Cookbook notebooks** (`cookbook/`) walk through building trees, call patterns, and evaluation strategies.
+- **Cookbook notebooks** (`cookbook/`) provide a
+  [tested end-to-end learning path](docs/cookbooks.md), from credential-free
+  execution and custom providers to live model/MCP workflows.
 - **Reproducible benchmark** (`evaluation/eval.py`) runs versioned deterministic
   cases without credentials, records machine-readable quality and resource
   metrics, and checks them against committed regression baselines. A separate
@@ -198,9 +200,12 @@ uv run jupyter notebook cookbook/
 
 The calculator and game-stat notebooks call the configured OpenAI model and
 therefore require `OPENAI_API_KEY`. Normal CI does not make live model calls: it
-validates that every notebook is clean and compilable, then starts the cookbook
-MCP servers and exercises their deterministic tools. Run the same checks locally
-with `make cookbooks` and `uv run pytest tests/test_cookbooks.py`.
+executes the credential-free quickstart and custom-provider tutorials, validates
+that every notebook is clean and compilable, then starts the cookbook MCP
+servers and exercises their deterministic tools. Run the same checks locally
+with `make cookbooks` and `uv run pytest tests/test_cookbooks.py`. See the
+[extension guide](docs/extensions.md) when contributing providers or other
+integrations.
 
 ## Contributing & local development
 

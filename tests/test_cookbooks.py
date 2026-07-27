@@ -7,6 +7,8 @@ from mcp import ClientSession, StdioServerParameters, stdio_client
 
 from scripts.check_cookbooks import (
     CookbookValidationError,
+    executable_notebook_paths,
+    execute_notebook,
     notebook_paths,
     validate_notebook,
 )
@@ -20,11 +22,24 @@ def test_committed_notebooks_are_clean_and_compile():
 
     assert {path.name for path in notebooks} == {
         "calculator.ipynb",
+        "custom-provider.ipynb",
         "gamestats.ipynb",
         "memory.ipynb",
+        "quickstart.ipynb",
     }
     for notebook in notebooks:
         validate_notebook(notebook)
+
+
+def test_credential_free_tutorials_execute_end_to_end():
+    notebooks = executable_notebook_paths(COOKBOOK)
+
+    assert {path.name for path in notebooks} == {
+        "custom-provider.ipynb",
+        "quickstart.ipynb",
+    }
+    for notebook in notebooks:
+        execute_notebook(notebook)
 
 
 def test_notebook_validation_rejects_execution_state(tmp_path):

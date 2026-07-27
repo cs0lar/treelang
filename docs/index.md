@@ -26,6 +26,8 @@ Python 3.12 or newer is required.
   and generate programs.
 - Test integrations with [deterministic fakes and provider contracts](testing.md).
 - Configure editors with the [canonical JSON Schema artifacts](json-schema.md).
+- Follow the [end-to-end cookbook learning path](cookbooks.md).
+- Build integrations with the [extension and provider guide](extensions.md).
 - Learn the [execution and replay semantics](execution-resilience.md).
 - Compare model integrations in the [provider compatibility matrix](provider-matrix.md).
 - Follow the [0.10 migration guide](migration-0.10.md) when upgrading.
