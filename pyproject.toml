@@ -19,6 +19,9 @@ dependencies = [
 [project.optional-dependencies]
 anthropic = ["anthropic>=0.104,<1"]
 
+[project.scripts]
+treelang = "treelang.cli:main"
+
 [project.urls]
 Homepage = "https://github.com/cs0lar/treelang"
 Issues = "https://github.com/cs0lar/treelang/issues"

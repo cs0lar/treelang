@@ -98,9 +98,10 @@ is merged through PR #121.
 The same versioned live-evaluation cases run across supported providers through
 PR #122.
 
-Phase 9 is now active. The first slice publishes a versioned documentation site
-with generated API references, guides, architecture decisions, and migration
-notes.
+Phase 9 is now active. The versioned documentation site with generated API
+references, guides, architecture decisions, and migration notes is merged
+through PR #124. The next slice adds a CLI for generating, validating,
+inspecting, replaying, and executing AST programs.
 Before new work, update `dev` and run:
 
 ```sh
@@ -210,6 +211,7 @@ providers without application-level changes.
 
 1. Publish a versioned documentation site with generated API references, guides,
    architecture decisions, and migration notes.
+   Complete through PR #124.
 2. Add a CLI for generating, validating, inspecting, replaying, and executing
    AST programs.
 3. Publish reusable downstream testing fixtures, fake transports, and provider
