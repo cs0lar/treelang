@@ -98,14 +98,11 @@ is merged through PR #121.
 The same versioned live-evaluation cases run across supported providers through
 PR #122.
 
-Phase 9 is now active. The versioned documentation site with generated API
-references, guides, architecture decisions, and migration notes is merged
-through PR #124. The CLI for generating, validating, inspecting, replaying, and
-executing AST programs is merged through PR #125. Reusable downstream testing
-fixtures, fake transports, and provider contract suites are merged through PR
-#126. Distributed JSON Schema artifacts and editor-validation examples are
-merged through PR #127. The final slice expands cookbooks into tested end-to-end
-tutorials and documents extension and provider contribution workflows.
+Phase 9 is complete through PR #128. The versioned documentation site is merged
+through PR #124, the CLI through PR #125, downstream testing fixtures and
+provider contracts through PR #126, and distributed JSON Schema artifacts
+through PR #127. Tested end-to-end cookbooks and extension/provider contribution
+workflows are merged through PR #128. The next task prepares release v1.0.0.
 Before new work, update `dev` and run:
 
 ```sh
@@ -226,6 +223,7 @@ providers without application-level changes.
    Complete through PR #127.
 5. Expand cookbooks into tested end-to-end tutorials and document extension and
    provider contribution workflows.
+   Complete through PR #128.
 
 Exit criteria: a new user can install Treelang, execute and inspect a validated
 program, build a provider, and reproduce benchmarks using documented workflows.
