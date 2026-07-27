@@ -101,10 +101,11 @@ PR #122.
 Phase 9 is now active. The versioned documentation site with generated API
 references, guides, architecture decisions, and migration notes is merged
 through PR #124. The CLI for generating, validating, inspecting, replaying, and
-executing AST programs is merged through PR #125. The next slice publishes
-reusable downstream testing fixtures, fake transports, and provider contract
-suites through PR #126. The next slice distributes the supported JSON Schema and
-adds editor-validation examples.
+executing AST programs is merged through PR #125. Reusable downstream testing
+fixtures, fake transports, and provider contract suites are merged through PR
+#126. Distributed JSON Schema artifacts and editor-validation examples are
+merged through PR #127. The final slice expands cookbooks into tested end-to-end
+tutorials and documents extension and provider contribution workflows.
 Before new work, update `dev` and run:
 
 ```sh
@@ -222,6 +223,7 @@ providers without application-level changes.
    contract suites.
    Complete through PR #126.
 4. Distribute the supported JSON Schema and add editor-validation examples.
+   Complete through PR #127.
 5. Expand cookbooks into tested end-to-end tutorials and document extension and
    provider contribution workflows.
 

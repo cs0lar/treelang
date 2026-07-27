@@ -41,6 +41,8 @@ def test_documentation_site_includes_generated_reference_and_guides():
     assert "Command-line interface: cli.md" in configuration
     assert "Downstream testing kit: testing.md" in configuration
     assert "JSON Schema and editor validation: json-schema.md" in configuration
+    assert "End-to-end cookbooks: cookbooks.md" in configuration
+    assert "Extensions and provider contributions: extensions.md" in configuration
     assert "Migration guide: migration-0.10.md" in configuration
     assert "adr/0004-recursive-schema-and-execution.md" in configuration
     assert "Versioned documentation" in landing_page
@@ -65,3 +67,18 @@ def test_provider_manifest_rejects_capability_drift(tmp_path):
 
     with pytest.raises(ValueError, match="capability drift"):
         load_manifest(path)
+
+
+def test_cookbook_and_extension_guides_cover_contribution_contracts():
+    cookbooks = Path("docs/cookbooks.md").read_text(encoding="utf-8")
+    extensions = Path("docs/extensions.md").read_text(encoding="utf-8")
+    contributing = Path("CONTRIBUTING.md").read_text(encoding="utf-8")
+
+    assert "quickstart.ipynb" in cookbooks
+    assert "custom-provider.ipynb" in cookbooks
+    assert "ci_execute" in cookbooks
+    assert "ToolProviderContract" in extensions
+    assert "ModelTransportContract" in extensions
+    assert "live-evaluation" in extensions
+    assert "docs/extensions.md" in contributing
+    assert "make cookbooks" in contributing

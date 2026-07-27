@@ -38,6 +38,7 @@ dev = [
     "mkdocs>=1.6,<2",
     "mkdocs-material>=9.6,<10",
     "mypy>=1.19,<3",
+    "nbclient>=0.10,<1",
     "nbformat>=5.10,<6",
     "notebook>=7,<8",
     "pip-audit>=2.9,<3",

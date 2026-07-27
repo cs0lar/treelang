@@ -7,6 +7,10 @@
   reusable provider contract suites.
 - [JSON Schema and editor validation](json-schema.md) — canonical v1/v2
   artifacts, CLI extraction, and editor mappings.
+- [End-to-end cookbooks](cookbooks.md) — tested tutorials from local execution
+  through model-backed MCP workflows.
+- [Extensions and provider contributions](extensions.md) — implementation
+  contracts, testing expectations, and contribution checklist.
 - [Supported API reference](api.md) — generated from `treelang.__all__`.
 - [Migration guide](migration-0.10.md) — compatibility guidance for the 0.10 series.
 - [Experimental recursive programs](recursive-programs.md) — validate and execute
