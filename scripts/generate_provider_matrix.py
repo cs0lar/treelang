@@ -187,7 +187,8 @@ def render_provider_matrix(manifest: Mapping[str, Any]) -> str:
                 f"- Adapter: `{provider['adapter']}`",
                 f"- Install: `{provider['installation']}`",
                 f"- Contract tests: [`{provider['contract_test']}`]"
-                f"(../{provider['contract_test']})",
+                "(https://github.com/cs0lar/treelang/blob/dev/"
+                f"{provider['contract_test']})",
                 f"- Guide: [`{provider['documentation']}`]"
                 f"({Path(provider['documentation']).name})",
                 f"- [Official documentation]({provider['official_documentation']})",

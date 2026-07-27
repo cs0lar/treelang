@@ -156,7 +156,7 @@ formats, and additional-property rules; see the
 
 ## Resources & examples
 
-- **Documentation** (`docs/`) contains the [supported API reference](docs/api.md),
+- **Documentation** ([published site](https://csolar.github.io/treelang/)) contains the [supported API reference](docs/api.md),
   [architecture decisions](docs/README.md), and the
   [0.10 migration guide](docs/migration-0.10.md).
 - **Cookbook notebooks** (`cookbook/`) walk through building trees, call patterns, and evaluation strategies.

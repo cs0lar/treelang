@@ -22,6 +22,7 @@ test:
 docs:
 	uv run python scripts/generate_api_docs.py
 	uv run python scripts/generate_provider_matrix.py
+	uv run mkdocs build --strict
 
 cookbooks:
 	uv run python scripts/check_cookbooks.py
@@ -32,6 +33,7 @@ build:
 check: lint typecheck test
 	uv run python scripts/generate_api_docs.py --check
 	uv run python scripts/generate_provider_matrix.py --check
+	uv run mkdocs build --strict
 	$(MAKE) cookbooks
 	$(MAKE) build
 
