@@ -24,6 +24,7 @@ Python 3.12 or newer is required.
 - Use the [supported API reference](api.md) to see the stable root exports.
 - Use the [command-line interface](cli.md) to validate, inspect, execute, replay,
   and generate programs.
+- Test integrations with [deterministic fakes and provider contracts](testing.md).
 - Learn the [execution and replay semantics](execution-resilience.md).
 - Compare model integrations in the [provider compatibility matrix](provider-matrix.md).
 - Follow the [0.10 migration guide](migration-0.10.md) when upgrading.

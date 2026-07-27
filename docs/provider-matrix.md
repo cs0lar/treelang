@@ -25,7 +25,7 @@ selected through declared capabilities; **unsupported** is rejected or omitted.
 
 - Adapter: `treelang.ai.transport.OpenAITransport`
 - Install: `treelang`
-- Contract tests: [`tests/ai/test_arborist.py`](https://github.com/cs0lar/treelang/blob/dev/tests/ai/test_arborist.py)
+- Contract tests: [`tests/test_testing.py`](https://github.com/cs0lar/treelang/blob/dev/tests/test_testing.py)
 - Guide: [`docs/provider-capabilities.md`](provider-capabilities.md)
 - [Official documentation](https://platform.openai.com/docs/guides/structured-outputs)
 - Checked model profiles:
@@ -37,7 +37,7 @@ selected through declared capabilities; **unsupported** is rejected or omitted.
 
 - Adapter: `treelang.ai.anthropic.AnthropicTransport`
 - Install: `treelang[anthropic]`
-- Contract tests: [`tests/ai/test_anthropic.py`](https://github.com/cs0lar/treelang/blob/dev/tests/ai/test_anthropic.py)
+- Contract tests: [`tests/test_testing.py`](https://github.com/cs0lar/treelang/blob/dev/tests/test_testing.py)
 - Guide: [`docs/anthropic.md`](anthropic.md)
 - [Official documentation](https://platform.claude.com/docs/en/build-with-claude/structured-outputs)
 - Checked model profiles:

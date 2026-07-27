@@ -46,6 +46,10 @@ treelang execute program.json --max-nodes 1000 --timeout 10
 See the [CLI guide](docs/cli.md) for replay fixtures, provider-backed generation,
 and stable exit statuses.
 
+Provider and application authors can import deterministic fakes and reusable,
+framework-neutral contract suites from `treelang.testing`; see the
+[testing-kit guide](docs/testing.md).
+
 ### Wire up tools (MCP)
 
 ```python
