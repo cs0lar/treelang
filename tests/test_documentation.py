@@ -29,6 +29,7 @@ def test_documentation_index_links_required_architecture_decisions():
     assert "0002-execution-semantics.md" in index
     assert "0003-provider-contracts.md" in index
     assert "migration-0.10.md" in index
+    assert "migration-1.0.md" in index
     assert "provider-matrix.md" in index
 
 
@@ -44,7 +45,8 @@ def test_documentation_site_includes_generated_reference_and_guides():
     assert "JSON Schema and editor validation: json-schema.md" in configuration
     assert "End-to-end cookbooks: cookbooks.md" in configuration
     assert "Extensions and provider contributions: extensions.md" in configuration
-    assert "Migration guide: migration-0.10.md" in configuration
+    assert "Migration guide 1.0: migration-1.0.md" in configuration
+    assert "Migration guide 0.10: migration-0.10.md" in configuration
     assert "adr/0004-recursive-schema-and-execution.md" in configuration
     assert "Versioned documentation" in landing_page
 

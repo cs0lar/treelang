@@ -1,5 +1,67 @@
 # Changelog
 
+## [1.0.0] - 2026-07-27
+
+Treelang 1.0 establishes the version 1 language, supported root API, execution
+semantics, provider contracts, and serialized artifacts as stable compatibility
+surfaces. Schema version 2 recursion remains explicit and opt-in.
+
+### Added
+
+- Added configurable node, nesting, call-depth, tool-call, concurrency, and
+  wall-clock execution budgets.
+- Added opt-in schema version 2 with lexical scope, user functions, explicit
+  calls, direct recursion, and an explicit-stack interpreter.
+- Added deterministic retry, idempotency, cancellation, parallel
+  partial-failure, model replay, and tool replay semantics.
+- Added complete pre-execution JSON Schema validation for evaluated tool inputs,
+  plus property-based and fuzz coverage for language/runtime invariants.
+- Added the optional Anthropic transport and a generated, continuously validated
+  OpenAI/Anthropic capability matrix.
+- Added provider-selectable live evaluation using the same versioned dataset,
+  metrics, workflow controls, and artifact format.
+- Added the `treelang` CLI for schema export, generation, validation, inspection,
+  execution, and deterministic replay.
+- Added framework-neutral downstream model/tool fakes and reusable provider
+  contract suites under `treelang.testing`.
+- Added canonical Draft 2020-12 artifacts for schema versions 1.0 and 2.0 in the
+  wheel and documentation site, with editor mappings and CI drift enforcement.
+- Added a versioned documentation site and credential-free, executable
+  quickstart and custom-provider tutorials.
+
+### Changed
+
+- Separated model capability negotiation from Arborist orchestration and
+  normalized structured output, usage accounting, timeouts, cancellation,
+  rate limits, and provider-error translation.
+- Prefer provider-native strict structured output when supported, with validated
+  capability-aware compatibility fallback.
+- Expanded public documentation around Treelang's plan-first/local-execution
+  niche, realistic use cases, limitations, extensions, and provider
+  contributions.
+- Release documentation is now published by package version with an updated
+  `latest` alias after successful tagged releases.
+
+### Compatibility
+
+- Schema version 1.0 serialization and execution remain compatible with the
+  0.10 series.
+- Schema version 2.0 and recursive model generation require explicit opt-in.
+- Python 3.12 or newer remains required.
+- Anthropic support remains an optional installation extra; the default
+  installation continues to include OpenAI.
+
+### Security
+
+- Generated or untrusted programs can now be constrained by independent
+  execution budgets before they reach application tools.
+- Complete tool schemas are enforced before invocation, so rejected arguments do
+  not consume tool-call budgets or reach providers.
+- Provider errors and cancellation are normalized without treating unrelated
+  failures as structured-output fallback signals.
+- Live model evaluation remains manual, owner-only, environment-protected, and
+  isolated from pull requests and normal CI.
+
 ## [0.10.2] - 2026-07-23
 
 ### Added

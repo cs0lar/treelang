@@ -46,6 +46,13 @@ def test_current_package_passes_public_api_smoke_test():
     smoke_release(metadata["project"]["version"])
 
 
+def test_current_release_metadata_has_a_matching_changelog_section():
+    metadata = tomllib.loads(Path("pyproject.toml").read_text(encoding="utf-8"))
+    version = metadata["project"]["version"]
+
+    assert validate_release(f"v{version}", Path(".")) == version
+
+
 def test_github_release_command_has_explicit_repository_context():
     workflow = Path(".github/workflows/release.yml").read_text(encoding="utf-8")
 

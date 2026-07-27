@@ -716,7 +716,7 @@ Methods:
 
 **Constant** · `treelang`
 
-Current value: `'0.10.2'`
+Current value: `'1.0.0'`
 
 ## `ast_examples`
 
