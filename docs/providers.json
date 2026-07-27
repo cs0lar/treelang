@@ -20,7 +20,7 @@
       "capability_function": "treelang.ai.transport.openai_model_capabilities",
       "installation": "treelang",
       "documentation": "docs/provider-capabilities.md",
-      "contract_test": "tests/ai/test_arborist.py",
+      "contract_test": "tests/test_testing.py",
       "features": {
         "completion": "supported",
         "streaming": "supported",
@@ -54,7 +54,7 @@
       "capability_function": "treelang.ai.anthropic.anthropic_model_capabilities",
       "installation": "treelang[anthropic]",
       "documentation": "docs/anthropic.md",
-      "contract_test": "tests/ai/test_anthropic.py",
+      "contract_test": "tests/test_testing.py",
       "features": {
         "completion": "supported",
         "streaming": "supported",

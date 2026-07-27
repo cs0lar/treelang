@@ -3,6 +3,8 @@
 - [Documentation site home](index.md) — installation, navigation, and versioning.
 - [Command-line interface](cli.md) — validate, inspect, execute, replay, and
   generate programs from scripts or a terminal.
+- [Downstream testing kit](testing.md) — deterministic model/tool fakes and
+  reusable provider contract suites.
 - [Supported API reference](api.md) — generated from `treelang.__all__`.
 - [Migration guide](migration-0.10.md) — compatibility guidance for the 0.10 series.
 - [Experimental recursive programs](recursive-programs.md) — validate and execute

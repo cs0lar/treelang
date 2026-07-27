@@ -5,6 +5,7 @@ from importlib.metadata import distribution
 from pathlib import Path
 
 import treelang
+import treelang.testing
 
 
 def smoke_release(expected_version: str, *, require_installed: bool = False) -> None:
@@ -25,6 +26,8 @@ def smoke_release(expected_version: str, *, require_installed: bool = False) -> 
     }
     if console_scripts.get("treelang") != "treelang.cli:main":
         raise RuntimeError("installed artifact has no supported treelang CLI")
+    if not treelang.testing.__all__:
+        raise RuntimeError("installed artifact has an empty downstream testing kit")
     if require_installed and "site-packages" not in str(Path(treelang.__file__)):
         raise RuntimeError(f"loaded package from source tree: {treelang.__file__}")
 
