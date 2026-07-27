@@ -35,6 +35,17 @@ Turn your toolboxes into executable **Abstract Syntax Trees** (ASTs) that Large 
 pip install treelang
 ```
 
+Treelang also installs a command-line interface:
+
+```sh
+treelang validate program.json
+treelang inspect program.json
+treelang execute program.json --max-nodes 1000 --timeout 10
+```
+
+See the [CLI guide](docs/cli.md) for replay fixtures, provider-backed generation,
+and stable exit statuses.
+
 ### Wire up tools (MCP)
 
 ```python

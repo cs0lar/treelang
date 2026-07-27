@@ -57,6 +57,7 @@ markdown_extensions:
 nav:
   - Home: index.md
   - Guides:
+      - Command-line interface: cli.md
       - Recursive programs: recursive-programs.md
       - Structured model output: structured-output.md
       - Tool input validation: tool-input-validation.md
