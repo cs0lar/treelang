@@ -102,7 +102,8 @@ Phase 9 is complete through PR #128. The versioned documentation site is merged
 through PR #124, the CLI through PR #125, downstream testing fixtures and
 provider contracts through PR #126, and distributed JSON Schema artifacts
 through PR #127. Tested end-to-end cookbooks and extension/provider contribution
-workflows are merged through PR #128. The next task prepares release v1.0.0.
+workflows are merged through PR #128. Release v1.0.0 metadata, changelog, and
+migration guidance are prepared for promotion from `dev` to `main`.
 Before new work, update `dev` and run:
 
 ```sh

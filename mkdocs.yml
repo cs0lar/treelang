@@ -73,7 +73,8 @@ nav:
       - Compatibility matrix: provider-matrix.md
   - Reference:
       - Supported API: api.md
-      - Migration guide: migration-0.10.md
+      - Migration guide 1.0: migration-1.0.md
+      - Migration guide 0.10: migration-0.10.md
   - Architecture decisions:
       - Schema versioning: adr/0001-schema-versioning.md
       - Execution semantics: adr/0002-execution-semantics.md

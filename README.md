@@ -245,7 +245,7 @@ formats, and additional-property rules; see the
 
 - **Documentation** ([published site](https://csolar.github.io/treelang/)) contains the [supported API reference](docs/api.md),
   [architecture decisions](docs/README.md), and the
-  [0.10 migration guide](docs/migration-0.10.md).
+  [1.0 migration guide](docs/migration-1.0.md).
 - **Cookbook notebooks** (`cookbook/`) provide a
   [tested end-to-end learning path](docs/cookbooks.md), from credential-free
   execution and custom providers to live model/MCP workflows.

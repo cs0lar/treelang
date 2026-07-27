@@ -12,7 +12,10 @@
 - [Extensions and provider contributions](extensions.md) — implementation
   contracts, testing expectations, and contribution checklist.
 - [Supported API reference](api.md) — generated from `treelang.__all__`.
-- [Migration guide](migration-0.10.md) — compatibility guidance for the 0.10 series.
+- [Migration guide 1.0](migration-1.0.md) — stability contract and upgrade
+  guidance for the first major release.
+- [Migration guide 0.10](migration-0.10.md) — historical compatibility guidance
+  for the 0.10 series.
 - [Experimental recursive programs](recursive-programs.md) — validate and execute
   opt-in schema version 2 programs with explicit safety budgets.
 - [Structured model output](structured-output.md) — strict JSON Schema capability
