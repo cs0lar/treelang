@@ -31,6 +31,18 @@ def test_documentation_index_links_required_architecture_decisions():
     assert "provider-matrix.md" in index
 
 
+def test_documentation_site_includes_generated_reference_and_guides():
+    configuration = Path("mkdocs.yml").read_text(encoding="utf-8")
+    landing_page = Path("docs/index.md").read_text(encoding="utf-8")
+
+    assert "site_url: https://csolar.github.io/treelang/" in configuration
+    assert "provider: mike" in configuration
+    assert "Supported API: api.md" in configuration
+    assert "Migration guide: migration-0.10.md" in configuration
+    assert "adr/0004-recursive-schema-and-execution.md" in configuration
+    assert "Versioned documentation" in landing_page
+
+
 def test_generated_provider_matrix_is_current_and_runtime_validated():
     manifest = load_manifest()
     reference = Path("docs/provider-matrix.md").read_text(encoding="utf-8")

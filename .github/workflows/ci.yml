@@ -30,6 +30,7 @@ jobs:
       - run: uv run mypy
       - run: uv run python scripts/generate_api_docs.py --check
       - run: uv run python scripts/generate_provider_matrix.py --check
+      - run: uv run mkdocs build --strict
       - name: Validate cookbook notebooks
         run: uv run python scripts/check_cookbooks.py
       - run: uv build

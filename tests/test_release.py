@@ -51,3 +51,13 @@ def test_github_release_command_has_explicit_repository_context():
 
     assert 'gh release create "$GITHUB_REF_NAME"' in workflow
     assert '--repo "$GITHUB_REPOSITORY"' in workflow
+
+
+def test_release_publishes_versioned_documentation_after_github_release():
+    workflow = Path(".github/workflows/release.yml").read_text(encoding="utf-8")
+
+    assert "documentation:" in workflow
+    assert "needs: github-release" in workflow
+    assert "contents: write" in workflow
+    assert 'mike deploy --push --update-aliases "${DOCS_VERSION#v}" latest' in workflow
+    assert "mike set-default --push latest" in workflow

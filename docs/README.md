@@ -1,5 +1,6 @@
 # Treelang Documentation
 
+- [Documentation site home](index.md) — installation, navigation, and versioning.
 - [Supported API reference](api.md) — generated from `treelang.__all__`.
 - [Migration guide](migration-0.10.md) — compatibility guidance for the 0.10 series.
 - [Experimental recursive programs](recursive-programs.md) — validate and execute
@@ -24,5 +25,7 @@
   - [ADR 0003: Separate provider and model transports](adr/0003-provider-contracts.md)
   - [ADR 0004: Add recursion through a version 2 schema and explicit-stack runtime](adr/0004-recursive-schema-and-execution.md)
 
-Run `make docs` after changing the supported public API. `make check` and CI
-verify that the committed reference is current.
+Run `make docs` after changing documentation or the supported public API.
+`make check` and CI verify generated references and build the site in strict
+mode. Tagged releases publish an immutable version with Mike and update the
+`latest` alias.

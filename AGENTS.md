@@ -89,13 +89,18 @@ PR #115, and property-based and fuzz coverage for language and runtime invariant
 through PR #116. Execution resilience and deterministic replay semantics are
 merged through PR #117.
 
-Phase 8 is now active. Model capability negotiation is separated from Arborist
-orchestration through PR #118, and the contract-tested Anthropic adapter is merged
-through PR #119. Cross-provider structured output, usage, failure, timeout, and
-cancellation behavior is normalized through PR #120. The generated, continuously
-validated provider capability and compatibility matrix is merged through PR #121.
-The final slice runs the same versioned live-evaluation cases across supported
-providers.
+Phase 8 is complete through PR #122. Model capability negotiation is separated
+from Arborist orchestration through PR #118, and the contract-tested Anthropic
+adapter is merged through PR #119. Cross-provider structured output, usage,
+failure, timeout, and cancellation behavior is normalized through PR #120. The
+generated, continuously validated provider capability and compatibility matrix
+is merged through PR #121.
+The same versioned live-evaluation cases run across supported providers through
+PR #122.
+
+Phase 9 is now active. The first slice publishes a versioned documentation site
+with generated API references, guides, architecture decisions, and migration
+notes.
 Before new work, update `dev` and run:
 
 ```sh
@@ -196,6 +201,7 @@ cannot be exceeded, and generative tests preserve execution invariants.
 4. Publish and continuously test a provider capability and compatibility matrix.
    Complete through PR #121.
 5. Run the same versioned live-evaluation cases across supported providers.
+   Complete through PR #122.
 
 Exit criteria: the supported evaluation suite passes against at least two model
 providers without application-level changes.
