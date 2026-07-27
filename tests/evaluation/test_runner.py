@@ -1,9 +1,14 @@
 import json
 from itertools import count
+from pathlib import Path
 
 import pytest
 
-from evaluation.dataset import DEFAULT_DATASET_PATH, load_dataset
+from evaluation.dataset import (
+    DEFAULT_DATASET_PATH,
+    DEFAULT_RECURSIVE_DATASET_PATH,
+    load_dataset,
+)
 from evaluation.eval import main
 from evaluation.models import EvaluationCase, EvaluationDataset, FailureCategory
 from evaluation.offline import OfflineModelTransport, OfflineToolProvider
@@ -29,6 +34,17 @@ async def test_versioned_offline_dataset_passes_deterministically():
     assert all(case.prompt_tokens == 0 for case in result.results)
     assert all(case.completion_tokens == 0 for case in result.results)
     assert all(case.estimated_cost_usd == 0 for case in result.results)
+
+
+@pytest.mark.asyncio
+async def test_recursive_offline_dataset_passes_deterministically():
+    dataset = load_dataset(DEFAULT_RECURSIVE_DATASET_PATH)
+    result = await OfflineBenchmarkRunner(
+        OfflineToolProvider(), clock=ticking_clock(), model="curated-ast-v2"
+    ).run(dataset)
+
+    assert dataset.version == "2.0"
+    assert result.passed == result.total == 2
 
 
 @pytest.mark.asyncio
@@ -127,6 +143,27 @@ async def test_cli_writes_machine_readable_result(tmp_path):
     comparison = json.loads(comparison_output.read_text(encoding="utf-8"))
     assert comparison["passed"] is True
     assert comparison["issues"] == []
+
+
+@pytest.mark.asyncio
+async def test_recursive_cli_compares_committed_baseline(tmp_path):
+    output = tmp_path / "recursive.json"
+    comparison_output = tmp_path / "recursive-comparison.json"
+
+    assert (
+        await main(
+            DEFAULT_RECURSIVE_DATASET_PATH,
+            output,
+            baseline_path=Path("evaluation/baselines/v2/offline-recursion.json"),
+            tolerances_path=Path("evaluation/baselines/v2/tolerances.json"),
+            comparison_output_path=comparison_output,
+        )
+        == 0
+    )
+    payload = json.loads(output.read_text(encoding="utf-8"))
+    assert payload["dataset_version"] == "2.0"
+    assert payload["model"] == "curated-ast-v2"
+    assert payload["passed"] == payload["total"] == 2
 
 
 @pytest.mark.asyncio

@@ -67,15 +67,16 @@ Examples:
 
 ## ✅ Code Quality & Testing
 
-- Run the complete local quality gate before submitting a PR:
+- Format changes and run the complete local quality gate before submitting a PR:
   ```sh
+  make format
   make check
   ```
 - Write tests using `pytest`; existing `unittest` test cases remain supported.
-- Ensure all tests pass before submitting a PR:
-  ```sh
-  uv run pytest
-  ```
+- Add a focused regression test for every behavior change.
+- Use the deterministic fakes and contract suites in `treelang.testing` for
+  application and provider integrations.
+- Run `make cookbooks` when changing a notebook or cookbook server.
 
 ## 🧪 Evaluation
 
@@ -86,15 +87,28 @@ The `evaluation` directory contains code for tracking the quality and robustness
   ```sh
   uv run python evaluation/eval.py
   ```
+- Credentialed evaluations run only through the owner-only manual GitHub
+  workflow; normal pull requests must remain offline.
 
 ## 📖 Documentation Contributions
 
 - Improve README, inline comments, or create guides in the `docs/` directory.
 - Use clear and concise language.
+- Run `make docs` to regenerate API, provider-matrix, and JSON Schema artifacts
+  and strictly build the documentation site.
+- Add credential-free tutorials to the cookbook CI execution set using the
+  process in the [cookbook guide](docs/cookbooks.md).
+
+## 🔌 Extensions and Providers
+
+Read the [extension and provider contribution guide](docs/extensions.md) before
+adding a tool provider, model transport, selector, memory integration, or
+language feature. Provider pull requests must pass the shared contract suite,
+document optional dependencies and credentials, update the compatibility
+matrix, and preserve provider-neutral orchestration.
 
 ## 💬 Need Help?
 
-- Join our community discussions on **[Discord/Slack/GitHub Discussions]**.
 - Open an issue if you're unsure about something.
 
 We appreciate your contributions and look forward to working with you! 🚀

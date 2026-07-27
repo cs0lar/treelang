@@ -151,7 +151,24 @@ async def test_live_runner_categorizes_model_failures(response, case, category):
 
 
 @pytest.mark.asyncio
-async def test_live_cli_writes_machine_readable_result(tmp_path, monkeypatch):
+@pytest.mark.parametrize(
+    ("provider_name", "transport_path", "api_key_name"),
+    [
+        ("openai", "evaluation.live_eval.OpenAITransport", "OPENAI_API_KEY"),
+        (
+            "anthropic",
+            "evaluation.live_eval.AnthropicTransport",
+            "ANTHROPIC_API_KEY",
+        ),
+    ],
+)
+async def test_live_cli_runs_same_dataset_for_each_provider(
+    tmp_path,
+    monkeypatch,
+    provider_name,
+    transport_path,
+    api_key_name,
+):
     dataset_path = tmp_path / "live.jsonl"
     dataset_path.write_text(
         '{"id":"answer","q":"question","a":42,"must_use":[]}\n',
@@ -159,16 +176,15 @@ async def test_live_cli_writes_machine_readable_result(tmp_path, monkeypatch):
     )
     output_path = tmp_path / "results" / "live.json"
     transport = UsageTransport([value_program(42)])
-    monkeypatch.setenv("OPENAI_API_KEY", "test-key")
-    monkeypatch.setattr(
-        "evaluation.live_eval.OpenAITransport", lambda **kwargs: transport
-    )
+    monkeypatch.setenv(api_key_name, "test-key")
+    monkeypatch.setattr(transport_path, lambda **kwargs: transport)
 
     exit_code = await run_live_cli(
         dataset_path=dataset_path,
         dataset_version="1.0",
         output_path=output_path,
-        model="gpt-test",
+        model=f"{provider_name}-test",
+        provider_name=provider_name,
         input_cost_per_million=2.0,
         output_cost_per_million=8.0,
     )
@@ -176,4 +192,14 @@ async def test_live_cli_writes_machine_readable_result(tmp_path, monkeypatch):
     payload = json.loads(output_path.read_text(encoding="utf-8"))
     assert exit_code == 0
     assert payload["mode"] == "live"
+    assert payload["provider"] == provider_name
+    assert payload["model"] == f"{provider_name}-test"
+    assert [result["case_id"] for result in payload["results"]] == ["answer"]
     assert payload["passed"] == payload["total"] == 1
+
+
+def test_live_runtime_rejects_unknown_provider():
+    from evaluation.live_eval import create_model_runtime
+
+    with pytest.raises(ValueError, match="Unsupported model provider"):
+        create_model_runtime("other", None)  # type: ignore[arg-type]

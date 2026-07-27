@@ -3,8 +3,28 @@ import treelang
 
 def test_public_api_exports_core_types():
     assert treelang.AST is not None
+    assert treelang.AnthropicTransport is not None
     assert treelang.TreeProgram is not None
     assert treelang.ToolProvider is not None
+    assert treelang.ExecutionLimits is not None
+    assert treelang.ExecutionPolicy is not None
+    assert treelang.RetryPolicy is not None
+    assert treelang.BranchOutcome is not None
+    assert treelang.ToolReplayProvider is not None
+    assert treelang.ModelReplayTransport is not None
+    assert treelang.ModelCapabilities is not None
+    assert treelang.ModelCapabilityNegotiator is not None
+    assert treelang.CapabilityAwareTransport is not None
+    assert treelang.ModelTransport is not None
+    assert treelang.UsageAwareTransport is not None
+    assert issubclass(treelang.ModelTransportError, treelang.ProviderResponseError)
+    assert issubclass(treelang.ModelTimeoutError, TimeoutError)
+    assert issubclass(treelang.ExecutionLimitError, treelang.ASTExecutionError)
+    assert issubclass(treelang.ReplayMismatchError, treelang.ProviderResponseError)
+    assert issubclass(
+        treelang.StructuredOutputUnsupportedError,
+        treelang.ProviderResponseError,
+    )
     assert treelang.CURRENT_SCHEMA_VERSION == "1.0"
     assert treelang.__version__
     assert isinstance(treelang.ast_json_schema(), str)

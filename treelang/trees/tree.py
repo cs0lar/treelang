@@ -2,7 +2,10 @@ from collections.abc import Callable
 from typing import Any, Dict, List, Union, overload
 
 from treelang.ai.provider import ToolProvider
+from treelang.trees.budget import ExecutionLimits
 from treelang.trees.compilation import compile_tool
+from treelang.trees.execution import execute
+from treelang.trees.policy import ExecutionPolicy
 from treelang.trees.schemas.v1 import AST as ASTSchema
 from treelang.trees.schemas.v1 import TreeNode
 from treelang.trees.traversal import avisit, visit
@@ -45,18 +48,26 @@ class AST:
             raise ValueError(f"Failed to parse AST: {e}") from e
 
     @classmethod
-    async def eval(cls, ast: TreeNode, provider: ToolProvider) -> Any:
+    async def eval(
+        cls,
+        ast: TreeNode,
+        provider: ToolProvider,
+        *,
+        limits: ExecutionLimits | None = None,
+        policy: ExecutionPolicy | None = None,
+    ) -> Any:
         """
         Evaluates the given AST.
 
         Args:
             ast TreeNode: The AST to evaluate.
             provider ToolProvider: The provider to use for evaluation.
+            limits ExecutionLimits: Optional per-invocation resource limits.
 
         Returns:
             Any: The result of evaluating the AST.
         """
-        return await ast.eval(provider)
+        return await execute(ast, provider, limits, policy=policy)
 
     @classmethod
     def visit(cls, ast: TreeNode, op: Callable[[TreeNode], None]) -> None:
@@ -100,14 +111,22 @@ class AST:
         return ast.model_dump_json(indent=2)
 
     @staticmethod
-    async def tool(ast: TreeNode, provider: ToolProvider) -> Callable[..., Any]:
+    async def tool(
+        ast: TreeNode,
+        provider: ToolProvider,
+        *,
+        limits: ExecutionLimits | None = None,
+        policy: ExecutionPolicy | None = None,
+    ) -> Callable[..., Any]:
         """
         Converts the given AST into a callable function that can be added as a tool.
 
         Args:
             ast (TreeNode): The AST to convert.
+            provider (ToolProvider): The provider used by the compiled tool.
+            limits (ExecutionLimits): Optional limits reset for each invocation.
 
         Returns:
             AnyFunction: The callable function representation of the AST.
         """
-        return await compile_tool(ast, provider)
+        return await compile_tool(ast, provider, limits, policy)

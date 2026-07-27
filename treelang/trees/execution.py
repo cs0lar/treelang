@@ -3,11 +3,18 @@
 import asyncio
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
+from functools import partial
 from typing import Any, Mapping
 
 from treelang.ai.provider import ToolProvider
-from treelang.ai.tool import normalize_tool_definition
-from treelang.exceptions import ASTValidationError, ProviderResponseError
+from treelang.ai.tool import normalize_tool_definition, validate_tool_arguments
+from treelang.exceptions import (
+    ASTValidationError,
+    ExecutionLimitError,
+    ProviderResponseError,
+)
+from treelang.trees.budget import ExecutionBudget, ExecutionLimits
+from treelang.trees.policy import ExecutionPolicy, call_tool, run_program
 from treelang.trees.schemas.v1 import (
     TreeConditional,
     TreeFilter,
@@ -34,12 +41,49 @@ class ExecutionContext:
 
     names: Mapping[str, Any] = field(default_factory=dict)
     nodes: Mapping[int, Any] = field(default_factory=dict)
+    budget: ExecutionBudget = field(default_factory=ExecutionBudget)
+    policy: ExecutionPolicy = field(default_factory=ExecutionPolicy)
+    depth: int = 0
+
+    @classmethod
+    def with_limits(
+        cls,
+        limits: ExecutionLimits | None = None,
+        policy: ExecutionPolicy | None = None,
+    ) -> "ExecutionContext":
+        return cls(
+            budget=ExecutionBudget(limits or ExecutionLimits()),
+            policy=policy or ExecutionPolicy(),
+        )
 
     def bind_names(self, values: Mapping[str, Any]) -> "ExecutionContext":
-        return ExecutionContext(names={**self.names, **values}, nodes=self.nodes)
+        return ExecutionContext(
+            names={**self.names, **values},
+            nodes=self.nodes,
+            budget=self.budget,
+            policy=self.policy,
+            depth=self.depth,
+        )
 
     def bind_nodes(self, values: Mapping[int, Any]) -> "ExecutionContext":
-        return ExecutionContext(names=self.names, nodes={**self.nodes, **values})
+        return ExecutionContext(
+            names=self.names,
+            nodes={**self.nodes, **values},
+            budget=self.budget,
+            policy=self.policy,
+            depth=self.depth,
+        )
+
+    def enter_node(self) -> "ExecutionContext":
+        depth = self.depth + 1
+        self.budget.consume_node(depth)
+        return ExecutionContext(
+            names=self.names,
+            nodes=self.nodes,
+            budget=self.budget,
+            policy=self.policy,
+            depth=depth,
+        )
 
     def value_for(self, node: object, name: str, default: Any) -> Any:
         if id(node) in self.nodes:
@@ -53,6 +97,7 @@ async def evaluate(
     context: ExecutionContext | None = None,
 ) -> Any:
     """Evaluate one AST node without mutating its schema model."""
+    context = (context or ExecutionContext()).enter_node()
     if isinstance(node, TreeValue):
         return _evaluate_value(node, context)
     if isinstance(node, TreeFunction):
@@ -70,6 +115,28 @@ async def evaluate(
     if isinstance(node, TreeReduce):
         return await _evaluate_reduce(node, provider, context)
     raise NotImplementedError(f"Unsupported AST node: {type(node).__name__}")
+
+
+async def execute(
+    node: TreeNode,
+    provider: ToolProvider,
+    limits: ExecutionLimits | None = None,
+    context: ExecutionContext | None = None,
+    policy: ExecutionPolicy | None = None,
+) -> Any:
+    """Evaluate a root node with one shared budget and wall-clock deadline."""
+    runtime_context = context or ExecutionContext.with_limits(limits, policy)
+    timeout = runtime_context.budget.limits.timeout_seconds
+    if timeout is None:
+        return await node.eval(provider, runtime_context)
+    deadline = asyncio.timeout(timeout)
+    try:
+        async with deadline:
+            return await node.eval(provider, runtime_context)
+    except TimeoutError:
+        if deadline.expired():
+            raise ExecutionLimitError("wall_clock_seconds", timeout) from None
+        raise
 
 
 def _evaluate_value(node: TreeValue, context: ExecutionContext | None) -> Any:
@@ -90,17 +157,27 @@ async def _evaluate_function(
     tool = normalize_tool_definition(raw_tool, expected_name=tool_name)
     properties = tool["properties"]
     property_names = list(properties)
-    if len(property_names) != len(node.params):
+    if "input_schema" not in tool and len(node.params) != len(property_names):
         raise ASTValidationError(
             f"Function '{tool_name}' expects {len(property_names)} parameters, "
             f"got {len(node.params)}"
         )
+    if len(node.params) > len(property_names):
+        raise ASTValidationError(
+            f"Function '{tool_name}' accepts at most {len(property_names)} parameters, "
+            f"got {len(node.params)}"
+        )
 
-    results = await asyncio.gather(
-        *[param.eval(provider, context) for param in node.params]
+    if context is None:  # pragma: no cover - evaluate() always supplies a context
+        context = ExecutionContext()
+    results = await context.budget.run_all(
+        [partial(param.eval, provider, context) for param in node.params]
     )
-    arguments = dict(zip(property_names, results, strict=True))
-    output = await provider.call_tool(tool_name, arguments)
+    arguments = dict(zip(property_names[: len(results)], results, strict=True))
+    validate_tool_arguments(tool, arguments)
+    output = await call_tool(
+        provider, tool_name, arguments, context.budget, context.policy
+    )
     return output.content
 
 
@@ -109,9 +186,16 @@ async def _evaluate_program(
     provider: ToolProvider,
     context: ExecutionContext | None,
 ) -> Any:
-    results = await asyncio.gather(
-        *[child.eval(provider, context) for child in node.body]
+    if context is None:  # pragma: no cover - evaluate() always supplies a context
+        context = ExecutionContext()
+    results = await run_program(
+        [partial(child.eval, provider, context) for child in node.body],
+        node.mode,
+        context.budget,
+        context.policy,
     )
+    if context.policy.parallel_failures == "collect":
+        return results
     return results[0] if len(results) == 1 else results
 
 

@@ -6,8 +6,14 @@ from typing import Any
 
 from treelang.ai.provider import ToolProvider
 from treelang.ai.tool import normalize_tool_definition
-from treelang.exceptions import ASTCompilationError, ASTExecutionError
-from treelang.trees.execution import ExecutionContext
+from treelang.exceptions import (
+    ASTCompilationError,
+    ASTExecutionError,
+    ExecutionLimitError,
+)
+from treelang.trees.budget import ExecutionLimits
+from treelang.trees.execution import ExecutionContext, execute
+from treelang.trees.policy import ExecutionPolicy
 from treelang.trees.schemas.v1 import (
     TreeFunction,
     TreeLambda,
@@ -30,7 +36,12 @@ JSON_TYPE_ANNOTATIONS: dict[str, object] = {
 }
 
 
-async def compile_tool(ast: TreeNode, provider: ToolProvider) -> CompiledTool:
+async def compile_tool(
+    ast: TreeNode,
+    provider: ToolProvider,
+    limits: ExecutionLimits | None = None,
+    policy: ExecutionPolicy | None = None,
+) -> CompiledTool:
     """Compile a program AST into a keyword-only async callable."""
     if not isinstance(ast, TreeProgram):
         raise ValueError("AST root must be a TreeProgram")
@@ -77,7 +88,7 @@ async def compile_tool(ast: TreeNode, provider: ToolProvider) -> CompiledTool:
                 Parameter.KEYWORD_ONLY,
                 annotation=(
                     JSON_TYPE_ANNOTATIONS.get(property_type, Any)
-                    if property_type is not None
+                    if isinstance(property_type, str)
                     else Any
                 ),
             )
@@ -106,13 +117,15 @@ async def compile_tool(ast: TreeNode, provider: ToolProvider) -> CompiledTool:
             ) from error
 
         try:
-            context = ExecutionContext().bind_nodes(
+            context = ExecutionContext.with_limits(limits, policy).bind_nodes(
                 {
                     id(node): bound_args.arguments[parameter_name]
                     for parameter_name, node in bindings
                 }
             )
-            return await ast.eval(provider, context)
+            return await execute(ast, provider, context=context)
+        except ExecutionLimitError:
+            raise
         except Exception as error:
             raise ASTExecutionError(
                 f"Error executing {program_name}(): {error}"

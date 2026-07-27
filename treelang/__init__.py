@@ -2,18 +2,48 @@
 
 from importlib.metadata import PackageNotFoundError, version
 
+from treelang.ai.anthropic import AnthropicTransport
+from treelang.ai.capabilities import (
+    CapabilityAwareTransport,
+    DefaultModelCapabilityNegotiator,
+    ModelCapabilities,
+    ModelCapabilityNegotiator,
+    StructuredOutputSelection,
+)
 from treelang.ai.provider import MCPToolProvider, ToolOutput, ToolProvider
 from treelang.ai.tool import ToolDefinition, ToolProperty
+from treelang.ai.transport import ModelTransport, ModelUsage, UsageAwareTransport
 from treelang.exceptions import (
     ASTCompilationError,
     ASTExecutionError,
     ASTValidationError,
+    ExecutionLimitError,
+    ModelAuthenticationError,
+    ModelConnectionError,
+    ModelRateLimitError,
+    ModelTimeoutError,
+    ModelTransportError,
     ProviderResponseError,
+    ReplayMismatchError,
+    StructuredOutputUnsupportedError,
     ToolExecutionError,
     ToolNotFoundError,
     TreelangError,
 )
 from treelang.observability import NoOpTraceSink, Observability, TraceSink
+from treelang.replay import (
+    ModelReplayEntry,
+    ModelReplayTransport,
+    ToolReplayEntry,
+    ToolReplayProvider,
+)
+from treelang.schema_artifacts import (
+    SUPPORTED_SCHEMA_VERSIONS,
+    json_schema_text,
+    load_json_schema,
+)
+from treelang.trees.budget import ExecutionLimits
+from treelang.trees.policy import BranchOutcome, ExecutionPolicy, RetryPolicy
 from treelang.trees.schemas import CURRENT_SCHEMA_VERSION, ast_examples, ast_json_schema
 from treelang.trees.schemas.v1 import (
     TreeConditional,
@@ -38,17 +68,42 @@ __all__ = [
     "ASTCompilationError",
     "ASTExecutionError",
     "ASTValidationError",
+    "AnthropicTransport",
+    "BranchOutcome",
+    "CapabilityAwareTransport",
     "CURRENT_SCHEMA_VERSION",
+    "DefaultModelCapabilityNegotiator",
+    "ExecutionLimitError",
+    "ExecutionLimits",
+    "ExecutionPolicy",
     "MCPToolProvider",
+    "ModelAuthenticationError",
+    "ModelCapabilities",
+    "ModelCapabilityNegotiator",
+    "ModelConnectionError",
+    "ModelRateLimitError",
+    "ModelReplayEntry",
+    "ModelReplayTransport",
+    "ModelTimeoutError",
+    "ModelTransport",
+    "ModelTransportError",
+    "ModelUsage",
     "NoOpTraceSink",
     "Observability",
     "ProviderResponseError",
+    "ReplayMismatchError",
+    "RetryPolicy",
+    "StructuredOutputUnsupportedError",
+    "StructuredOutputSelection",
+    "SUPPORTED_SCHEMA_VERSIONS",
     "ToolExecutionError",
     "ToolDefinition",
     "ToolNotFoundError",
     "ToolOutput",
     "ToolProperty",
     "ToolProvider",
+    "ToolReplayEntry",
+    "ToolReplayProvider",
     "TraceSink",
     "TreeConditional",
     "TreeFilter",
@@ -60,7 +115,10 @@ __all__ = [
     "TreeReduce",
     "TreeValue",
     "TreelangError",
+    "UsageAwareTransport",
     "__version__",
     "ast_examples",
     "ast_json_schema",
+    "json_schema_text",
+    "load_json_schema",
 ]

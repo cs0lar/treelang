@@ -1,11 +1,44 @@
 # Treelang Documentation
 
+- [Documentation site home](index.md) — installation, navigation, and versioning.
+- [Command-line interface](cli.md) — validate, inspect, execute, replay, and
+  generate programs from scripts or a terminal.
+- [Downstream testing kit](testing.md) — deterministic model/tool fakes and
+  reusable provider contract suites.
+- [JSON Schema and editor validation](json-schema.md) — canonical v1/v2
+  artifacts, CLI extraction, and editor mappings.
+- [End-to-end cookbooks](cookbooks.md) — tested tutorials from local execution
+  through model-backed MCP workflows.
+- [Extensions and provider contributions](extensions.md) — implementation
+  contracts, testing expectations, and contribution checklist.
 - [Supported API reference](api.md) — generated from `treelang.__all__`.
-- [Migration guide](migration-0.10.md) — compatibility guidance for the 0.10 series.
+- [Migration guide 1.0](migration-1.0.md) — stability contract and upgrade
+  guidance for the first major release.
+- [Migration guide 0.10](migration-0.10.md) — historical compatibility guidance
+  for the 0.10 series.
+- [Experimental recursive programs](recursive-programs.md) — validate and execute
+  opt-in schema version 2 programs with explicit safety budgets.
+- [Structured model output](structured-output.md) — strict JSON Schema capability
+  negotiation, fallback policy, and compatibility mode.
+- [Tool input validation](tool-input-validation.md) — full pre-invocation JSON
+  Schema enforcement for v1 and v2 execution.
+- [Execution resilience and replay](execution-resilience.md) — configure safe
+  retries, parallel partial failures, cancellation, and offline replay.
+- [Model capability negotiation](provider-capabilities.md) — declare transport
+  features and customize provider-neutral request policy.
+- [Anthropic transport](anthropic.md) — install and use the optional Claude
+  Messages API adapter.
+- [Normalized transport contracts](transport-contracts.md) — common usage,
+  errors, timeout, cancellation, and fallback semantics.
+- [Provider compatibility matrix](provider-matrix.md) — continuously validated
+  features, installation paths, and representative model capabilities.
 - Architecture decisions:
   - [ADR 0001: Version the serialized AST schema](adr/0001-schema-versioning.md)
   - [ADR 0002: Execute ASTs with isolated async contexts](adr/0002-execution-semantics.md)
   - [ADR 0003: Separate provider and model transports](adr/0003-provider-contracts.md)
+  - [ADR 0004: Add recursion through a version 2 schema and explicit-stack runtime](adr/0004-recursive-schema-and-execution.md)
 
-Run `make docs` after changing the supported public API. `make check` and CI
-verify that the committed reference is current.
+Run `make docs` after changing documentation or the supported public API.
+`make check` and CI verify generated references and build the site in strict
+mode. Tagged releases publish an immutable version with Mike and update the
+`latest` alias.

@@ -1,0 +1,149 @@
+{
+  "version": "2.0",
+  "cases": [
+    {
+      "id": "recursive-sum",
+      "question": "Recursively sum the integers from one through three.",
+      "expected": 6.0,
+      "must_use": ["function_definition", "call", "variable"],
+      "ast": {
+        "type": "program",
+        "schema_version": "2.0",
+        "mode": "single",
+        "definitions": [
+          {
+            "type": "function_definition",
+            "name": "sum_to_three",
+            "params": ["n", "acc"],
+            "body": {
+              "type": "conditional",
+              "condition": {
+                "type": "tool_call",
+                "tool": "greater_than",
+                "arguments": {
+                  "value": {"type": "variable", "name": "n"},
+                  "threshold": {"type": "literal", "value": 3}
+                }
+              },
+              "true_branch": {"type": "variable", "name": "acc"},
+              "false_branch": {
+                "type": "call",
+                "function": "sum_to_three",
+                "arguments": [
+                  {
+                    "type": "tool_call",
+                    "tool": "add",
+                    "arguments": {
+                      "x": {"type": "variable", "name": "n"},
+                      "y": {"type": "literal", "value": 1}
+                    }
+                  },
+                  {
+                    "type": "tool_call",
+                    "tool": "add",
+                    "arguments": {
+                      "x": {"type": "variable", "name": "acc"},
+                      "y": {"type": "variable", "name": "n"}
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        ],
+        "body": [
+          {
+            "type": "call",
+            "function": "sum_to_three",
+            "arguments": [
+              {"type": "literal", "value": 1},
+              {"type": "literal", "value": 0}
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "mutual-recursion-even",
+      "question": "Determine recursively whether four is even.",
+      "expected": true,
+      "must_use": ["even", "odd", "call"],
+      "ast": {
+        "type": "program",
+        "schema_version": "2.0",
+        "mode": "single",
+        "definitions": [
+          {
+            "type": "function_definition",
+            "name": "even",
+            "params": ["n"],
+            "body": {
+              "type": "conditional",
+              "condition": {
+                "type": "tool_call",
+                "tool": "greater_than",
+                "arguments": {
+                  "value": {"type": "variable", "name": "n"},
+                  "threshold": {"type": "literal", "value": 0}
+                }
+              },
+              "true_branch": {
+                "type": "call",
+                "function": "odd",
+                "arguments": [
+                  {
+                    "type": "tool_call",
+                    "tool": "add",
+                    "arguments": {
+                      "x": {"type": "variable", "name": "n"},
+                      "y": {"type": "literal", "value": -1}
+                    }
+                  }
+                ]
+              },
+              "false_branch": {"type": "literal", "value": true}
+            }
+          },
+          {
+            "type": "function_definition",
+            "name": "odd",
+            "params": ["n"],
+            "body": {
+              "type": "conditional",
+              "condition": {
+                "type": "tool_call",
+                "tool": "greater_than",
+                "arguments": {
+                  "value": {"type": "variable", "name": "n"},
+                  "threshold": {"type": "literal", "value": 0}
+                }
+              },
+              "true_branch": {
+                "type": "call",
+                "function": "even",
+                "arguments": [
+                  {
+                    "type": "tool_call",
+                    "tool": "add",
+                    "arguments": {
+                      "x": {"type": "variable", "name": "n"},
+                      "y": {"type": "literal", "value": -1}
+                    }
+                  }
+                ]
+              },
+              "false_branch": {"type": "literal", "value": false}
+            }
+          }
+        ],
+        "body": [
+          {
+            "type": "call",
+            "function": "even",
+            "arguments": [{"type": "literal", "value": 4}]
+          }
+        ]
+      }
+    }
+  ]
+}

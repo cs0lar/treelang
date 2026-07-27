@@ -1,6 +1,6 @@
 [project]
 name = "treelang"
-version = "0.10.2"
+version = "1.0.0"
 description = "LLM function calling on steroids using Abstract Syntax Trees."
 authors = [
     { name = "csolar", email = "cristiano.solarino@brightminded.com" },
@@ -9,22 +9,36 @@ license = "MIT"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
+    "jsonschema>=4.23,<5",
     "mcp>=1.28.1,<2",
     "openai>=1.68,<3",
     "pydantic>=2.10,<3",
     "python-dotenv>=1.0,<2",
 ]
 
+[project.optional-dependencies]
+anthropic = ["anthropic>=0.104,<1"]
+
+[project.scripts]
+treelang = "treelang.cli:main"
+
 [project.urls]
 Homepage = "https://github.com/cs0lar/treelang"
 Issues = "https://github.com/cs0lar/treelang/issues"
+Documentation = "https://csolar.github.io/treelang/"
 
 [dependency-groups]
 dev = [
+    "anthropic>=0.104,<1",
     "build>=1.4,<2",
+    "hypothesis>=6.135,<7",
     "ipykernel>=6.29,<8",
     "mcp[cli]>=1.28.1,<2",
+    "mike>=2.1,<3",
+    "mkdocs>=1.6,<2",
+    "mkdocs-material>=9.6,<10",
     "mypy>=1.19,<3",
+    "nbclient>=0.10,<1",
     "nbformat>=5.10,<6",
     "notebook>=7,<8",
     "pip-audit>=2.9,<3",
@@ -32,7 +46,8 @@ dev = [
     "pytest>=9.0,<10",
     "pytest-asyncio>=1.3,<2",
     "pytest-cov>=7.0,<8",
-    "ruff>=0.15,<0.16",
+    "ruff>=0.15,<0.17",
+    "types-jsonschema>=4.23,<5",
 ]
 
 [build-system]

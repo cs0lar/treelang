@@ -17,11 +17,11 @@ Represents an Abstract Syntax Tree (AST) for a very simple programming language.
 Methods:
 
 - `parse(cls, ast: Union[Dict[str, Any], List[Dict[str, Any]]]) -> treelang.trees.schemas.v1.TreeNode | list[treelang.trees.schemas.v1.TreeNode]` — Parses the given dictionary or list into a TreeNode.
-- `eval(cls, ast: treelang.trees.schemas.v1.TreeNode, provider: treelang.ai.provider.ToolProvider) -> Any` — Evaluates the given AST.
+- `eval(cls, ast: treelang.trees.schemas.v1.TreeNode, provider: treelang.ai.provider.ToolProvider, *, limits: treelang.trees.budget.ExecutionLimits | None = None, policy: treelang.trees.policy.ExecutionPolicy | None = None) -> Any` — Evaluates the given AST.
 - `visit(cls, ast: treelang.trees.schemas.v1.TreeNode, op: collections.abc.Callable[[treelang.trees.schemas.v1.TreeNode], None]) -> None` — Performs a depth-first visit of the AST and applies the given operation to each node.
 - `avisit(cls, ast: treelang.trees.schemas.v1.TreeNode, op: collections.abc.Callable[[treelang.trees.schemas.v1.TreeNode], None]) -> None` — Performs an asynchronous depth-first visit of the AST and applies the given operation to each node.
 - `repr(cls, ast: treelang.trees.schemas.v1.TreeNode) -> str` — Returns a string representation of the AST.
-- `tool(ast: treelang.trees.schemas.v1.TreeNode, provider: treelang.ai.provider.ToolProvider) -> collections.abc.Callable[..., typing.Any]` — Converts the given AST into a callable function that can be added as a tool.
+- `tool(ast: treelang.trees.schemas.v1.TreeNode, provider: treelang.ai.provider.ToolProvider, *, limits: treelang.trees.budget.ExecutionLimits | None = None, policy: treelang.trees.policy.ExecutionPolicy | None = None) -> collections.abc.Callable[..., typing.Any]` — Converts the given AST into a callable function that can be added as a tool.
 
 ## `ASTCompilationError`
 
@@ -33,7 +33,7 @@ Raised when an AST cannot be compiled into a callable tool.
 
 **Class** · `treelang.exceptions`
 
-Raised when a compiled AST fails during execution.
+Raised when an AST fails during execution.
 
 ## `ASTValidationError`
 
@@ -41,11 +41,110 @@ Raised when a compiled AST fails during execution.
 
 Raised when an AST violates a runtime tool contract.
 
+## `AnthropicTransport`
+
+**Class** · `treelang.ai.anthropic`
+
+```python
+AnthropicTransport(*, api_key: 'str | None' = None, timeout: 'float | None' = None, max_tokens: 'int' = 4096, client: 'Any | None' = None, strict_json_schema: 'bool | None' = None) -> 'None'
+```
+
+Translate provider-neutral model requests to Anthropic Messages.
+
+
+Methods:
+
+- `capabilities(self, model: 'str') -> 'ModelCapabilities'` — Report Claude features, allowing an explicit deployment override.
+- `complete(self, request: 'ModelRequest') -> 'str'`
+- `consume_usage(self) -> 'ModelUsage'` — Return and clear usage for the latest completion in this async context.
+- `stream(self, request: 'ModelRequest') -> 'AsyncIterator[str]'`
+
+## `BranchOutcome`
+
+**Class** · `treelang.trees.policy`
+
+```python
+BranchOutcome(success: 'bool', value: 'Any' = None, error_type: 'str | None' = None, error_message: 'str | None' = None) -> None
+```
+
+Serializable outcome for one parallel branch in collection mode.
+
+
+Methods:
+
+- `succeeded(cls, value: 'Any') -> 'BranchOutcome'`
+- `failed(cls, error: 'Exception') -> 'BranchOutcome'`
+
+## `CapabilityAwareTransport`
+
+**Class** · `treelang.ai.capabilities`
+
+```python
+CapabilityAwareTransport(*args, **kwargs)
+```
+
+Optional transport extension for model-specific capability discovery.
+
+
+Methods:
+
+- `capabilities(self, model: 'str') -> 'ModelCapabilities'`
+
 ## `CURRENT_SCHEMA_VERSION`
 
 **Constant** · `treelang`
 
 Current value: `'1.0'`
+
+## `DefaultModelCapabilityNegotiator`
+
+**Class** · `treelang.ai.capabilities`
+
+```python
+DefaultModelCapabilityNegotiator()
+```
+
+Conservative capability and structured-output policy.
+
+
+Methods:
+
+- `capabilities(self, transport: 'object', model: 'str') -> 'ModelCapabilities'`
+- `structured_output(self, capabilities: 'ModelCapabilities', *, model: 'str', configured_mode: 'StructuredOutputMode', schema_version: 'SchemaVersion', tools: 'list[ToolDefinition]') -> 'StructuredOutputSelection'`
+- `fallback_after_rejection(self, selection: 'StructuredOutputSelection', configured_mode: 'StructuredOutputMode') -> 'StructuredOutputSelection | None'`
+
+## `ExecutionLimitError`
+
+**Class** · `treelang.exceptions`
+
+```python
+ExecutionLimitError(resource: str, limit: int | float) -> None
+```
+
+Raised when an AST invocation exceeds a configured resource limit.
+
+## `ExecutionLimits`
+
+**Class** · `treelang.trees.budget`
+
+```python
+ExecutionLimits(max_nodes: 'int | None' = None, max_depth: 'int | None' = None, max_call_depth: 'int | None' = None, max_tool_calls: 'int | None' = None, max_concurrency: 'int | None' = None, timeout_seconds: 'float | None' = None) -> None
+```
+
+Optional resource limits for one AST invocation.
+
+``None`` leaves a resource unlimited. Positive values enforce an inclusive
+maximum, preserving historical behavior when no limits are supplied.
+
+## `ExecutionPolicy`
+
+**Class** · `treelang.trees.policy`
+
+```python
+ExecutionPolicy(retry: 'RetryPolicy' = <factory>, parallel_failures: "Literal['raise', 'collect']" = 'raise') -> None
+```
+
+Opt-in retry and parallel partial-failure behavior.
 
 ## `MCPToolProvider`
 
@@ -62,6 +161,136 @@ Methods:
 
 - `call_tool(self, name: str, arguments: dict[str, typing.Any]) -> treelang.ai.provider.ToolOutput` — Invoke a named tool with validated keyword arguments.
 - `list_tools(self) -> list[treelang.ai.tool.ToolDefinition]` — Return normalized metadata for every available tool.
+
+## `ModelAuthenticationError`
+
+**Class** · `treelang.exceptions`
+
+```python
+ModelAuthenticationError(message: str, *, provider: str, status_code: int | None = None, retry_after: float | None = None) -> None
+```
+
+Raised when a model provider rejects authentication or authorization.
+
+## `ModelCapabilities`
+
+**Class** · `treelang.ai.capabilities`
+
+```python
+ModelCapabilities(strict_json_schema: 'bool' = False, temperature: 'bool' = False) -> None
+```
+
+Features supported by one model through a transport.
+
+## `ModelCapabilityNegotiator`
+
+**Class** · `treelang.ai.capabilities`
+
+```python
+ModelCapabilityNegotiator(*args, **kwargs)
+```
+
+Policy boundary between model features and request orchestration.
+
+
+Methods:
+
+- `capabilities(self, transport: 'object', model: 'str') -> 'ModelCapabilities'`
+- `structured_output(self, capabilities: 'ModelCapabilities', *, model: 'str', configured_mode: 'StructuredOutputMode', schema_version: 'SchemaVersion', tools: 'list[ToolDefinition]') -> 'StructuredOutputSelection'`
+- `fallback_after_rejection(self, selection: 'StructuredOutputSelection', configured_mode: 'StructuredOutputMode') -> 'StructuredOutputSelection | None'`
+
+## `ModelConnectionError`
+
+**Class** · `treelang.exceptions`
+
+```python
+ModelConnectionError(message: str, *, provider: str, status_code: int | None = None, retry_after: float | None = None) -> None
+```
+
+Raised when the provider SDK cannot reach its model service.
+
+## `ModelRateLimitError`
+
+**Class** · `treelang.exceptions`
+
+```python
+ModelRateLimitError(message: str, *, provider: str, status_code: int | None = None, retry_after: float | None = None) -> None
+```
+
+Raised when a model provider reports exhausted request capacity.
+
+## `ModelReplayEntry`
+
+**Class** · `treelang.replay`
+
+```python
+ModelReplayEntry(request: 'dict[str, Any]', response: 'str | tuple[str, ...]', kind: "Literal['complete', 'stream']" = 'complete') -> None
+```
+
+One expected model request and completion or stream response.
+
+## `ModelReplayTransport`
+
+**Class** · `treelang.replay`
+
+```python
+ModelReplayTransport(entries: 'Sequence[ModelReplayEntry]') -> 'None'
+```
+
+Replay ordered model requests without credentials or network access.
+
+
+Methods:
+
+- `complete(self, request: 'ModelRequest') -> 'str'`
+- `stream(self, request: 'ModelRequest') -> 'AsyncIterator[str]'`
+- `assert_consumed(self) -> 'None'` — Raise when expected requests remain unconsumed.
+
+## `ModelTimeoutError`
+
+**Class** · `treelang.exceptions`
+
+```python
+ModelTimeoutError(message: str, *, provider: str, status_code: int | None = None, retry_after: float | None = None) -> None
+```
+
+Raised when the provider SDK times out a model request.
+
+## `ModelTransport`
+
+**Class** · `treelang.ai.transport`
+
+```python
+ModelTransport(*args, **kwargs)
+```
+
+Minimal model interface required by Arborist orchestration.
+
+
+Methods:
+
+- `complete(self, request: collections.abc.Mapping[str, typing.Any]) -> str`
+- `stream(self, request: collections.abc.Mapping[str, typing.Any]) -> collections.abc.AsyncIterator[str]`
+
+## `ModelTransportError`
+
+**Class** · `treelang.exceptions`
+
+```python
+ModelTransportError(message: str, *, provider: str, status_code: int | None = None, retry_after: float | None = None) -> None
+```
+
+Normalized failure returned by a model transport SDK.
+
+## `ModelUsage`
+
+**Class** · `treelang.ai.transport`
+
+```python
+ModelUsage(prompt_tokens: int = 0, completion_tokens: int = 0) -> None
+```
+
+Token usage reported for one model completion.
 
 ## `NoOpTraceSink`
 
@@ -99,6 +328,44 @@ Methods:
 
 Raised when a provider returns an invalid response.
 
+## `ReplayMismatchError`
+
+**Class** · `treelang.exceptions`
+
+Raised when runtime activity diverges from a deterministic replay.
+
+## `RetryPolicy`
+
+**Class** · `treelang.trees.policy`
+
+```python
+RetryPolicy(max_attempts: 'int' = 1, delay_seconds: 'float' = 0, idempotent_tools: 'frozenset[str]' = <factory>, retryable_exceptions: 'tuple[type[Exception], ...]' = (<class 'treelang.exceptions.ToolExecutionError'>, <class 'TimeoutError'>)) -> None
+```
+
+Retry transient failures only for tools declared safe to repeat.
+
+## `StructuredOutputUnsupportedError`
+
+**Class** · `treelang.exceptions`
+
+Raised when a provider rejects strict structured-output configuration.
+
+## `StructuredOutputSelection`
+
+**Class** · `treelang.ai.capabilities`
+
+```python
+StructuredOutputSelection(response_format: 'dict[str, Any]', mode: 'SelectedOutputMode', fallback_reason: 'str | None' = None) -> None
+```
+
+Negotiated response format and the reason for compatibility fallback.
+
+## `SUPPORTED_SCHEMA_VERSIONS`
+
+**Constant** · `treelang`
+
+Current value: `('1.0', '2.0')`
+
 ## `ToolExecutionError`
 
 **Class** · `treelang.exceptions`
@@ -117,6 +384,7 @@ Fields:
 - `name: Required[str]`
 - `properties: Required[dict[str, treelang.ai.tool.ToolProperty]]`
 - `description: NotRequired[str | None]`
+- `input_schema: NotRequired[dict[str, Any]]`
 
 ## `ToolNotFoundError`
 
@@ -148,10 +416,29 @@ JSON Schema metadata used for one tool argument.
 
 Fields:
 
-- `type: str`
+- `type: str | list[str]`
 - `description: str`
 - `enum: list[Any]`
 - `default: Any`
+- `const: Any`
+- `minimum: int | float`
+- `maximum: int | float`
+- `exclusiveMinimum: int | float`
+- `exclusiveMaximum: int | float`
+- `multipleOf: int | float`
+- `minLength: int`
+- `maxLength: int`
+- `pattern: str`
+- `format: str`
+- `minItems: int`
+- `maxItems: int`
+- `uniqueItems: bool`
+- `items: Any`
+- `minProperties: int`
+- `maxProperties: int`
+- `properties: dict[str, Any]`
+- `required: list[str]`
+- `additionalProperties: bool | dict[str, Any]`
 
 ## `ToolProvider`
 
@@ -169,6 +456,33 @@ Methods:
 - `get_tool_definition(self, name: str) -> treelang.ai.tool.ToolDefinition` — Return normalized metadata for one named tool.
 - `call_tool(self, name: str, arguments: dict[str, typing.Any]) -> treelang.ai.provider.ToolOutput` — Invoke a named tool with validated keyword arguments.
 - `list_tools(self) -> list[treelang.ai.tool.ToolDefinition]` — Return normalized metadata for every available tool.
+
+## `ToolReplayEntry`
+
+**Class** · `treelang.replay`
+
+```python
+ToolReplayEntry(name: 'str', arguments: 'dict[str, Any]', output: 'Any') -> None
+```
+
+One expected provider invocation and its deterministic output.
+
+## `ToolReplayProvider`
+
+**Class** · `treelang.replay`
+
+```python
+ToolReplayProvider(tools: 'Sequence[ToolDefinition]', entries: 'Sequence[ToolReplayEntry]') -> 'None'
+```
+
+Replay an ordered sequence of tool calls and reject any drift.
+
+
+Methods:
+
+- `list_tools(self) -> 'list[ToolDefinition]'` — Return normalized metadata for every available tool.
+- `call_tool(self, name: 'str', arguments: 'dict[str, Any]') -> 'ToolOutput'` — Invoke a named tool with validated keyword arguments.
+- `assert_consumed(self) -> 'None'` — Raise when expected calls remain unconsumed.
 
 ## `TraceSink`
 
@@ -383,11 +697,26 @@ Methods:
 
 Base class for errors raised by Treelang.
 
+## `UsageAwareTransport`
+
+**Class** · `treelang.ai.transport`
+
+```python
+UsageAwareTransport(*args, **kwargs)
+```
+
+Optional transport contract for normalized per-context token usage.
+
+
+Methods:
+
+- `consume_usage(self) -> treelang.ai.transport.ModelUsage`
+
 ## `__version__`
 
 **Constant** · `treelang`
 
-Current value: `'0.10.2'`
+Current value: `'1.0.0'`
 
 ## `ast_examples`
 
@@ -408,3 +737,23 @@ ast_json_schema() -> str
 ```
 
 Return the JSON schema for the Treelang AST model.
+
+## `json_schema_text`
+
+**Function** · `treelang.schema_artifacts`
+
+```python
+json_schema_text(version: 'SupportedSchemaVersion') -> 'str'
+```
+
+Read one canonical schema exactly as distributed in the package.
+
+## `load_json_schema`
+
+**Function** · `treelang.schema_artifacts`
+
+```python
+load_json_schema(version: 'SupportedSchemaVersion') -> 'dict[str, Any]'
+```
+
+Load one canonical schema as a JSON-compatible mapping.

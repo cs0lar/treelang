@@ -1,9 +1,12 @@
 import asyncio
 import json
+from copy import deepcopy
 from types import SimpleNamespace
 from unittest.mock import AsyncMock
 
+import httpx
 import pytest
+from openai import BadRequestError
 
 from treelang.ai.arborist import (
     ArboristConfig,
@@ -12,12 +15,21 @@ from treelang.ai.arborist import (
     EvalType,
     OpenAIArborist,
 )
+from treelang.ai.capabilities import ModelCapabilities, StructuredOutputSelection
 from treelang.ai.memory import ChatMessage, Memory
 from treelang.ai.provider import ToolOutput, ToolProvider
 from treelang.ai.responses import TreeDescription
 from treelang.ai.transport import OpenAITransport
-from treelang.exceptions import ProviderResponseError
+from treelang.exceptions import (
+    ExecutionLimitError,
+    ModelTransportError,
+    ProviderResponseError,
+    StructuredOutputUnsupportedError,
+)
+from treelang.observability import Observability
+from treelang.trees.budget import ExecutionLimits
 from treelang.trees.schemas.v1 import TreeProgram, TreeValue
+from treelang.trees.schemas.v2 import TreeProgram as TreeProgramV2
 
 
 def program_json(body):
@@ -25,14 +37,28 @@ def program_json(body):
 
 
 class FakeTransport:
-    def __init__(self, *responses, stream_parts=()):
+    def __init__(
+        self,
+        *responses,
+        stream_parts=(),
+        strict_json_schema=False,
+        temperature=False,
+    ):
         self.responses = list(responses)
         self.stream_parts = list(stream_parts)
         self.requests = []
         self.stream_requests = []
+        self.strict_json_schema = strict_json_schema
+        self.temperature = temperature
+
+    def capabilities(self, model):
+        return ModelCapabilities(
+            strict_json_schema=self.strict_json_schema,
+            temperature=self.temperature,
+        )
 
     async def complete(self, request):
-        self.requests.append(request)
+        self.requests.append(deepcopy(request))
         response = self.responses.pop(0)
         if isinstance(response, BaseException):
             raise response
@@ -55,13 +81,94 @@ class FakeProvider(ToolProvider):
                 "name": "identity",
                 "description": "Return a value",
                 "properties": {"value": {"type": "integer"}},
-            }
+            },
+            {
+                "name": "greater_than",
+                "description": "Compare two values",
+                "properties": {
+                    "value": {"type": "integer"},
+                    "threshold": {"type": "integer"},
+                },
+            },
+            {
+                "name": "add",
+                "description": "Add two values",
+                "properties": {
+                    "x": {"type": "integer"},
+                    "y": {"type": "integer"},
+                },
+            },
         ]
         self.tools = {tool["name"]: tool for tool in tools}
         return tools
 
     async def call_tool(self, name, arguments):
+        if name == "greater_than":
+            return ToolOutput(content=arguments["value"] > arguments["threshold"])
+        if name == "add":
+            return ToolOutput(content=arguments["x"] + arguments["y"])
         return ToolOutput(content=arguments["value"])
+
+
+def recursive_program_json() -> str:
+    return json.dumps(
+        {
+            "type": "program",
+            "schema_version": "2.0",
+            "mode": "single",
+            "definitions": [
+                {
+                    "type": "function_definition",
+                    "name": "sum_to_three",
+                    "params": ["n", "acc"],
+                    "body": {
+                        "type": "conditional",
+                        "condition": {
+                            "type": "tool_call",
+                            "tool": "greater_than",
+                            "arguments": {
+                                "value": {"type": "variable", "name": "n"},
+                                "threshold": {"type": "literal", "value": 3},
+                            },
+                        },
+                        "true_branch": {"type": "variable", "name": "acc"},
+                        "false_branch": {
+                            "type": "call",
+                            "function": "sum_to_three",
+                            "arguments": [
+                                {
+                                    "type": "tool_call",
+                                    "tool": "add",
+                                    "arguments": {
+                                        "x": {"type": "variable", "name": "n"},
+                                        "y": {"type": "literal", "value": 1},
+                                    },
+                                },
+                                {
+                                    "type": "tool_call",
+                                    "tool": "add",
+                                    "arguments": {
+                                        "x": {"type": "variable", "name": "acc"},
+                                        "y": {"type": "variable", "name": "n"},
+                                    },
+                                },
+                            ],
+                        },
+                    },
+                }
+            ],
+            "body": [
+                {
+                    "type": "call",
+                    "function": "sum_to_three",
+                    "arguments": [
+                        {"type": "literal", "value": 1},
+                        {"type": "literal", "value": 0},
+                    ],
+                }
+            ],
+        }
+    )
 
 
 class FakeMemory(Memory):
@@ -94,7 +201,8 @@ def test_config_reads_environment_once(monkeypatch):
 @pytest.mark.asyncio
 async def test_arborist_tree_mode_builds_typed_request_with_memory_and_tools():
     transport = FakeTransport(
-        program_json([{"type": "value", "name": "answer", "value": 42}])
+        program_json([{"type": "value", "name": "answer", "value": 42}]),
+        temperature=True,
     )
     arborist = OpenAIArborist(
         model="gpt-4o-test",
@@ -119,6 +227,197 @@ async def test_arborist_tree_mode_builds_typed_request_with_memory_and_tools():
         "second",
     ]
     assert request["tools"][0]["function"]["name"] == "identity"
+    assert request["response_format"] == {"type": "json_object"}
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("schema_version", ["1.0", "2.0"])
+async def test_arborist_uses_strict_schema_when_transport_supports_it(schema_version):
+    response = (
+        recursive_program_json()
+        if schema_version == "2.0"
+        else program_json([{"type": "value", "name": "answer", "value": 42}])
+    )
+    transport = FakeTransport(response, strict_json_schema=True)
+    arborist = OpenAIArborist(
+        model="strict-model",
+        provider=FakeProvider(),
+        config=ArboristConfig(model="strict-model", schema_version=schema_version),
+        transport=transport,
+    )
+
+    await arborist.eval("question", EvalType.TREE)
+
+    response_format = transport.requests[0]["response_format"]
+    assert response_format["type"] == "json_schema"
+    assert response_format["json_schema"]["strict"] is True
+    assert response_format["json_schema"]["name"] == (
+        f"treelang_ast_v{schema_version[0]}"
+    )
+
+
+@pytest.mark.asyncio
+async def test_arborist_auto_falls_back_only_for_strict_output_rejection():
+    transport = FakeTransport(
+        StructuredOutputUnsupportedError("unsupported response_format"),
+        program_json([{"type": "value", "name": "answer", "value": 42}]),
+        strict_json_schema=True,
+    )
+    arborist = OpenAIArborist(
+        model="strict-model",
+        provider=FakeProvider(),
+        transport=transport,
+    )
+
+    response = await arborist.eval("question", EvalType.TREE)
+
+    assert isinstance(response.content, TreeProgram)
+    assert transport.requests[0]["response_format"]["type"] == "json_schema"
+    assert transport.requests[1]["response_format"] == {"type": "json_object"}
+
+
+@pytest.mark.asyncio
+async def test_arborist_does_not_fallback_for_unrelated_provider_failure():
+    transport = FakeTransport(
+        PermissionError("authentication failed"),
+        strict_json_schema=True,
+    )
+    arborist = OpenAIArborist(
+        model="strict-model",
+        provider=FakeProvider(),
+        transport=transport,
+    )
+
+    with pytest.raises(PermissionError, match="authentication failed"):
+        await arborist.eval("question", EvalType.TREE)
+
+    assert len(transport.requests) == 1
+
+
+@pytest.mark.asyncio
+async def test_required_strict_mode_rejects_incapable_transport_before_request():
+    transport = FakeTransport(
+        program_json([{"type": "value", "name": "answer", "value": 42}])
+    )
+    arborist = OpenAIArborist(
+        model="legacy-model",
+        provider=FakeProvider(),
+        config=ArboristConfig(model="legacy-model", structured_output_mode="required"),
+        transport=transport,
+    )
+
+    with pytest.raises(StructuredOutputUnsupportedError, match="does not declare"):
+        await arborist.eval("question", EvalType.TREE)
+
+    assert transport.requests == []
+
+
+@pytest.mark.asyncio
+async def test_compatibility_mode_ignores_strict_capability():
+    transport = FakeTransport(
+        program_json([{"type": "value", "name": "answer", "value": 42}]),
+        strict_json_schema=True,
+    )
+    arborist = OpenAIArborist(
+        model="strict-model",
+        provider=FakeProvider(),
+        config=ArboristConfig(
+            model="strict-model", structured_output_mode="compatibility"
+        ),
+        transport=transport,
+    )
+
+    await arborist.eval("question", EvalType.TREE)
+
+    assert transport.requests[0]["response_format"] == {"type": "json_object"}
+
+
+@pytest.mark.asyncio
+async def test_arborist_delegates_request_features_to_injected_negotiator():
+    class Negotiator:
+        def __init__(self):
+            self.calls = []
+
+        def capabilities(self, transport, model):
+            self.calls.append(("capabilities", transport, model))
+            return ModelCapabilities(temperature=True)
+
+        def structured_output(
+            self,
+            capabilities,
+            *,
+            model,
+            configured_mode,
+            schema_version,
+            tools,
+        ):
+            self.calls.append(
+                (
+                    "structured_output",
+                    capabilities,
+                    model,
+                    configured_mode,
+                    schema_version,
+                    tools,
+                )
+            )
+            return StructuredOutputSelection(
+                response_format={"type": "json_object"},
+                mode="compatibility",
+            )
+
+        def fallback_after_rejection(self, selection, configured_mode):
+            self.calls.append(("fallback", selection, configured_mode))
+            return None
+
+    transport = FakeTransport(
+        program_json([{"type": "value", "name": "answer", "value": 42}])
+    )
+    negotiator = Negotiator()
+    arborist = OpenAIArborist(
+        model="provider-specific-model",
+        provider=FakeProvider(),
+        transport=transport,
+        capability_negotiator=negotiator,
+    )
+
+    await arborist.eval("question", EvalType.TREE)
+
+    assert transport.requests[0]["temperature"] == 0.0
+    assert transport.requests[0]["response_format"] == {"type": "json_object"}
+    assert [call[0] for call in negotiator.calls] == [
+        "capabilities",
+        "structured_output",
+    ]
+
+
+@pytest.mark.asyncio
+async def test_structured_output_selection_and_fallback_are_observable():
+    class Tracer:
+        def __init__(self):
+            self.events = []
+
+        def record(self, event, attributes):
+            self.events.append((event, attributes))
+
+    tracer = Tracer()
+    transport = FakeTransport(
+        program_json([{"type": "value", "name": "answer", "value": 42}])
+    )
+    arborist = OpenAIArborist(
+        model="legacy-model",
+        provider=FakeProvider(),
+        transport=transport,
+        observability=Observability(tracer=tracer),
+    )
+
+    await arborist.eval("question", EvalType.TREE)
+
+    events = {event: attributes for event, attributes in tracer.events}
+    assert events["model.structured_output.fallback"]["reason"] == (
+        "capability_unavailable"
+    )
+    assert events["model.structured_output.selected"]["mode"] == "compatibility"
 
 
 @pytest.mark.asyncio
@@ -145,6 +444,95 @@ async def test_arborist_walk_mode_executes_generated_tree():
     assert response.type == EvalType.WALK
     assert response.content == 7
     assert "temperature" not in transport.requests[0]
+
+
+@pytest.mark.asyncio
+async def test_arborist_walk_mode_enforces_execution_limits():
+    arborist = OpenAIArborist(
+        model="model",
+        provider=FakeProvider(),
+        transport=FakeTransport(
+            program_json([{"type": "value", "name": "answer", "value": 42}])
+        ),
+        execution_limits=ExecutionLimits(max_nodes=1),
+    )
+
+    with pytest.raises(ExecutionLimitError, match="nodes"):
+        await arborist.eval("question")
+
+
+@pytest.mark.asyncio
+async def test_arborist_generates_and_walks_opt_in_recursive_schema():
+    transport = FakeTransport(recursive_program_json())
+    arborist = OpenAIArborist(
+        model="model",
+        provider=FakeProvider(),
+        config=ArboristConfig(model="model", schema_version="2.0"),
+        transport=transport,
+        execution_limits=ExecutionLimits(
+            max_nodes=100,
+            max_call_depth=10,
+            timeout_seconds=1,
+        ),
+    )
+
+    response = await arborist.eval("sum one through three")
+
+    assert response.content == 6
+    assert response.jsontree["schema_version"] == "2.0"
+    assert '"function_definition"' in transport.requests[0]["messages"][0]["content"]
+
+
+@pytest.mark.asyncio
+async def test_arborist_returns_typed_recursive_tree_without_walking():
+    arborist = OpenAIArborist(
+        model="model",
+        provider=FakeProvider(),
+        config=ArboristConfig(model="model", schema_version="2.0"),
+        transport=FakeTransport(recursive_program_json()),
+    )
+
+    response = await arborist.eval("sum one through three", EvalType.TREE)
+
+    assert isinstance(response.content, TreeProgramV2)
+
+
+@pytest.mark.asyncio
+async def test_arborist_requires_safety_limits_to_walk_generated_v2_program():
+    arborist = OpenAIArborist(
+        model="model",
+        provider=FakeProvider(),
+        config=ArboristConfig(model="model", schema_version="2.0"),
+        transport=FakeTransport(recursive_program_json()),
+        execution_limits=ExecutionLimits(max_call_depth=10),
+    )
+
+    with pytest.raises(ValueError, match="max_call_depth, max_nodes"):
+        await arborist.eval("sum one through three")
+
+
+@pytest.mark.asyncio
+async def test_arborist_repairs_invalid_recursive_model_output():
+    invalid = json.loads(recursive_program_json())
+    invalid["definitions"][0]["body"]["true_branch"] = {
+        "type": "variable",
+        "name": "missing",
+    }
+    transport = FakeTransport(json.dumps(invalid), recursive_program_json())
+    arborist = OpenAIArborist(
+        model="model",
+        provider=FakeProvider(),
+        config=ArboristConfig(
+            model="model", schema_version="2.0", validation_retries=1
+        ),
+        transport=transport,
+    )
+
+    response = await arborist.eval("sum one through three", EvalType.TREE)
+
+    assert isinstance(response.content, TreeProgramV2)
+    assert len(transport.requests) == 2
+    assert "Unbound variable" in transport.requests[1]["messages"][-1]["content"]
 
 
 @pytest.mark.asyncio
@@ -182,7 +570,7 @@ async def test_arborist_retries_an_invalid_conditional_ast_with_feedback():
             }
         ]
     )
-    transport = FakeTransport(invalid, valid)
+    transport = FakeTransport(invalid, valid, strict_json_schema=True)
     arborist = OpenAIArborist(
         model="model", provider=FakeProvider(), transport=transport
     )
@@ -191,6 +579,10 @@ async def test_arborist_retries_an_invalid_conditional_ast_with_feedback():
 
     assert response.content == 100
     assert len(transport.requests) == 2
+    assert all(
+        request["response_format"]["type"] == "json_schema"
+        for request in transport.requests
+    )
     correction = transport.requests[1]["messages"][-1]["content"]
     assert "failed validation" in correction
     assert "conditional.condition" in correction
@@ -249,6 +641,19 @@ def test_arborist_config_rejects_negative_validation_retries():
         ArboristConfig(model="model", validation_retries=-1)
 
 
+def test_arborist_config_rejects_unknown_schema_version():
+    with pytest.raises(ValueError, match="schema_version"):
+        ArboristConfig(model="model", schema_version="3.0")  # type: ignore[arg-type]
+
+
+def test_arborist_config_rejects_unknown_structured_output_mode():
+    with pytest.raises(ValueError, match="structured_output_mode"):
+        ArboristConfig(
+            model="model",
+            structured_output_mode="sometimes",  # type: ignore[arg-type]
+        )
+
+
 @pytest.mark.asyncio
 async def test_arborist_cancellation_propagates_from_transport():
     started = asyncio.Event()
@@ -263,7 +668,9 @@ async def test_arborist_cancellation_propagates_from_transport():
                 cancelled.set()
 
     arborist = OpenAIArborist(
-        model="model", provider=FakeProvider(), transport=BlockingTransport()
+        model="model",
+        provider=FakeProvider(),
+        transport=BlockingTransport(strict_json_schema=True),
     )
     task = asyncio.create_task(arborist.eval("question"))
     await started.wait()
@@ -289,7 +696,7 @@ async def test_arborist_enforces_configured_timeout():
         model="model",
         provider=FakeProvider(),
         config=ArboristConfig(model="model", timeout=0.01),
-        transport=BlockingTransport(),
+        transport=BlockingTransport(strict_json_schema=True),
     )
 
     with pytest.raises(TimeoutError):
@@ -366,7 +773,10 @@ async def test_openai_transport_complete_and_stream_without_network():
         SimpleNamespace(
             choices=[SimpleNamespace(delta=SimpleNamespace(content="part"))]
         ),
-        SimpleNamespace(choices=[SimpleNamespace(delta=SimpleNamespace(content=None))]),
+        SimpleNamespace(
+            choices=[SimpleNamespace(delta=SimpleNamespace(content=None))],
+            usage=SimpleNamespace(prompt_tokens=20, completion_tokens=4),
+        ),
     ]
 
     async def stream_chunks():
@@ -383,11 +793,18 @@ async def test_openai_transport_complete_and_stream_without_network():
     transport = OpenAITransport(client=client)
 
     assert await transport.complete({"model": "model", "messages": []}) == "complete"
+    assert transport.capabilities("gpt-4o").strict_json_schema is True
+    assert transport.capabilities("gpt-4o").temperature is True
+    assert transport.capabilities("unknown-model").strict_json_schema is False
+    assert transport.capabilities("unknown-model").temperature is False
     assert transport.consume_usage().prompt_tokens == 12
     assert transport.consume_usage().prompt_tokens == 0
     assert [
         part async for part in transport.stream({"model": "model", "messages": []})
     ] == ["part"]
+    assert transport.consume_usage().completion_tokens == 4
+    stream_request = client.chat.completions.create.await_args_list[1].kwargs
+    assert stream_request["stream_options"] == {"include_usage": True}
 
 
 @pytest.mark.asyncio
@@ -406,3 +823,43 @@ async def test_openai_transport_rejects_missing_text():
 
     with pytest.raises(ProviderResponseError, match="no text content"):
         await OpenAITransport(client=client).complete({})
+
+
+@pytest.mark.asyncio
+async def test_openai_transport_translates_only_structured_output_rejections():
+    response = httpx.Response(
+        400,
+        request=httpx.Request("POST", "https://api.openai.com/v1/chat/completions"),
+    )
+    structured_error = BadRequestError(
+        "response_format json_schema is unsupported",
+        response=response,
+        body={
+            "code": "unsupported_value",
+            "param": "response_format",
+        },
+    )
+    other_error = BadRequestError(
+        "invalid temperature",
+        response=response,
+        body={"code": "invalid_parameter", "param": "temperature"},
+    )
+    client = SimpleNamespace(
+        chat=SimpleNamespace(
+            completions=SimpleNamespace(
+                create=AsyncMock(side_effect=[structured_error, other_error])
+            )
+        )
+    )
+    transport = OpenAITransport(client=client)
+    strict_request = {
+        "response_format": {
+            "type": "json_schema",
+            "json_schema": {"name": "tree", "strict": True, "schema": {}},
+        }
+    }
+
+    with pytest.raises(StructuredOutputUnsupportedError):
+        await transport.complete(strict_request)
+    with pytest.raises(ModelTransportError, match="invalid temperature"):
+        await transport.complete(strict_request)

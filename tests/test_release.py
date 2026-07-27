@@ -46,8 +46,25 @@ def test_current_package_passes_public_api_smoke_test():
     smoke_release(metadata["project"]["version"])
 
 
+def test_current_release_metadata_has_a_matching_changelog_section():
+    metadata = tomllib.loads(Path("pyproject.toml").read_text(encoding="utf-8"))
+    version = metadata["project"]["version"]
+
+    assert validate_release(f"v{version}", Path(".")) == version
+
+
 def test_github_release_command_has_explicit_repository_context():
     workflow = Path(".github/workflows/release.yml").read_text(encoding="utf-8")
 
     assert 'gh release create "$GITHUB_REF_NAME"' in workflow
     assert '--repo "$GITHUB_REPOSITORY"' in workflow
+
+
+def test_release_publishes_versioned_documentation_after_github_release():
+    workflow = Path(".github/workflows/release.yml").read_text(encoding="utf-8")
+
+    assert "documentation:" in workflow
+    assert "needs: github-release" in workflow
+    assert "contents: write" in workflow
+    assert 'mike deploy --push --update-aliases "${DOCS_VERSION#v}" latest' in workflow
+    assert "mike set-default --push latest" in workflow

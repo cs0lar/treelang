@@ -77,10 +77,34 @@ generated notes, and PyPI Trusted Publishing. Security gates, dependency policy,
 generated API documentation and architecture decisions, executable cookbook CI,
 migration guidance, and enforced `dev`/`main` branch policies are active.
 
-Phase 7 is now active. Begin with configurable execution budgets for AST node
-count, nesting depth, tool calls, concurrency, and wall-clock duration, preserving
-existing behavior when budgets are not configured. Before new work, update `dev`
-and run:
+Phase 7 is complete through PR #117. Configurable version 1 execution budgets are
+merged through PR #110, and the recursive version 2 language contract and
+validation model are merged through PR #111. The explicit-stack interpreter and
+separate call-depth enforcement are merged through PR #112. Opt-in schema v2
+model generation and deterministic recursive evaluation coverage are merged
+through PR #113.
+Capability-aware strict structured output with validated compatibility fallback
+is merged through PR #114, complete pre-execution tool input validation through
+PR #115, and property-based and fuzz coverage for language and runtime invariants
+through PR #116. Execution resilience and deterministic replay semantics are
+merged through PR #117.
+
+Phase 8 is complete through PR #122. Model capability negotiation is separated
+from Arborist orchestration through PR #118, and the contract-tested Anthropic
+adapter is merged through PR #119. Cross-provider structured output, usage,
+failure, timeout, and cancellation behavior is normalized through PR #120. The
+generated, continuously validated provider capability and compatibility matrix
+is merged through PR #121.
+The same versioned live-evaluation cases run across supported providers through
+PR #122.
+
+Phase 9 is complete through PR #128. The versioned documentation site is merged
+through PR #124, the CLI through PR #125, downstream testing fixtures and
+provider contracts through PR #126, and distributed JSON Schema artifacts
+through PR #127. Tested end-to-end cookbooks and extension/provider contribution
+workflows are merged through PR #128. Release v1.0.0 metadata, changelog, and
+migration guidance are prepared for promotion from `dev` to `main`.
+Before new work, update `dev` and run:
 
 ```sh
 git fetch origin
@@ -148,27 +172,39 @@ documentation matches the released API.
 ### Phase 7: Runtime Reliability & Safety
 
 1. Add configurable execution budgets for AST nodes, nesting depth, tool calls,
-   concurrency, and wall-clock duration.
-2. Use provider-supported strict structured output with validated repair as a
-   capability-aware fallback.
-3. Validate complete tool input schemas, including required fields, types, and
-   constraints, before execution.
-4. Add property-based and fuzz tests for parsing, traversal, conditionals,
-   lambdas, maps, filters, reductions, and concurrent execution.
-5. Define retry, idempotency, cancellation, and partial-failure semantics for
+   concurrency, and wall-clock duration. Complete through PR #110.
+2. Define an opt-in version 2 schema for user function declarations, variable
+   references, user calls, lexical scope, and recursion while preserving version
+   1 compatibility. Complete through PR #111.
+3. Implement version 2 evaluation with an explicit stack and a separate
+   user-call-depth budget; support direct recursion before mutual recursion and
+   model generation. Complete through PR #113.
+4. Use provider-supported strict structured output with validated repair as a
+   capability-aware fallback. Complete through PR #114.
+5. Validate complete tool input schemas, including required fields, types, and
+   constraints, before execution. Complete through PR #115.
+6. Add property-based and fuzz tests for parsing, traversal, conditionals,
+   lambdas, maps, filters, reductions, recursion, and concurrent execution.
+   Complete through PR #116.
+7. Define retry, idempotency, cancellation, and partial-failure semantics for
    sequential and parallel programs. Add deterministic model/tool replay.
+   Complete through PR #117.
 
 Exit criteria: malformed or adversarial ASTs fail safely, configured budgets
 cannot be exceeded, and generative tests preserve execution invariants.
 
 ### Phase 8: Provider Portability
 
-1. Separate model capability negotiation from Arborist orchestration.
+1. Separate model capability negotiation from Arborist orchestration. Complete
+   through PR #118.
 2. Add contract-tested adapters for at least one additional model provider.
+   Complete through PR #119.
 3. Normalize structured-output support, token accounting, rate limits, timeout,
-   cancellation, and provider-error translation.
+   cancellation, and provider-error translation. Complete through PR #120.
 4. Publish and continuously test a provider capability and compatibility matrix.
+   Complete through PR #121.
 5. Run the same versioned live-evaluation cases across supported providers.
+   Complete through PR #122.
 
 Exit criteria: the supported evaluation suite passes against at least two model
 providers without application-level changes.
@@ -177,13 +213,18 @@ providers without application-level changes.
 
 1. Publish a versioned documentation site with generated API references, guides,
    architecture decisions, and migration notes.
+   Complete through PR #124.
 2. Add a CLI for generating, validating, inspecting, replaying, and executing
    AST programs.
+   Complete through PR #125.
 3. Publish reusable downstream testing fixtures, fake transports, and provider
    contract suites.
+   Complete through PR #126.
 4. Distribute the supported JSON Schema and add editor-validation examples.
+   Complete through PR #127.
 5. Expand cookbooks into tested end-to-end tutorials and document extension and
    provider contribution workflows.
+   Complete through PR #128.
 
 Exit criteria: a new user can install Treelang, execute and inspect a validated
 program, build a provider, and reproduce benchmarks using documented workflows.
