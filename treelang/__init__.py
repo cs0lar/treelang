@@ -37,6 +37,11 @@ from treelang.replay import (
     ToolReplayEntry,
     ToolReplayProvider,
 )
+from treelang.schema_artifacts import (
+    SUPPORTED_SCHEMA_VERSIONS,
+    json_schema_text,
+    load_json_schema,
+)
 from treelang.trees.budget import ExecutionLimits
 from treelang.trees.policy import BranchOutcome, ExecutionPolicy, RetryPolicy
 from treelang.trees.schemas import CURRENT_SCHEMA_VERSION, ast_examples, ast_json_schema
@@ -90,6 +95,7 @@ __all__ = [
     "RetryPolicy",
     "StructuredOutputUnsupportedError",
     "StructuredOutputSelection",
+    "SUPPORTED_SCHEMA_VERSIONS",
     "ToolExecutionError",
     "ToolDefinition",
     "ToolNotFoundError",
@@ -113,4 +119,6 @@ __all__ = [
     "__version__",
     "ast_examples",
     "ast_json_schema",
+    "json_schema_text",
+    "load_json_schema",
 ]

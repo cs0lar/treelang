@@ -13,7 +13,7 @@ from typing import Any, Literal, NoReturn
 
 from pydantic import ValidationError
 
-from treelang import __version__
+from treelang import __version__, json_schema_text
 from treelang.ai.anthropic import AnthropicTransport
 from treelang.ai.arborist import OpenAIArborist
 from treelang.ai.config import ArboristConfig
@@ -70,6 +70,10 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="treelang", description=__doc__)
     parser.add_argument("--version", action="version", version=__version__)
     commands = parser.add_subparsers(dest="command", required=True)
+
+    schema = commands.add_parser("schema", help="print a canonical JSON Schema")
+    schema.add_argument("--schema-version", choices=("1.0", "2.0"), default="1.0")
+    schema.add_argument("--output", type=Path)
 
     validate = commands.add_parser("validate", help="validate and normalize a program")
     _add_io_arguments(validate)
@@ -314,6 +318,9 @@ def _model_runtime(
 
 
 async def _run(arguments: argparse.Namespace) -> int:
+    if arguments.command == "schema":
+        _write_text(json_schema_text(arguments.schema_version), arguments.output)
+        return 0
     if arguments.command in {"validate", "inspect", "execute", "replay"}:
         version, program = _parse_program(_read_json(arguments.input))
 

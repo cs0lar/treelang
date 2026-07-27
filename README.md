@@ -50,6 +50,10 @@ Provider and application authors can import deterministic fakes and reusable,
 framework-neutral contract suites from `treelang.testing`; see the
 [testing-kit guide](docs/testing.md).
 
+Canonical v1 and v2 JSON Schema files ship in the package and documentation site.
+See the [editor-validation guide](docs/json-schema.md), or run
+`treelang schema --schema-version 2.0`.
+
 ### Wire up tools (MCP)
 
 ```python

@@ -19,6 +19,10 @@ def smoke_release(expected_version: str, *, require_installed: bool = False) -> 
         raise RuntimeError(f"missing public exports: {', '.join(missing)}")
     if treelang.CURRENT_SCHEMA_VERSION != "1.0":
         raise RuntimeError("installed artifact has an unexpected schema version")
+    for version in treelang.SUPPORTED_SCHEMA_VERSIONS:
+        schema = treelang.load_json_schema(version)
+        if schema.get("$schema") != "https://json-schema.org/draft/2020-12/schema":
+            raise RuntimeError(f"installed schema {version} has no stable dialect")
     console_scripts = {
         entry.name: entry.value
         for entry in distribution("treelang").entry_points

@@ -103,7 +103,8 @@ references, guides, architecture decisions, and migration notes is merged
 through PR #124. The CLI for generating, validating, inspecting, replaying, and
 executing AST programs is merged through PR #125. The next slice publishes
 reusable downstream testing fixtures, fake transports, and provider contract
-suites.
+suites through PR #126. The next slice distributes the supported JSON Schema and
+adds editor-validation examples.
 Before new work, update `dev` and run:
 
 ```sh
@@ -219,6 +220,7 @@ providers without application-level changes.
    Complete through PR #125.
 3. Publish reusable downstream testing fixtures, fake transports, and provider
    contract suites.
+   Complete through PR #126.
 4. Distribute the supported JSON Schema and add editor-validation examples.
 5. Expand cookbooks into tested end-to-end tutorials and document extension and
    provider contribution workflows.

@@ -360,6 +360,12 @@ StructuredOutputSelection(response_format: 'dict[str, Any]', mode: 'SelectedOutp
 
 Negotiated response format and the reason for compatibility fallback.
 
+## `SUPPORTED_SCHEMA_VERSIONS`
+
+**Constant** · `treelang`
+
+Current value: `('1.0', '2.0')`
+
 ## `ToolExecutionError`
 
 **Class** · `treelang.exceptions`
@@ -731,3 +737,23 @@ ast_json_schema() -> str
 ```
 
 Return the JSON schema for the Treelang AST model.
+
+## `json_schema_text`
+
+**Function** · `treelang.schema_artifacts`
+
+```python
+json_schema_text(version: 'SupportedSchemaVersion') -> 'str'
+```
+
+Read one canonical schema exactly as distributed in the package.
+
+## `load_json_schema`
+
+**Function** · `treelang.schema_artifacts`
+
+```python
+load_json_schema(version: 'SupportedSchemaVersion') -> 'dict[str, Any]'
+```
+
+Load one canonical schema as a JSON-compatible mapping.
