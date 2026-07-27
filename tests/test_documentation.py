@@ -40,6 +40,7 @@ def test_documentation_site_includes_generated_reference_and_guides():
     assert "Supported API: api.md" in configuration
     assert "Command-line interface: cli.md" in configuration
     assert "Downstream testing kit: testing.md" in configuration
+    assert "JSON Schema and editor validation: json-schema.md" in configuration
     assert "Migration guide: migration-0.10.md" in configuration
     assert "adr/0004-recursive-schema-and-execution.md" in configuration
     assert "Versioned documentation" in landing_page

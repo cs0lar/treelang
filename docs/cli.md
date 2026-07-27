@@ -4,6 +4,16 @@ Treelang installs a `treelang` command for validating, inspecting, executing,
 replaying, and generating AST programs. Commands read program JSON from a file
 or from standard input when the input is `-`.
 
+## Export JSON Schema
+
+```sh
+treelang schema --schema-version 1.0
+treelang schema --schema-version 2.0 --output treelang-v2.schema.json
+```
+
+The output is the exact canonical artifact shipped in the package and published
+on the documentation site. See the [editor-validation guide](json-schema.md).
+
 ## Validate and inspect
 
 ```sh
