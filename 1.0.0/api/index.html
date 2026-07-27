@@ -1,0 +1,3013 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Generate, validate, inspect, and execute AST programs with model providers.">
+      
+      
+      
+        <link rel="canonical" href="https://csolar.github.io/treelang/latest/api/">
+      
+      
+        <link rel="prev" href="../provider-matrix/">
+      
+      
+        <link rel="next" href="../migration-1.0/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>Supported API - Treelang</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="green" data-md-color-accent="teal">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#api-reference" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      <div data-md-color-scheme="default" data-md-component="outdated" hidden>
+        
+      </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="Treelang" class="md-header__button md-logo" aria-label="Treelang" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Treelang
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Supported API
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="green" data-md-color-accent="teal"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="green" data-md-color-accent="teal"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/cs0lar/treelang" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    csolar/treelang
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="Treelang" class="md-nav__button md-logo" aria-label="Treelang" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    Treelang
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/cs0lar/treelang" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    csolar/treelang
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guides
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cli/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Command-line interface
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../testing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Downstream testing kit
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../json-schema/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    JSON Schema and editor validation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cookbooks/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    End-to-end cookbooks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../extensions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Extensions and provider contributions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../recursive-programs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Recursive programs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../structured-output/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Structured model output
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tool-input-validation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tool input validation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../execution-resilience/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Execution resilience and replay
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Providers
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Providers
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../provider-capabilities/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Capability negotiation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../anthropic/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Anthropic
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../transport-contracts/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Transport contracts
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../provider-matrix/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Compatibility matrix
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Supported API
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Supported API
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#ast" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        AST
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#astcompilationerror" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ASTCompilationError
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#astexecutionerror" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ASTExecutionError
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#astvalidationerror" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ASTValidationError
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#anthropictransport" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        AnthropicTransport
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#branchoutcome" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        BranchOutcome
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#capabilityawaretransport" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        CapabilityAwareTransport
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#current_schema_version" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        CURRENT_SCHEMA_VERSION
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#defaultmodelcapabilitynegotiator" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        DefaultModelCapabilityNegotiator
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#executionlimiterror" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ExecutionLimitError
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#executionlimits" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ExecutionLimits
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#executionpolicy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ExecutionPolicy
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#mcptoolprovider" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        MCPToolProvider
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#modelauthenticationerror" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ModelAuthenticationError
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#modelcapabilities" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ModelCapabilities
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#modelcapabilitynegotiator" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ModelCapabilityNegotiator
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#modelconnectionerror" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ModelConnectionError
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#modelratelimiterror" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ModelRateLimitError
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#modelreplayentry" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ModelReplayEntry
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#modelreplaytransport" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ModelReplayTransport
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#modeltimeouterror" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ModelTimeoutError
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#modeltransport" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ModelTransport
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#modeltransporterror" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ModelTransportError
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#modelusage" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ModelUsage
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#nooptracesink" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        NoOpTraceSink
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#observability" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Observability
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#providerresponseerror" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ProviderResponseError
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#replaymismatcherror" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ReplayMismatchError
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#retrypolicy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        RetryPolicy
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#structuredoutputunsupportederror" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        StructuredOutputUnsupportedError
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#structuredoutputselection" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        StructuredOutputSelection
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#supported_schema_versions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        SUPPORTED_SCHEMA_VERSIONS
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#toolexecutionerror" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ToolExecutionError
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#tooldefinition" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ToolDefinition
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#toolnotfounderror" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ToolNotFoundError
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#tooloutput" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ToolOutput
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#toolproperty" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ToolProperty
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#toolprovider" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ToolProvider
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#toolreplayentry" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ToolReplayEntry
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#toolreplayprovider" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ToolReplayProvider
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#tracesink" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TraceSink
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#treeconditional" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TreeConditional
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#treefilter" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TreeFilter
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#treefunction" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TreeFunction
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#treelambda" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TreeLambda
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#treemap" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TreeMap
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#treenode" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TreeNode
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#treeprogram" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TreeProgram
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#treereduce" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TreeReduce
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#treevalue" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TreeValue
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#treelangerror" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TreelangError
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#usageawaretransport" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        UsageAwareTransport
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#__version__" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        __version__
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ast_examples" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ast_examples
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ast_json_schema" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ast_json_schema
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#json_schema_text" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        json_schema_text
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#load_json_schema" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        load_json_schema
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../migration-1.0/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Migration guide 1.0
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../migration-0.10/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Migration guide 0.10
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture decisions
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Architecture decisions
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/0001-schema-versioning/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Schema versioning
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/0002-execution-semantics/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Execution semantics
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/0003-provider-contracts/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Provider contracts
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/0004-recursive-schema-and-execution/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Recursive schema and execution
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#ast" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        AST
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#astcompilationerror" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ASTCompilationError
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#astexecutionerror" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ASTExecutionError
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#astvalidationerror" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ASTValidationError
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#anthropictransport" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        AnthropicTransport
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#branchoutcome" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        BranchOutcome
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#capabilityawaretransport" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        CapabilityAwareTransport
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#current_schema_version" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        CURRENT_SCHEMA_VERSION
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#defaultmodelcapabilitynegotiator" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        DefaultModelCapabilityNegotiator
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#executionlimiterror" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ExecutionLimitError
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#executionlimits" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ExecutionLimits
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#executionpolicy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ExecutionPolicy
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#mcptoolprovider" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        MCPToolProvider
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#modelauthenticationerror" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ModelAuthenticationError
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#modelcapabilities" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ModelCapabilities
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#modelcapabilitynegotiator" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ModelCapabilityNegotiator
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#modelconnectionerror" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ModelConnectionError
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#modelratelimiterror" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ModelRateLimitError
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#modelreplayentry" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ModelReplayEntry
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#modelreplaytransport" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ModelReplayTransport
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#modeltimeouterror" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ModelTimeoutError
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#modeltransport" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ModelTransport
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#modeltransporterror" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ModelTransportError
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#modelusage" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ModelUsage
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#nooptracesink" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        NoOpTraceSink
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#observability" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Observability
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#providerresponseerror" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ProviderResponseError
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#replaymismatcherror" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ReplayMismatchError
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#retrypolicy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        RetryPolicy
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#structuredoutputunsupportederror" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        StructuredOutputUnsupportedError
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#structuredoutputselection" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        StructuredOutputSelection
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#supported_schema_versions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        SUPPORTED_SCHEMA_VERSIONS
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#toolexecutionerror" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ToolExecutionError
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#tooldefinition" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ToolDefinition
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#toolnotfounderror" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ToolNotFoundError
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#tooloutput" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ToolOutput
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#toolproperty" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ToolProperty
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#toolprovider" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ToolProvider
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#toolreplayentry" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ToolReplayEntry
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#toolreplayprovider" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ToolReplayProvider
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#tracesink" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TraceSink
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#treeconditional" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TreeConditional
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#treefilter" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TreeFilter
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#treefunction" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TreeFunction
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#treelambda" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TreeLambda
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#treemap" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TreeMap
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#treenode" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TreeNode
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#treeprogram" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TreeProgram
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#treereduce" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TreeReduce
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#treevalue" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TreeValue
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#treelangerror" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TreelangError
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#usageawaretransport" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        UsageAwareTransport
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#__version__" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        __version__
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ast_examples" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ast_examples
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ast_json_schema" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ast_json_schema
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#json_schema_text" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        json_schema_text
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#load_json_schema" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        load_json_schema
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="api-reference">API Reference<a class="headerlink" href="#api-reference" title="Permanent link">&para;</a></h1>
+<p>This file is generated from <code>treelang.__all__</code>. Do not edit it by hand;
+run <code>make docs</code> after changing the supported public API.</p>
+<h2 id="ast"><code>AST</code><a class="headerlink" href="#ast" title="Permanent link">&para;</a></h2>
+<p><strong>Class</strong> · <code>treelang.trees.tree</code></p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">AST</span><span class="p">()</span>
+</code></pre></div>
+<p>Represents an Abstract Syntax Tree (AST) for a very simple programming language.</p>
+<p>Methods:</p>
+<ul>
+<li><code>parse(cls, ast: Union[Dict[str, Any], List[Dict[str, Any]]]) -&gt; treelang.trees.schemas.v1.TreeNode | list[treelang.trees.schemas.v1.TreeNode]</code> — Parses the given dictionary or list into a TreeNode.</li>
+<li><code>eval(cls, ast: treelang.trees.schemas.v1.TreeNode, provider: treelang.ai.provider.ToolProvider, *, limits: treelang.trees.budget.ExecutionLimits | None = None, policy: treelang.trees.policy.ExecutionPolicy | None = None) -&gt; Any</code> — Evaluates the given AST.</li>
+<li><code>visit(cls, ast: treelang.trees.schemas.v1.TreeNode, op: collections.abc.Callable[[treelang.trees.schemas.v1.TreeNode], None]) -&gt; None</code> — Performs a depth-first visit of the AST and applies the given operation to each node.</li>
+<li><code>avisit(cls, ast: treelang.trees.schemas.v1.TreeNode, op: collections.abc.Callable[[treelang.trees.schemas.v1.TreeNode], None]) -&gt; None</code> — Performs an asynchronous depth-first visit of the AST and applies the given operation to each node.</li>
+<li><code>repr(cls, ast: treelang.trees.schemas.v1.TreeNode) -&gt; str</code> — Returns a string representation of the AST.</li>
+<li><code>tool(ast: treelang.trees.schemas.v1.TreeNode, provider: treelang.ai.provider.ToolProvider, *, limits: treelang.trees.budget.ExecutionLimits | None = None, policy: treelang.trees.policy.ExecutionPolicy | None = None) -&gt; collections.abc.Callable[..., typing.Any]</code> — Converts the given AST into a callable function that can be added as a tool.</li>
+</ul>
+<h2 id="astcompilationerror"><code>ASTCompilationError</code><a class="headerlink" href="#astcompilationerror" title="Permanent link">&para;</a></h2>
+<p><strong>Class</strong> · <code>treelang.exceptions</code></p>
+<p>Raised when an AST cannot be compiled into a callable tool.</p>
+<h2 id="astexecutionerror"><code>ASTExecutionError</code><a class="headerlink" href="#astexecutionerror" title="Permanent link">&para;</a></h2>
+<p><strong>Class</strong> · <code>treelang.exceptions</code></p>
+<p>Raised when an AST fails during execution.</p>
+<h2 id="astvalidationerror"><code>ASTValidationError</code><a class="headerlink" href="#astvalidationerror" title="Permanent link">&para;</a></h2>
+<p><strong>Class</strong> · <code>treelang.exceptions</code></p>
+<p>Raised when an AST violates a runtime tool contract.</p>
+<h2 id="anthropictransport"><code>AnthropicTransport</code><a class="headerlink" href="#anthropictransport" title="Permanent link">&para;</a></h2>
+<p><strong>Class</strong> · <code>treelang.ai.anthropic</code></p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="n">AnthropicTransport</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">api_key</span><span class="p">:</span> <span class="s1">&#39;str | None&#39;</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">timeout</span><span class="p">:</span> <span class="s1">&#39;float | None&#39;</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">max_tokens</span><span class="p">:</span> <span class="s1">&#39;int&#39;</span> <span class="o">=</span> <span class="mi">4096</span><span class="p">,</span> <span class="n">client</span><span class="p">:</span> <span class="s1">&#39;Any | None&#39;</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">strict_json_schema</span><span class="p">:</span> <span class="s1">&#39;bool | None&#39;</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;None&#39;</span>
+</code></pre></div>
+<p>Translate provider-neutral model requests to Anthropic Messages.</p>
+<p>Methods:</p>
+<ul>
+<li><code>capabilities(self, model: 'str') -&gt; 'ModelCapabilities'</code> — Report Claude features, allowing an explicit deployment override.</li>
+<li><code>complete(self, request: 'ModelRequest') -&gt; 'str'</code></li>
+<li><code>consume_usage(self) -&gt; 'ModelUsage'</code> — Return and clear usage for the latest completion in this async context.</li>
+<li><code>stream(self, request: 'ModelRequest') -&gt; 'AsyncIterator[str]'</code></li>
+</ul>
+<h2 id="branchoutcome"><code>BranchOutcome</code><a class="headerlink" href="#branchoutcome" title="Permanent link">&para;</a></h2>
+<p><strong>Class</strong> · <code>treelang.trees.policy</code></p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">BranchOutcome</span><span class="p">(</span><span class="n">success</span><span class="p">:</span> <span class="s1">&#39;bool&#39;</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="s1">&#39;Any&#39;</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">error_type</span><span class="p">:</span> <span class="s1">&#39;str | None&#39;</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">error_message</span><span class="p">:</span> <span class="s1">&#39;str | None&#39;</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span>
+</code></pre></div>
+<p>Serializable outcome for one parallel branch in collection mode.</p>
+<p>Methods:</p>
+<ul>
+<li><code>succeeded(cls, value: 'Any') -&gt; 'BranchOutcome'</code></li>
+<li><code>failed(cls, error: 'Exception') -&gt; 'BranchOutcome'</code></li>
+</ul>
+<h2 id="capabilityawaretransport"><code>CapabilityAwareTransport</code><a class="headerlink" href="#capabilityawaretransport" title="Permanent link">&para;</a></h2>
+<p><strong>Class</strong> · <code>treelang.ai.capabilities</code></p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="n">CapabilityAwareTransport</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+</code></pre></div>
+<p>Optional transport extension for model-specific capability discovery.</p>
+<p>Methods:</p>
+<ul>
+<li><code>capabilities(self, model: 'str') -&gt; 'ModelCapabilities'</code></li>
+</ul>
+<h2 id="current_schema_version"><code>CURRENT_SCHEMA_VERSION</code><a class="headerlink" href="#current_schema_version" title="Permanent link">&para;</a></h2>
+<p><strong>Constant</strong> · <code>treelang</code></p>
+<p>Current value: <code>'1.0'</code></p>
+<h2 id="defaultmodelcapabilitynegotiator"><code>DefaultModelCapabilityNegotiator</code><a class="headerlink" href="#defaultmodelcapabilitynegotiator" title="Permanent link">&para;</a></h2>
+<p><strong>Class</strong> · <code>treelang.ai.capabilities</code></p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="n">DefaultModelCapabilityNegotiator</span><span class="p">()</span>
+</code></pre></div>
+<p>Conservative capability and structured-output policy.</p>
+<p>Methods:</p>
+<ul>
+<li><code>capabilities(self, transport: 'object', model: 'str') -&gt; 'ModelCapabilities'</code></li>
+<li><code>structured_output(self, capabilities: 'ModelCapabilities', *, model: 'str', configured_mode: 'StructuredOutputMode', schema_version: 'SchemaVersion', tools: 'list[ToolDefinition]') -&gt; 'StructuredOutputSelection'</code></li>
+<li><code>fallback_after_rejection(self, selection: 'StructuredOutputSelection', configured_mode: 'StructuredOutputMode') -&gt; 'StructuredOutputSelection | None'</code></li>
+</ul>
+<h2 id="executionlimiterror"><code>ExecutionLimitError</code><a class="headerlink" href="#executionlimiterror" title="Permanent link">&para;</a></h2>
+<p><strong>Class</strong> · <code>treelang.exceptions</code></p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="n">ExecutionLimitError</span><span class="p">(</span><span class="n">resource</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">limit</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span>
+</code></pre></div>
+<p>Raised when an AST invocation exceeds a configured resource limit.</p>
+<h2 id="executionlimits"><code>ExecutionLimits</code><a class="headerlink" href="#executionlimits" title="Permanent link">&para;</a></h2>
+<p><strong>Class</strong> · <code>treelang.trees.budget</code></p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="n">ExecutionLimits</span><span class="p">(</span><span class="n">max_nodes</span><span class="p">:</span> <span class="s1">&#39;int | None&#39;</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">max_depth</span><span class="p">:</span> <span class="s1">&#39;int | None&#39;</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">max_call_depth</span><span class="p">:</span> <span class="s1">&#39;int | None&#39;</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">max_tool_calls</span><span class="p">:</span> <span class="s1">&#39;int | None&#39;</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">max_concurrency</span><span class="p">:</span> <span class="s1">&#39;int | None&#39;</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">timeout_seconds</span><span class="p">:</span> <span class="s1">&#39;float | None&#39;</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span>
+</code></pre></div>
+<p>Optional resource limits for one AST invocation.</p>
+<p><code>None</code> leaves a resource unlimited. Positive values enforce an inclusive
+maximum, preserving historical behavior when no limits are supplied.</p>
+<h2 id="executionpolicy"><code>ExecutionPolicy</code><a class="headerlink" href="#executionpolicy" title="Permanent link">&para;</a></h2>
+<p><strong>Class</strong> · <code>treelang.trees.policy</code></p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="n">ExecutionPolicy</span><span class="p">(</span><span class="n">retry</span><span class="p">:</span> <span class="s1">&#39;RetryPolicy&#39;</span> <span class="o">=</span> <span class="o">&lt;</span><span class="n">factory</span><span class="o">&gt;</span><span class="p">,</span> <span class="n">parallel_failures</span><span class="p">:</span> <span class="s2">&quot;Literal[&#39;raise&#39;, &#39;collect&#39;]&quot;</span> <span class="o">=</span> <span class="s1">&#39;raise&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span>
+</code></pre></div>
+<p>Opt-in retry and parallel partial-failure behavior.</p>
+<h2 id="mcptoolprovider"><code>MCPToolProvider</code><a class="headerlink" href="#mcptoolprovider" title="Permanent link">&para;</a></h2>
+<p><strong>Class</strong> · <code>treelang.ai.provider</code></p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="n">MCPToolProvider</span><span class="p">(</span><span class="n">session</span><span class="p">:</span> <span class="n">mcp</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">ClientSession</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span>
+</code></pre></div>
+<p>Tool provider backed by an initialized MCP client session.</p>
+<p>Methods:</p>
+<ul>
+<li><code>call_tool(self, name: str, arguments: dict[str, typing.Any]) -&gt; treelang.ai.provider.ToolOutput</code> — Invoke a named tool with validated keyword arguments.</li>
+<li><code>list_tools(self) -&gt; list[treelang.ai.tool.ToolDefinition]</code> — Return normalized metadata for every available tool.</li>
+</ul>
+<h2 id="modelauthenticationerror"><code>ModelAuthenticationError</code><a class="headerlink" href="#modelauthenticationerror" title="Permanent link">&para;</a></h2>
+<p><strong>Class</strong> · <code>treelang.exceptions</code></p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="n">ModelAuthenticationError</span><span class="p">(</span><span class="n">message</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">provider</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">status_code</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">retry_after</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span>
+</code></pre></div>
+<p>Raised when a model provider rejects authentication or authorization.</p>
+<h2 id="modelcapabilities"><code>ModelCapabilities</code><a class="headerlink" href="#modelcapabilities" title="Permanent link">&para;</a></h2>
+<p><strong>Class</strong> · <code>treelang.ai.capabilities</code></p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="n">ModelCapabilities</span><span class="p">(</span><span class="n">strict_json_schema</span><span class="p">:</span> <span class="s1">&#39;bool&#39;</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">temperature</span><span class="p">:</span> <span class="s1">&#39;bool&#39;</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span>
+</code></pre></div>
+<p>Features supported by one model through a transport.</p>
+<h2 id="modelcapabilitynegotiator"><code>ModelCapabilityNegotiator</code><a class="headerlink" href="#modelcapabilitynegotiator" title="Permanent link">&para;</a></h2>
+<p><strong>Class</strong> · <code>treelang.ai.capabilities</code></p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="n">ModelCapabilityNegotiator</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+</code></pre></div>
+<p>Policy boundary between model features and request orchestration.</p>
+<p>Methods:</p>
+<ul>
+<li><code>capabilities(self, transport: 'object', model: 'str') -&gt; 'ModelCapabilities'</code></li>
+<li><code>structured_output(self, capabilities: 'ModelCapabilities', *, model: 'str', configured_mode: 'StructuredOutputMode', schema_version: 'SchemaVersion', tools: 'list[ToolDefinition]') -&gt; 'StructuredOutputSelection'</code></li>
+<li><code>fallback_after_rejection(self, selection: 'StructuredOutputSelection', configured_mode: 'StructuredOutputMode') -&gt; 'StructuredOutputSelection | None'</code></li>
+</ul>
+<h2 id="modelconnectionerror"><code>ModelConnectionError</code><a class="headerlink" href="#modelconnectionerror" title="Permanent link">&para;</a></h2>
+<p><strong>Class</strong> · <code>treelang.exceptions</code></p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="n">ModelConnectionError</span><span class="p">(</span><span class="n">message</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">provider</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">status_code</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">retry_after</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span>
+</code></pre></div>
+<p>Raised when the provider SDK cannot reach its model service.</p>
+<h2 id="modelratelimiterror"><code>ModelRateLimitError</code><a class="headerlink" href="#modelratelimiterror" title="Permanent link">&para;</a></h2>
+<p><strong>Class</strong> · <code>treelang.exceptions</code></p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="n">ModelRateLimitError</span><span class="p">(</span><span class="n">message</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">provider</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">status_code</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">retry_after</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span>
+</code></pre></div>
+<p>Raised when a model provider reports exhausted request capacity.</p>
+<h2 id="modelreplayentry"><code>ModelReplayEntry</code><a class="headerlink" href="#modelreplayentry" title="Permanent link">&para;</a></h2>
+<p><strong>Class</strong> · <code>treelang.replay</code></p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="n">ModelReplayEntry</span><span class="p">(</span><span class="n">request</span><span class="p">:</span> <span class="s1">&#39;dict[str, Any]&#39;</span><span class="p">,</span> <span class="n">response</span><span class="p">:</span> <span class="s1">&#39;str | tuple[str, ...]&#39;</span><span class="p">,</span> <span class="n">kind</span><span class="p">:</span> <span class="s2">&quot;Literal[&#39;complete&#39;, &#39;stream&#39;]&quot;</span> <span class="o">=</span> <span class="s1">&#39;complete&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span>
+</code></pre></div>
+<p>One expected model request and completion or stream response.</p>
+<h2 id="modelreplaytransport"><code>ModelReplayTransport</code><a class="headerlink" href="#modelreplaytransport" title="Permanent link">&para;</a></h2>
+<p><strong>Class</strong> · <code>treelang.replay</code></p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a><span class="n">ModelReplayTransport</span><span class="p">(</span><span class="n">entries</span><span class="p">:</span> <span class="s1">&#39;Sequence[ModelReplayEntry]&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;None&#39;</span>
+</code></pre></div>
+<p>Replay ordered model requests without credentials or network access.</p>
+<p>Methods:</p>
+<ul>
+<li><code>complete(self, request: 'ModelRequest') -&gt; 'str'</code></li>
+<li><code>stream(self, request: 'ModelRequest') -&gt; 'AsyncIterator[str]'</code></li>
+<li><code>assert_consumed(self) -&gt; 'None'</code> — Raise when expected requests remain unconsumed.</li>
+</ul>
+<h2 id="modeltimeouterror"><code>ModelTimeoutError</code><a class="headerlink" href="#modeltimeouterror" title="Permanent link">&para;</a></h2>
+<p><strong>Class</strong> · <code>treelang.exceptions</code></p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a><span class="n">ModelTimeoutError</span><span class="p">(</span><span class="n">message</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">provider</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">status_code</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">retry_after</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span>
+</code></pre></div>
+<p>Raised when the provider SDK times out a model request.</p>
+<h2 id="modeltransport"><code>ModelTransport</code><a class="headerlink" href="#modeltransport" title="Permanent link">&para;</a></h2>
+<p><strong>Class</strong> · <code>treelang.ai.transport</code></p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a><span class="n">ModelTransport</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+</code></pre></div>
+<p>Minimal model interface required by Arborist orchestration.</p>
+<p>Methods:</p>
+<ul>
+<li><code>complete(self, request: collections.abc.Mapping[str, typing.Any]) -&gt; str</code></li>
+<li><code>stream(self, request: collections.abc.Mapping[str, typing.Any]) -&gt; collections.abc.AsyncIterator[str]</code></li>
+</ul>
+<h2 id="modeltransporterror"><code>ModelTransportError</code><a class="headerlink" href="#modeltransporterror" title="Permanent link">&para;</a></h2>
+<p><strong>Class</strong> · <code>treelang.exceptions</code></p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a><span class="n">ModelTransportError</span><span class="p">(</span><span class="n">message</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">provider</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">status_code</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">retry_after</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span>
+</code></pre></div>
+<p>Normalized failure returned by a model transport SDK.</p>
+<h2 id="modelusage"><code>ModelUsage</code><a class="headerlink" href="#modelusage" title="Permanent link">&para;</a></h2>
+<p><strong>Class</strong> · <code>treelang.ai.transport</code></p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a><span class="n">ModelUsage</span><span class="p">(</span><span class="n">prompt_tokens</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">completion_tokens</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span>
+</code></pre></div>
+<p>Token usage reported for one model completion.</p>
+<h2 id="nooptracesink"><code>NoOpTraceSink</code><a class="headerlink" href="#nooptracesink" title="Permanent link">&para;</a></h2>
+<p><strong>Class</strong> · <code>treelang.observability</code></p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a><span class="n">NoOpTraceSink</span><span class="p">()</span>
+</code></pre></div>
+<p>Trace sink that intentionally discards every event.</p>
+<p>Methods:</p>
+<ul>
+<li><code>record(self, event: str, attributes: collections.abc.Mapping[str, typing.Any]) -&gt; None</code></li>
+</ul>
+<h2 id="observability"><code>Observability</code><a class="headerlink" href="#observability" title="Permanent link">&para;</a></h2>
+<p><strong>Class</strong> · <code>treelang.observability</code></p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a><span class="n">Observability</span><span class="p">(</span><span class="n">logger</span><span class="p">:</span> <span class="n">logging</span><span class="o">.</span><span class="n">Logger</span> <span class="o">=</span> <span class="o">&lt;</span><span class="n">factory</span><span class="o">&gt;</span><span class="p">,</span> <span class="n">tracer</span><span class="p">:</span> <span class="n">treelang</span><span class="o">.</span><span class="n">observability</span><span class="o">.</span><span class="n">TraceSink</span> <span class="o">=</span> <span class="o">&lt;</span><span class="n">factory</span><span class="o">&gt;</span><span class="p">,</span> <span class="n">allow_content</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span>
+</code></pre></div>
+<p>Send the same redacted event to JSON logs and an optional trace sink.</p>
+<p>Methods:</p>
+<ul>
+<li><code>emit(self, event: str, **attributes: Any) -&gt; None</code></li>
+</ul>
+<h2 id="providerresponseerror"><code>ProviderResponseError</code><a class="headerlink" href="#providerresponseerror" title="Permanent link">&para;</a></h2>
+<p><strong>Class</strong> · <code>treelang.exceptions</code></p>
+<p>Raised when a provider returns an invalid response.</p>
+<h2 id="replaymismatcherror"><code>ReplayMismatchError</code><a class="headerlink" href="#replaymismatcherror" title="Permanent link">&para;</a></h2>
+<p><strong>Class</strong> · <code>treelang.exceptions</code></p>
+<p>Raised when runtime activity diverges from a deterministic replay.</p>
+<h2 id="retrypolicy"><code>RetryPolicy</code><a class="headerlink" href="#retrypolicy" title="Permanent link">&para;</a></h2>
+<p><strong>Class</strong> · <code>treelang.trees.policy</code></p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a><span class="n">RetryPolicy</span><span class="p">(</span><span class="n">max_attempts</span><span class="p">:</span> <span class="s1">&#39;int&#39;</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">delay_seconds</span><span class="p">:</span> <span class="s1">&#39;float&#39;</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">idempotent_tools</span><span class="p">:</span> <span class="s1">&#39;frozenset[str]&#39;</span> <span class="o">=</span> <span class="o">&lt;</span><span class="n">factory</span><span class="o">&gt;</span><span class="p">,</span> <span class="n">retryable_exceptions</span><span class="p">:</span> <span class="s1">&#39;tuple[type[Exception], ...]&#39;</span> <span class="o">=</span> <span class="p">(</span><span class="o">&lt;</span><span class="k">class</span><span class="w"> </span><span class="err">&#39;</span><span class="nc">treelang</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">ToolExecutionError</span><span class="s1">&#39;&gt;, &lt;class &#39;</span><span class="ne">TimeoutError</span><span class="s1">&#39;&gt;)) -&gt; None</span>
+</code></pre></div>
+<p>Retry transient failures only for tools declared safe to repeat.</p>
+<h2 id="structuredoutputunsupportederror"><code>StructuredOutputUnsupportedError</code><a class="headerlink" href="#structuredoutputunsupportederror" title="Permanent link">&para;</a></h2>
+<p><strong>Class</strong> · <code>treelang.exceptions</code></p>
+<p>Raised when a provider rejects strict structured-output configuration.</p>
+<h2 id="structuredoutputselection"><code>StructuredOutputSelection</code><a class="headerlink" href="#structuredoutputselection" title="Permanent link">&para;</a></h2>
+<p><strong>Class</strong> · <code>treelang.ai.capabilities</code></p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a><span class="n">StructuredOutputSelection</span><span class="p">(</span><span class="n">response_format</span><span class="p">:</span> <span class="s1">&#39;dict[str, Any]&#39;</span><span class="p">,</span> <span class="n">mode</span><span class="p">:</span> <span class="s1">&#39;SelectedOutputMode&#39;</span><span class="p">,</span> <span class="n">fallback_reason</span><span class="p">:</span> <span class="s1">&#39;str | None&#39;</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span>
+</code></pre></div>
+<p>Negotiated response format and the reason for compatibility fallback.</p>
+<h2 id="supported_schema_versions"><code>SUPPORTED_SCHEMA_VERSIONS</code><a class="headerlink" href="#supported_schema_versions" title="Permanent link">&para;</a></h2>
+<p><strong>Constant</strong> · <code>treelang</code></p>
+<p>Current value: <code>('1.0', '2.0')</code></p>
+<h2 id="toolexecutionerror"><code>ToolExecutionError</code><a class="headerlink" href="#toolexecutionerror" title="Permanent link">&para;</a></h2>
+<p><strong>Class</strong> · <code>treelang.exceptions</code></p>
+<p>Raised when a provider reports that a tool invocation failed.</p>
+<h2 id="tooldefinition"><code>ToolDefinition</code><a class="headerlink" href="#tooldefinition" title="Permanent link">&para;</a></h2>
+<p><strong>Typed dictionary</strong> · <code>treelang.ai.tool</code></p>
+<p>Provider-neutral metadata for one callable tool.</p>
+<p>Fields:</p>
+<ul>
+<li><code>name: Required[str]</code></li>
+<li><code>properties: Required[dict[str, treelang.ai.tool.ToolProperty]]</code></li>
+<li><code>description: NotRequired[str | None]</code></li>
+<li><code>input_schema: NotRequired[dict[str, Any]]</code></li>
+</ul>
+<h2 id="toolnotfounderror"><code>ToolNotFoundError</code><a class="headerlink" href="#toolnotfounderror" title="Permanent link">&para;</a></h2>
+<p><strong>Class</strong> · <code>treelang.exceptions</code></p>
+<p>Raised when a provider does not expose a requested tool.</p>
+<h2 id="tooloutput"><code>ToolOutput</code><a class="headerlink" href="#tooloutput" title="Permanent link">&para;</a></h2>
+<p><strong>Class</strong> · <code>treelang.ai.provider</code></p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-24-1" name="__codelineno-24-1" href="#__codelineno-24-1"></a><span class="n">ToolOutput</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">content</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span>
+</code></pre></div>
+<p>Provider-neutral value returned by one successful tool invocation.</p>
+<p>Fields:</p>
+<ul>
+<li><code>content: Any</code></li>
+</ul>
+<h2 id="toolproperty"><code>ToolProperty</code><a class="headerlink" href="#toolproperty" title="Permanent link">&para;</a></h2>
+<p><strong>Typed dictionary</strong> · <code>treelang.ai.tool</code></p>
+<p>JSON Schema metadata used for one tool argument.</p>
+<p>Fields:</p>
+<ul>
+<li><code>type: str | list[str]</code></li>
+<li><code>description: str</code></li>
+<li><code>enum: list[Any]</code></li>
+<li><code>default: Any</code></li>
+<li><code>const: Any</code></li>
+<li><code>minimum: int | float</code></li>
+<li><code>maximum: int | float</code></li>
+<li><code>exclusiveMinimum: int | float</code></li>
+<li><code>exclusiveMaximum: int | float</code></li>
+<li><code>multipleOf: int | float</code></li>
+<li><code>minLength: int</code></li>
+<li><code>maxLength: int</code></li>
+<li><code>pattern: str</code></li>
+<li><code>format: str</code></li>
+<li><code>minItems: int</code></li>
+<li><code>maxItems: int</code></li>
+<li><code>uniqueItems: bool</code></li>
+<li><code>items: Any</code></li>
+<li><code>minProperties: int</code></li>
+<li><code>maxProperties: int</code></li>
+<li><code>properties: dict[str, Any]</code></li>
+<li><code>required: list[str]</code></li>
+<li><code>additionalProperties: bool | dict[str, Any]</code></li>
+</ul>
+<h2 id="toolprovider"><code>ToolProvider</code><a class="headerlink" href="#toolprovider" title="Permanent link">&para;</a></h2>
+<p><strong>Class</strong> · <code>treelang.ai.provider</code></p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-25-1" name="__codelineno-25-1" href="#__codelineno-25-1"></a><span class="n">ToolProvider</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span>
+</code></pre></div>
+<p>Provider-neutral interface for tool discovery and invocation.</p>
+<p>Methods:</p>
+<ul>
+<li><code>get_tool_definition(self, name: str) -&gt; treelang.ai.tool.ToolDefinition</code> — Return normalized metadata for one named tool.</li>
+<li><code>call_tool(self, name: str, arguments: dict[str, typing.Any]) -&gt; treelang.ai.provider.ToolOutput</code> — Invoke a named tool with validated keyword arguments.</li>
+<li><code>list_tools(self) -&gt; list[treelang.ai.tool.ToolDefinition]</code> — Return normalized metadata for every available tool.</li>
+</ul>
+<h2 id="toolreplayentry"><code>ToolReplayEntry</code><a class="headerlink" href="#toolreplayentry" title="Permanent link">&para;</a></h2>
+<p><strong>Class</strong> · <code>treelang.replay</code></p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-26-1" name="__codelineno-26-1" href="#__codelineno-26-1"></a><span class="n">ToolReplayEntry</span><span class="p">(</span><span class="n">name</span><span class="p">:</span> <span class="s1">&#39;str&#39;</span><span class="p">,</span> <span class="n">arguments</span><span class="p">:</span> <span class="s1">&#39;dict[str, Any]&#39;</span><span class="p">,</span> <span class="n">output</span><span class="p">:</span> <span class="s1">&#39;Any&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span>
+</code></pre></div>
+<p>One expected provider invocation and its deterministic output.</p>
+<h2 id="toolreplayprovider"><code>ToolReplayProvider</code><a class="headerlink" href="#toolreplayprovider" title="Permanent link">&para;</a></h2>
+<p><strong>Class</strong> · <code>treelang.replay</code></p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-27-1" name="__codelineno-27-1" href="#__codelineno-27-1"></a><span class="n">ToolReplayProvider</span><span class="p">(</span><span class="n">tools</span><span class="p">:</span> <span class="s1">&#39;Sequence[ToolDefinition]&#39;</span><span class="p">,</span> <span class="n">entries</span><span class="p">:</span> <span class="s1">&#39;Sequence[ToolReplayEntry]&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;None&#39;</span>
+</code></pre></div>
+<p>Replay an ordered sequence of tool calls and reject any drift.</p>
+<p>Methods:</p>
+<ul>
+<li><code>list_tools(self) -&gt; 'list[ToolDefinition]'</code> — Return normalized metadata for every available tool.</li>
+<li><code>call_tool(self, name: 'str', arguments: 'dict[str, Any]') -&gt; 'ToolOutput'</code> — Invoke a named tool with validated keyword arguments.</li>
+<li><code>assert_consumed(self) -&gt; 'None'</code> — Raise when expected calls remain unconsumed.</li>
+</ul>
+<h2 id="tracesink"><code>TraceSink</code><a class="headerlink" href="#tracesink" title="Permanent link">&para;</a></h2>
+<p><strong>Class</strong> · <code>treelang.observability</code></p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-28-1" name="__codelineno-28-1" href="#__codelineno-28-1"></a><span class="n">TraceSink</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+</code></pre></div>
+<p>Vendor-neutral destination for already-redacted trace events.</p>
+<p>Methods:</p>
+<ul>
+<li><code>record(self, event: str, attributes: collections.abc.Mapping[str, typing.Any]) -&gt; None</code></li>
+</ul>
+<h2 id="treeconditional"><code>TreeConditional</code><a class="headerlink" href="#treeconditional" title="Permanent link">&para;</a></h2>
+<p><strong>Class</strong> · <code>treelang.trees.schemas.v1</code></p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-29-1" name="__codelineno-29-1" href="#__codelineno-29-1"></a><span class="n">TreeConditional</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="nb">type</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;conditional&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;conditional&#39;</span><span class="p">,</span> <span class="n">condition</span><span class="p">:</span> <span class="n">Node</span><span class="p">,</span> <span class="n">true_branch</span><span class="p">:</span> <span class="n">Node</span><span class="p">,</span> <span class="n">false_branch</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Node</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span>
+</code></pre></div>
+<p>Represents a conditional statement in the AST.</p>
+<p>Fields:</p>
+<ul>
+<li><code>type: Literal['conditional']</code></li>
+<li><code>condition: 'Node'</code></li>
+<li><code>true_branch: 'Node'</code></li>
+<li><code>false_branch: Optional[ForwardRef('Node')]</code></li>
+</ul>
+<p>Methods:</p>
+<ul>
+<li><code>eval(self, provider: treelang.ai.provider.ToolProvider, context: 'ExecutionContext | None' = None) -&gt; Any</code></li>
+</ul>
+<h2 id="treefilter"><code>TreeFilter</code><a class="headerlink" href="#treefilter" title="Permanent link">&para;</a></h2>
+<p><strong>Class</strong> · <code>treelang.trees.schemas.v1</code></p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-30-1" name="__codelineno-30-1" href="#__codelineno-30-1"></a><span class="n">TreeFilter</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="nb">type</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;filter&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;filter&#39;</span><span class="p">,</span> <span class="n">function</span><span class="p">:</span> <span class="n">treelang</span><span class="o">.</span><span class="n">trees</span><span class="o">.</span><span class="n">schemas</span><span class="o">.</span><span class="n">v1</span><span class="o">.</span><span class="n">TreeLambda</span><span class="p">,</span> <span class="n">iterable</span><span class="p">:</span> <span class="n">Node</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span>
+</code></pre></div>
+<p>Represents a filter operation in the abstract syntax tree (AST).</p>
+<p>Fields:</p>
+<ul>
+<li><code>type: Literal['filter']</code></li>
+<li><code>function: treelang.trees.schemas.v1.TreeLambda</code></li>
+<li><code>iterable: 'Node'</code></li>
+</ul>
+<p>Methods:</p>
+<ul>
+<li><code>eval(self, provider: treelang.ai.provider.ToolProvider, context: 'ExecutionContext | None' = None) -&gt; Any</code></li>
+</ul>
+<h2 id="treefunction"><code>TreeFunction</code><a class="headerlink" href="#treefunction" title="Permanent link">&para;</a></h2>
+<p><strong>Class</strong> · <code>treelang.trees.schemas.v1</code></p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-31-1" name="__codelineno-31-1" href="#__codelineno-31-1"></a><span class="n">TreeFunction</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="nb">type</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;function&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;function&#39;</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">MinLen</span><span class="p">(</span><span class="n">min_length</span><span class="o">=</span><span class="mi">1</span><span class="p">)],</span> <span class="n">params</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Node</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span>
+</code></pre></div>
+<p>Represents a function in the abstract syntax tree (AST).</p>
+<p>Fields:</p>
+<ul>
+<li><code>type: Literal['function']</code></li>
+<li><code>name: str</code></li>
+<li><code>params: List[ForwardRef('Node')]</code></li>
+</ul>
+<p>Methods:</p>
+<ul>
+<li><code>eval(self, provider: treelang.ai.provider.ToolProvider, context: 'ExecutionContext | None' = None) -&gt; Any</code></li>
+</ul>
+<h2 id="treelambda"><code>TreeLambda</code><a class="headerlink" href="#treelambda" title="Permanent link">&para;</a></h2>
+<p><strong>Class</strong> · <code>treelang.trees.schemas.v1</code></p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-32-1" name="__codelineno-32-1" href="#__codelineno-32-1"></a><span class="n">TreeLambda</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="nb">type</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;lambda&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;lambda&#39;</span><span class="p">,</span> <span class="n">params</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">body</span><span class="p">:</span> <span class="n">treelang</span><span class="o">.</span><span class="n">trees</span><span class="o">.</span><span class="n">schemas</span><span class="o">.</span><span class="n">v1</span><span class="o">.</span><span class="n">TreeFunction</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span>
+</code></pre></div>
+<p>Represents an anonymous (lambda) function.</p>
+<p>Fields:</p>
+<ul>
+<li><code>type: Literal['lambda']</code></li>
+<li><code>params: List[str]</code></li>
+<li><code>body: treelang.trees.schemas.v1.TreeFunction</code></li>
+</ul>
+<p>Methods:</p>
+<ul>
+<li><code>eval(self, provider: treelang.ai.provider.ToolProvider, context: 'ExecutionContext | None' = None) -&gt; Any</code></li>
+</ul>
+<h2 id="treemap"><code>TreeMap</code><a class="headerlink" href="#treemap" title="Permanent link">&para;</a></h2>
+<p><strong>Class</strong> · <code>treelang.trees.schemas.v1</code></p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-33-1" name="__codelineno-33-1" href="#__codelineno-33-1"></a><span class="n">TreeMap</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="nb">type</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;map&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;map&#39;</span><span class="p">,</span> <span class="n">function</span><span class="p">:</span> <span class="n">treelang</span><span class="o">.</span><span class="n">trees</span><span class="o">.</span><span class="n">schemas</span><span class="o">.</span><span class="n">v1</span><span class="o">.</span><span class="n">TreeLambda</span><span class="p">,</span> <span class="n">iterable</span><span class="p">:</span> <span class="n">Node</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span>
+</code></pre></div>
+<p>Represents a map operation in the abstract syntax tree (AST).</p>
+<p>Fields:</p>
+<ul>
+<li><code>type: Literal['map']</code></li>
+<li><code>function: treelang.trees.schemas.v1.TreeLambda</code></li>
+<li><code>iterable: 'Node'</code></li>
+</ul>
+<p>Methods:</p>
+<ul>
+<li><code>eval(self, provider: treelang.ai.provider.ToolProvider, context: 'ExecutionContext | None' = None) -&gt; Any</code></li>
+</ul>
+<h2 id="treenode"><code>TreeNode</code><a class="headerlink" href="#treenode" title="Permanent link">&para;</a></h2>
+<p><strong>Class</strong> · <code>treelang.trees.schemas.v1</code></p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-34-1" name="__codelineno-34-1" href="#__codelineno-34-1"></a><span class="n">TreeNode</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="nb">type</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;node&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;node&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span>
+</code></pre></div>
+<p>Represents a node in the abstract syntax tree (AST).</p>
+<p>Fields:</p>
+<ul>
+<li><code>type: Literal['node']</code></li>
+</ul>
+<p>Methods:</p>
+<ul>
+<li><code>eval(self, provider: treelang.ai.provider.ToolProvider, context: 'ExecutionContext | None' = None) -&gt; Any</code></li>
+<li><code>hash(self) -&gt; str</code></li>
+</ul>
+<h2 id="treeprogram"><code>TreeProgram</code><a class="headerlink" href="#treeprogram" title="Permanent link">&para;</a></h2>
+<p><strong>Class</strong> · <code>treelang.trees.schemas.v1</code></p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-35-1" name="__codelineno-35-1" href="#__codelineno-35-1"></a><span class="n">TreeProgram</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="nb">type</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;program&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;program&#39;</span><span class="p">,</span> <span class="n">body</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Node</span><span class="p">],</span> <span class="n">mode</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;single&#39;</span><span class="p">,</span> <span class="s1">&#39;parallel&#39;</span><span class="p">],</span> <span class="n">name</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">description</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">schema_version</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;1.0&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;1.0&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span>
+</code></pre></div>
+<p>Represents a program in the abstract syntax tree (AST).</p>
+<p>Fields:</p>
+<ul>
+<li><code>type: Literal['program']</code></li>
+<li><code>body: List[ForwardRef('Node')]</code></li>
+<li><code>mode: Literal['single', 'parallel']</code></li>
+<li><code>name: Optional[str]</code></li>
+<li><code>description: Optional[str]</code></li>
+<li><code>schema_version: Literal['1.0']</code></li>
+</ul>
+<p>Methods:</p>
+<ul>
+<li><code>eval(self, provider: treelang.ai.provider.ToolProvider, context: 'ExecutionContext | None' = None) -&gt; Any</code></li>
+</ul>
+<h2 id="treereduce"><code>TreeReduce</code><a class="headerlink" href="#treereduce" title="Permanent link">&para;</a></h2>
+<p><strong>Class</strong> · <code>treelang.trees.schemas.v1</code></p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-36-1" name="__codelineno-36-1" href="#__codelineno-36-1"></a><span class="n">TreeReduce</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="nb">type</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;reduce&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;reduce&#39;</span><span class="p">,</span> <span class="n">function</span><span class="p">:</span> <span class="n">treelang</span><span class="o">.</span><span class="n">trees</span><span class="o">.</span><span class="n">schemas</span><span class="o">.</span><span class="n">v1</span><span class="o">.</span><span class="n">TreeLambda</span><span class="p">,</span> <span class="n">iterable</span><span class="p">:</span> <span class="n">Node</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span>
+</code></pre></div>
+<p>Represents a reduce operation in the abstract syntax tree (AST).</p>
+<p>Fields:</p>
+<ul>
+<li><code>type: Literal['reduce']</code></li>
+<li><code>function: treelang.trees.schemas.v1.TreeLambda</code></li>
+<li><code>iterable: 'Node'</code></li>
+</ul>
+<p>Methods:</p>
+<ul>
+<li><code>eval(self, provider: treelang.ai.provider.ToolProvider, context: 'ExecutionContext | None' = None) -&gt; Any</code></li>
+</ul>
+<h2 id="treevalue"><code>TreeValue</code><a class="headerlink" href="#treevalue" title="Permanent link">&para;</a></h2>
+<p><strong>Class</strong> · <code>treelang.trees.schemas.v1</code></p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-37-1" name="__codelineno-37-1" href="#__codelineno-37-1"></a><span class="n">TreeValue</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="nb">type</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;value&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;value&#39;</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">MinLen</span><span class="p">(</span><span class="n">min_length</span><span class="o">=</span><span class="mi">1</span><span class="p">)],</span> <span class="n">value</span><span class="p">:</span> <span class="n">JsonValue</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span>
+</code></pre></div>
+<p>Represents a value in the abstract syntax tree (AST).</p>
+<p>Fields:</p>
+<ul>
+<li><code>type: Literal['value']</code></li>
+<li><code>name: str</code></li>
+<li><code>value: JsonValue</code></li>
+</ul>
+<p>Methods:</p>
+<ul>
+<li><code>eval(self, provider: treelang.ai.provider.ToolProvider, context: 'ExecutionContext | None' = None) -&gt; Any</code></li>
+</ul>
+<h2 id="treelangerror"><code>TreelangError</code><a class="headerlink" href="#treelangerror" title="Permanent link">&para;</a></h2>
+<p><strong>Class</strong> · <code>treelang.exceptions</code></p>
+<p>Base class for errors raised by Treelang.</p>
+<h2 id="usageawaretransport"><code>UsageAwareTransport</code><a class="headerlink" href="#usageawaretransport" title="Permanent link">&para;</a></h2>
+<p><strong>Class</strong> · <code>treelang.ai.transport</code></p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-38-1" name="__codelineno-38-1" href="#__codelineno-38-1"></a><span class="n">UsageAwareTransport</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+</code></pre></div>
+<p>Optional transport contract for normalized per-context token usage.</p>
+<p>Methods:</p>
+<ul>
+<li><code>consume_usage(self) -&gt; treelang.ai.transport.ModelUsage</code></li>
+</ul>
+<h2 id="__version__"><code>__version__</code><a class="headerlink" href="#__version__" title="Permanent link">&para;</a></h2>
+<p><strong>Constant</strong> · <code>treelang</code></p>
+<p>Current value: <code>'1.0.0'</code></p>
+<h2 id="ast_examples"><code>ast_examples</code><a class="headerlink" href="#ast_examples" title="Permanent link">&para;</a></h2>
+<p><strong>Function</strong> · <code>treelang.trees.schemas</code></p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-39-1" name="__codelineno-39-1" href="#__codelineno-39-1"></a><span class="n">ast_examples</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">str</span>
+</code></pre></div>
+<p>Return examples for the Treelang AST model.</p>
+<h2 id="ast_json_schema"><code>ast_json_schema</code><a class="headerlink" href="#ast_json_schema" title="Permanent link">&para;</a></h2>
+<p><strong>Function</strong> · <code>treelang.trees.schemas</code></p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-40-1" name="__codelineno-40-1" href="#__codelineno-40-1"></a><span class="n">ast_json_schema</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">str</span>
+</code></pre></div>
+<p>Return the JSON schema for the Treelang AST model.</p>
+<h2 id="json_schema_text"><code>json_schema_text</code><a class="headerlink" href="#json_schema_text" title="Permanent link">&para;</a></h2>
+<p><strong>Function</strong> · <code>treelang.schema_artifacts</code></p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-41-1" name="__codelineno-41-1" href="#__codelineno-41-1"></a><span class="n">json_schema_text</span><span class="p">(</span><span class="n">version</span><span class="p">:</span> <span class="s1">&#39;SupportedSchemaVersion&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;str&#39;</span>
+</code></pre></div>
+<p>Read one canonical schema exactly as distributed in the package.</p>
+<h2 id="load_json_schema"><code>load_json_schema</code><a class="headerlink" href="#load_json_schema" title="Permanent link">&para;</a></h2>
+<p><strong>Function</strong> · <code>treelang.schema_artifacts</code></p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-42-1" name="__codelineno-42-1" href="#__codelineno-42-1"></a><span class="n">load_json_schema</span><span class="p">(</span><span class="n">version</span><span class="p">:</span> <span class="s1">&#39;SupportedSchemaVersion&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;dict[str, Any]&#39;</span>
+</code></pre></div>
+<p>Load one canonical schema as a JSON-compatible mapping.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+          
+          <a href="../provider-matrix/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Compatibility matrix">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                Compatibility matrix
+              </div>
+            </div>
+          </a>
+        
+        
+          
+          <a href="../migration-1.0/" class="md-footer__link md-footer__link--next" aria-label="Next: Migration guide 1.0">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              <div class="md-ellipsis">
+                Migration guide 1.0
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11z"/></svg>
+            </div>
+          </a>
+        
+      </nav>
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; Treelang contributors
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["content.code.copy", "navigation.footer", "navigation.instant", "navigation.sections", "navigation.top", "search.highlight", "search.suggest"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>
