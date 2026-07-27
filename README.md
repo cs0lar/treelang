@@ -4,30 +4,78 @@
 [![PyPI Downloads](https://static.pepy.tech/badge/treelang)](https://pepy.tech/projects/treelang)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-Turn your toolboxes into executable **Abstract Syntax Trees** (ASTs) that Large Language Models can plan in a single shot. `treelang` lets you express arbitrarily complex workflows, keep sensitive values out of the LLM, and reuse the resulting programs as shareable, cacheable trees.
+Treelang is a small, typed orchestration language for the gap between simple
+tool calling and a full workflow engine.
+
+Most tool-using agents alternate between a model call and a tool call, sending
+each result back to the model so it can choose the next step. Treelang takes a
+different path: the model generates a complete, validated program first, then
+your application executes that program locally against its tools. Intermediate
+tool results stay in your process and do not return to the model.
+
+That trade is especially useful when the workflow shape can be planned before
+the data arrives: bulk operations, private-data processing, repeatable
+automations, and tool compositions that need branching, mapping, filtering,
+reduction, concurrency, or bounded recursion. The generated AST is a real
+artifact—you can inspect it, reject it, apply resource limits, cache it, replay
+it, or expose it as another tool.
 
 ## Highlights
 
-- **One LLM call, full plan** – generate an AST for a complete solution without the expensive function-call loop.
-- **Complex workflows** – conditionals, higher-order functions (`map`, `filter`, `reduce`), and nested tool invocations all live in one tree.
-- **Secure + green** – the LLM never sees tool results; you evaluate nodes locally while controlling cost and compliance.
-- **Model Context Protocol native** – ships with an MCP client provider but can work with any tool registry through the `ToolProvider` abstraction.
-- **Composable outputs** – turn ASTs into callable tools (`AST.tool`) or serialize/describe them for sharing, caching, or review.
+- **Plan once, execute locally** — generate the complete tool program before
+  execution instead of paying for a model round-trip after every tool result.
+- **Keep the data plane out of the prompt** — customer records, financial
+  values, internal search results, and other intermediate outputs flow between
+  local nodes and tools without being sent back to the model.
+- **Use real control flow** — validated ASTs support nested tool calls,
+  conditionals, `map`, `filter`, `reduce`, parallel branches, and opt-in
+  recursive functions.
+- **Review the program before it runs** — serialize, diff, sign, cache, approve,
+  replay, or reject a plan independently from model generation.
+- **Put hard limits around generated code** — enforce node, depth, call, tool,
+  concurrency, and wall-clock budgets; validate complete tool input schemas
+  before invocation.
+- **Bring your own models and tools** — OpenAI and Anthropic share the same
+  orchestration contract; MCP and custom `ToolProvider` implementations share
+  the same execution runtime.
+- **Test without a model bill** — deterministic transports, tool fakes, replay
+  fixtures, provider contract suites, and an offline benchmark ship with the
+  project.
 
 ## What you can build
 
-- **Enterprise copilots** that must orchestrate dozens of tools with branching logic.
-- **Automations** that need to fan out over datasets (e.g., score/map/filter large collections asynchronously).
-- **Reusable skills**: persist an AST, describe it with `EvalResponse.describe()`, and redeploy it as a tool on your MCP server.
-- **LLM evaluation loops**: ask for the tree (`EvalType.TREE`) to inspect reasoning before execution, or walk it immediately for answers.
+- **Private bulk operations** — fetch IDs, fan out over records, apply
+  deterministic eligibility tools, and aggregate results without placing the
+  underlying records in model context.
+- **Finance and operations workflows** — compose invoice, pricing, inventory, or
+  reconciliation tools into reviewable plans with explicit branches and
+  execution budgets.
+- **Reusable generated automations** — create a workflow for a user's intent,
+  approve it once, then persist and rerun the same AST as inputs change.
+- **MCP tool composition** — turn several narrow MCP tools into one higher-level
+  callable tool without implementing a new orchestration service for every
+  composition.
+- **Controlled recursive jobs** — use opt-in schema v2 for bounded retries,
+  hierarchical traversal, divide-and-conquer operations, or recursive business
+  rules with a separate call-depth limit.
+- **Auditable AI features** — store the proposed program separately from its
+  execution evidence, then reproduce model and tool behavior with deterministic
+  replay.
+
+Treelang is not intended for open-ended agents that must repeatedly inspect
+unstructured tool output and improvise their next action. It fits best when
+tools expose the operations and predicates needed to express the decision logic,
+and when local execution, privacy, repeatability, or auditability matter more
+than continuous model deliberation.
 
 ## Quick start
 
 ### Requirements
 
 - Python 3.12+
-- An OpenAI API key (`OPENAI_API_KEY`) and optional `OPENAI_MODEL` override (defaults to `gpt-4o-2024-11-20`)
-- A source of tools: an MCP server, or your own provider implementing `treelang.ai.provider.ToolProvider`
+- An OpenAI API key for the example below, or install `treelang[anthropic]` and
+  use the Anthropic transport
+- A source of tools for production: an MCP server or a custom `ToolProvider`
 
 ### Install
 
@@ -54,68 +102,86 @@ Canonical v1 and v2 JSON Schema files ship in the package and documentation site
 See the [editor-validation guide](docs/json-schema.md), or run
 `treelang schema --schema-version 2.0`.
 
-### Wire up tools (MCP)
+### Generate, inspect, then execute
+
+This runnable example models a realistic data-minimization boundary: the model
+can see the invoice tool definitions, but invoice IDs and balances appear only
+during local execution. `FakeToolProvider` keeps the quick start self-contained;
+replace it with `MCPToolProvider` or your own provider in an application.
 
 ```python
 import asyncio
-from contextlib import AsyncExitStack
 
-from mcp import ClientSession
-from mcp.client.streamable_http import streamable_http_client
-
-from treelang.ai.arborist import EvalType, OpenAIArborist
-from treelang.ai.provider import MCPToolProvider
+from treelang import AST, ExecutionLimits
+from treelang.ai.arborist import OpenAIArborist
+from treelang.ai.responses import EvalType
+from treelang.testing import FakeToolProvider
 
 
-async def build_arborist(stack: AsyncExitStack) -> OpenAIArborist:
-    try:
-        await stack.__aenter__()
-        # Connect to a streamable HTTP server
-        read_stream, write_stream, _ = await stack.enter_async_context(
-            streamable_http_client("http://localhost:8000/mcp")
-        )
-
-        # Create a session using the client streams
-        session = await stack.enter_async_context(
-            ClientSession(read_stream, write_stream)
-        )
-
-        # Initialize the connection
-        await session.initialize()
-
-        # Create the Arborist
-        provider = MCPToolProvider(session)
-        arborist = OpenAIArborist(provider=provider, model="gpt-4o")
-
-        return arborist
-
-    except Exception:
-        print ("Error building the Arborist")
-        await stack.aclose()
-        raise
-
-```
-
-### Ask a question (MCP)
-
-```python
-async def run():
-    stack = AsyncExitStack()
-    arborist = await build_arborist(stack)
-
-    response = await arborist.eval(
-        query="Compare next weekend flights BOS➜SFO and summarize the cheapest option.",
-        type=EvalType.WALK,  # change to EvalType.TREE to inspect the JSON AST instead
+async def main() -> None:
+    balances = {1001: 850.0, 1002: 1_900.0, 1003: 400.0}
+    provider = FakeToolProvider(
+        tools=[
+            {
+                "name": "list_open_invoice_ids",
+                "description": "Return the IDs of all currently open invoices.",
+                "properties": {},
+            },
+            {
+                "name": "get_invoice_balance",
+                "description": "Return the outstanding balance for one invoice ID.",
+                "properties": {"invoice_id": {"type": "integer"}},
+            },
+            {
+                "name": "sum_values",
+                "description": "Return the sum of a list of numbers.",
+                "properties": {
+                    "values": {"type": "array", "items": {"type": "number"}}
+                },
+            },
+        ],
+        results={
+            "list_open_invoice_ids": list(balances),
+            "get_invoice_balance": lambda args: balances[args["invoice_id"]],
+            "sum_values": lambda args: sum(args["values"]),
+        },
     )
-    print(response.content)  # fully-evaluated tool output
-    if (stack):
-        await stack.aclose()
 
-if __name__ == "__main__":
-    asyncio.run(run())
+    arborist = OpenAIArborist(
+        model="gpt-4o-2024-11-20",
+        provider=provider,
+    )
+    response = await arborist.eval(
+        "Get every open invoice balance, then return their total.",
+        EvalType.TREE,
+    )
+
+    # The model call is finished. Review or persist the program before it runs.
+    tree = response.content
+    print(AST.repr(tree))
+
+    # Invoice IDs and balances now move only between local tools and AST nodes.
+    total = await AST.eval(
+        tree,
+        provider,
+        limits=ExecutionLimits(
+            max_nodes=100,
+            max_tool_calls=20,
+            max_concurrency=5,
+            timeout_seconds=10,
+        ),
+    )
+    print(total)  # 3150.0
+
+
+asyncio.run(main())
 ```
 
-Use `response.jsontree` with `AST.parse()` or `AST.repr()` if you want to log, cache, or transform the raw tree.
+The exact generated tree can vary by model, but it must validate before Treelang
+returns it. Asking for `EvalType.TREE` creates an explicit approval boundary;
+use `EvalType.WALK` when immediate execution is appropriate. The
+[credential-free quickstart notebook](cookbook/quickstart.ipynb) demonstrates
+the same validate/inspect/execute lifecycle with no model call.
 
 ### Bound execution resources
 
@@ -171,7 +237,9 @@ formats, and additional-property rules; see the
 - **Arborist (`treelang/ai/arborist.py`)** – orchestrates LLM calls, maintains history via the optional `Memory` interface, and decides whether to return ASTs or walked results.
 - **Tool providers (`treelang/ai/provider.py`)** – abstract how tools are discovered/invoked. We ship an MCP client implementation and a template for custom providers.
 - **Selectors (`treelang/ai/selector.py`)** – plug in your own tool filtering logic; `AllToolsSelector` ships by default.
-- **Trees (`treelang/trees/tree.py`)** – immutable node classes plus helpers such as async traversal, repr generation, and turning trees into callable tools.
+- **Trees (`treelang/trees/tree.py`)** – validated node models plus helpers for
+  async traversal, execution, representation, and compilation into callable
+  tools.
 
 ## Resources & examples
 

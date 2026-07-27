@@ -1,3 +1,4 @@
+import ast
 import json
 from pathlib import Path
 
@@ -82,3 +83,19 @@ def test_cookbook_and_extension_guides_cover_contribution_contracts():
     assert "live-evaluation" in extensions
     assert "docs/extensions.md" in contributing
     assert "make cookbooks" in contributing
+
+
+def test_readme_positions_the_niche_and_quick_start_compiles():
+    readme = Path("README.md").read_text(encoding="utf-8")
+
+    assert "gap between simple\ntool calling and a full workflow engine" in readme
+    assert "Intermediate\ntool results stay in your process" in readme
+    assert "not intended for open-ended agents" in readme
+    assert "Private bulk operations" in readme
+    assert "Generate, inspect, then execute" in readme
+
+    quick_start = readme.split("### Generate, inspect, then execute", maxsplit=1)[1]
+    python_source = quick_start.split("```python", maxsplit=1)[1].split(
+        "```", maxsplit=1
+    )[0]
+    ast.parse(python_source)
