@@ -256,7 +256,8 @@ tool calls.
 
 Add immutable path-based replacement, wrapping, and grafting for schema v2
 expressions. Reject missing paths, incompatible node locations, unbound variables,
-invalid call arity, and results exceeding configured structural limits.
+invalid call arity, and results exceeding configured structural limits. Complete
+through PR #135.
 
 Exit criteria: callers can construct a larger valid program from a base program
 and an expression with deterministic transformation records.

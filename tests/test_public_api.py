@@ -13,6 +13,7 @@ def test_public_api_exports_core_types():
     assert treelang.ConservativeTreePruner is not None
     assert treelang.prune_tree is not None
     assert treelang.graft_expression is not None
+    assert treelang.compose_programs is not None
     assert treelang.wrap_expression is not None
     assert treelang.TransformationLimits is not None
     assert issubclass(treelang.TreeTransformationError, ValueError)

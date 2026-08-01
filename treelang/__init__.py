@@ -44,6 +44,7 @@ from treelang.schema_artifacts import (
     load_json_schema,
 )
 from treelang.trees.budget import ExecutionLimits
+from treelang.trees.composition import compose_programs
 from treelang.trees.grafting import graft_expression, wrap_expression
 from treelang.trees.policy import BranchOutcome, ExecutionPolicy, RetryPolicy
 from treelang.trees.pruning import ConservativeTreePruner, prune_tree
@@ -82,6 +83,7 @@ __all__ = [
     "AnthropicTransport",
     "BranchOutcome",
     "CapabilityAwareTransport",
+    "compose_programs",
     "ConservativeTreePruner",
     "CURRENT_SCHEMA_VERSION",
     "DefaultModelCapabilityNegotiator",

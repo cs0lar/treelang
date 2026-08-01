@@ -90,6 +90,16 @@ Methods:
 
 - `capabilities(self, model: 'str') -> 'ModelCapabilities'`
 
+## `compose_programs`
+
+**Function** · `treelang.trees.composition`
+
+```python
+compose_programs(programs: 'Sequence[TreeProgram]', *, mode: "Literal['single', 'parallel']" = 'single', name: 'str | None' = None, description: 'str | None' = None, limits: 'TransformationLimits | None' = None) -> 'TransformResult[TreeProgram]'
+```
+
+Combine independent programs with hygienic user-function names.
+
 ## `ConservativeTreePruner`
 
 **Class** · `treelang.trees.pruning`

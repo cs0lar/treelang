@@ -18,6 +18,7 @@ from treelang.trees.schemas.v2 import (
     TreeToolCall,
     TreeVariable,
 )
+from treelang.trees.transformation_validation import validate_transformed_program
 from treelang.trees.transforms import (
     TransformationLimits,
     TransformationRecord,
@@ -43,7 +44,7 @@ def graft_expression(
         raise TreeTransformationError(
             f"Tree path '{at}' does not identify a schema v2 expression"
         )
-    validated = _validate_result(transformed, limits)
+    validated = validate_transformed_program(transformed, limits)
     return TransformResult(
         tree=validated,
         lineage=(
@@ -92,7 +93,7 @@ def wrap_expression(
     transformed, found = _replace_in_program(source, at, wrapped)
     if not found:  # pragma: no cover - target lookup establishes this invariant
         raise RuntimeError("Located expression disappeared during wrapping")
-    validated = _validate_result(transformed, limits)
+    validated = validate_transformed_program(transformed, limits)
     return TransformResult(
         tree=validated,
         lineage=(
@@ -110,20 +111,6 @@ def wrap_expression(
             ),
         ),
     )
-
-
-def _validate_result(
-    program: TreeProgram, limits: TransformationLimits | None
-) -> TreeProgram:
-    try:
-        validated = AST(root=program).root
-    except ValidationError as error:
-        raise TreeTransformationError(
-            "Transformation produced an invalid schema v2 program: "
-            f"{_validation_message(error)}"
-        ) from error
-    _enforce_limits(validated, limits or TransformationLimits())
-    return validated
 
 
 def _replace_in_program(
@@ -284,57 +271,6 @@ def _substitute_placeholder(
             condition_count + true_count + false_count,
         )
     return expression, 0
-
-
-def _enforce_limits(program: TreeProgram, limits: TransformationLimits) -> None:
-    nodes = 1 + len(program.definitions)
-    max_depth = 1
-    for definition in program.definitions:
-        expression_nodes, expression_depth = _expression_size(definition.body, 3)
-        nodes += expression_nodes
-        max_depth = max(max_depth, expression_depth)
-    for expression in program.body:
-        expression_nodes, expression_depth = _expression_size(expression, 2)
-        nodes += expression_nodes
-        max_depth = max(max_depth, expression_depth)
-    if limits.max_nodes is not None and nodes > limits.max_nodes:
-        raise TreeTransformationError(
-            f"Transformed program exceeds max_nodes ({limits.max_nodes}); got {nodes}"
-        )
-    if limits.max_depth is not None and max_depth > limits.max_depth:
-        raise TreeTransformationError(
-            f"Transformed program exceeds max_depth ({limits.max_depth}); got {max_depth}"
-        )
-
-
-def _expression_size(expression: Expression, depth: int) -> tuple[int, int]:
-    children: list[Expression]
-    if isinstance(expression, (TreeCall, TreeToolCall)):
-        children = (
-            list(expression.arguments.values())
-            if isinstance(expression, TreeToolCall)
-            else expression.arguments
-        )
-    elif isinstance(expression, TreeConditional):
-        children = [
-            expression.condition,
-            expression.true_branch,
-            expression.false_branch,
-        ]
-    else:
-        children = []
-    nodes = 1
-    max_depth = depth
-    for child in children:
-        child_nodes, child_depth = _expression_size(child, depth + 1)
-        nodes += child_nodes
-        max_depth = max(max_depth, child_depth)
-    return nodes, max_depth
-
-
-def _validation_message(error: ValidationError) -> str:
-    details = error.errors(include_url=False, include_input=False)
-    return str(details[0]["msg"]) if details else "validation failed"
 
 
 __all__ = ["graft_expression", "wrap_expression"]
