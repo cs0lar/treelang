@@ -514,6 +514,16 @@ Methods:
 
 - `record(self, event: str, attributes: collections.abc.Mapping[str, typing.Any]) -> None`
 
+## `TransformationLimits`
+
+**Class** · `treelang.trees.transforms`
+
+```python
+TransformationLimits(max_nodes: 'int | None' = None, max_depth: 'int | None' = None) -> None
+```
+
+Optional inclusive structural limits for a transformed program.
+
 ## `TransformResult`
 
 **Class** · `treelang.trees.transforms`
@@ -771,6 +781,12 @@ Methods:
 
 Base class for errors raised by Treelang.
 
+## `TreeTransformationError`
+
+**Class** · `treelang.exceptions`
+
+Raised when a requested tree transformation cannot produce a valid tree.
+
 ## `UsageAwareTransport`
 
 **Class** · `treelang.ai.transport`
@@ -812,6 +828,16 @@ ast_json_schema() -> str
 
 Return the JSON schema for the Treelang AST model.
 
+## `graft_expression`
+
+**Function** · `treelang.trees.grafting`
+
+```python
+graft_expression(program: 'TreeProgram', graft: 'Expression', *, at: 'TreePath', limits: 'TransformationLimits | None' = None) -> 'TransformResult[TreeProgram]'
+```
+
+Replace the expression at ``at`` with ``graft`` and validate the result.
+
 ## `json_schema_text`
 
 **Function** · `treelang.schema_artifacts`
@@ -841,3 +867,13 @@ prune_tree(tree: 'TreeProgram | TreeNode') -> 'TransformResult[TreeProgram] | Tr
 ```
 
 Prune a version 2 program, preserving version 1 trees unchanged.
+
+## `wrap_expression`
+
+**Function** · `treelang.trees.grafting`
+
+```python
+wrap_expression(program: 'TreeProgram', wrapper: 'Expression', *, at: 'TreePath', placeholder: 'str' = 'graft', limits: 'TransformationLimits | None' = None) -> 'TransformResult[TreeProgram]'
+```
+
+Replace placeholder variables in ``wrapper`` with the expression at ``at``.

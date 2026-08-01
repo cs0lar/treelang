@@ -66,6 +66,10 @@ class ASTValidationError(TreelangError, ValueError):
     """Raised when an AST violates a runtime tool contract."""
 
 
+class TreeTransformationError(TreelangError, ValueError):
+    """Raised when a requested tree transformation cannot produce a valid tree."""
+
+
 class ASTExecutionError(TreelangError, RuntimeError):
     """Raised when an AST fails during execution."""
 

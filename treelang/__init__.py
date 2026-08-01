@@ -29,6 +29,7 @@ from treelang.exceptions import (
     ToolExecutionError,
     ToolNotFoundError,
     TreelangError,
+    TreeTransformationError,
 )
 from treelang.observability import NoOpTraceSink, Observability, TraceSink
 from treelang.replay import (
@@ -43,6 +44,7 @@ from treelang.schema_artifacts import (
     load_json_schema,
 )
 from treelang.trees.budget import ExecutionLimits
+from treelang.trees.grafting import graft_expression, wrap_expression
 from treelang.trees.policy import BranchOutcome, ExecutionPolicy, RetryPolicy
 from treelang.trees.pruning import ConservativeTreePruner, prune_tree
 from treelang.trees.schemas import CURRENT_SCHEMA_VERSION, ast_examples, ast_json_schema
@@ -58,6 +60,7 @@ from treelang.trees.schemas.v1 import (
     TreeValue,
 )
 from treelang.trees.transforms import (
+    TransformationLimits,
     TransformationRecord,
     TransformResult,
     TreeChange,
@@ -114,6 +117,7 @@ __all__ = [
     "ToolReplayEntry",
     "ToolReplayProvider",
     "TraceSink",
+    "TransformationLimits",
     "TransformResult",
     "TransformationRecord",
     "TreeConditional",
@@ -129,11 +133,14 @@ __all__ = [
     "TreeReduce",
     "TreeValue",
     "TreelangError",
+    "TreeTransformationError",
     "UsageAwareTransport",
     "__version__",
     "ast_examples",
     "ast_json_schema",
+    "graft_expression",
     "json_schema_text",
     "load_json_schema",
     "prune_tree",
+    "wrap_expression",
 ]

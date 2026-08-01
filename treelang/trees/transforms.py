@@ -9,6 +9,22 @@ type TreePathSegment = str | int
 
 
 @dataclass(frozen=True, slots=True)
+class TransformationLimits:
+    """Optional inclusive structural limits for a transformed program."""
+
+    max_nodes: int | None = None
+    max_depth: int | None = None
+
+    def __post_init__(self) -> None:
+        for name in ("max_nodes", "max_depth"):
+            value = getattr(self, name)
+            if value is not None and (
+                isinstance(value, bool) or not isinstance(value, int) or value <= 0
+            ):
+                raise ValueError(f"{name} must be a positive integer or None")
+
+
+@dataclass(frozen=True, slots=True)
 class TreePath:
     """Identify a node by field names and zero-based sequence indexes.
 
@@ -118,6 +134,7 @@ class TransformResult[TreeT]:
 
 
 __all__ = [
+    "TransformationLimits",
     "TransformResult",
     "TransformationRecord",
     "TreeChange",
