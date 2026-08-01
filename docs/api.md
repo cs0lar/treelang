@@ -90,6 +90,21 @@ Methods:
 
 - `capabilities(self, model: 'str') -> 'ModelCapabilities'`
 
+## `ConservativeTreePruner`
+
+**Class** · `treelang.trees.pruning`
+
+```python
+ConservativeTreePruner()
+```
+
+Apply only locally provable rewrites without evaluating external tools.
+
+
+Methods:
+
+- `prune(self, tree: 'TreeProgram | TreeNode') -> 'TransformResult[TreeProgram] | TransformResult[TreeNode]'` — Return a validated pruned copy, or the original version 1 tree.
+
 ## `CURRENT_SCHEMA_VERSION`
 
 **Constant** · `treelang`
@@ -816,3 +831,13 @@ load_json_schema(version: 'SupportedSchemaVersion') -> 'dict[str, Any]'
 ```
 
 Load one canonical schema as a JSON-compatible mapping.
+
+## `prune_tree`
+
+**Function** · `treelang.trees.pruning`
+
+```python
+prune_tree(tree: 'TreeProgram | TreeNode') -> 'TransformResult[TreeProgram] | TransformResult[TreeNode]'
+```
+
+Prune a version 2 program, preserving version 1 trees unchanged.
