@@ -30,6 +30,7 @@ Documentation = "https://csolar.github.io/treelang/"
 [dependency-groups]
 dev = [
     "anthropic>=0.104,<1",
+    "anyio>=4.5,<5",
     "build>=1.4,<2",
     "hypothesis>=6.135,<7",
     "ipykernel>=6.29,<8",
