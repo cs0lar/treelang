@@ -41,6 +41,21 @@ Raised when an AST fails during execution.
 
 Raised when an AST violates a runtime tool contract.
 
+## `AsyncTreeGrower`
+
+**Class** · `treelang.trees.strategies`
+
+```python
+AsyncTreeGrower(*args, **kwargs)
+```
+
+Asynchronous boundary for model- or evaluation-guided growth.
+
+
+Methods:
+
+- `grow(self, programs: 'Sequence[TreeProgram]', *, options: 'GrowthOptions') -> 'TransformResult[TreeProgram]'`
+
 ## `AnthropicTransport`
 
 **Class** · `treelang.ai.anthropic`
@@ -170,6 +185,16 @@ ExecutionPolicy(retry: 'RetryPolicy' = <factory>, parallel_failures: "Literal['r
 ```
 
 Opt-in retry and parallel partial-failure behavior.
+
+## `GrowthOptions`
+
+**Class** · `treelang.trees.strategies`
+
+```python
+GrowthOptions(mode: "Literal['single', 'parallel']" = 'single', name: 'str | None' = None, description: 'str | None' = None, limits: 'TransformationLimits | None' = None) -> None
+```
+
+Deterministic options shared by synchronous and asynchronous growers.
 
 ## `MCPToolProvider`
 
@@ -352,6 +377,21 @@ Methods:
 **Class** · `treelang.exceptions`
 
 Raised when a provider returns an invalid response.
+
+## `ProgramCompositionGrower`
+
+**Class** · `treelang.trees.strategies`
+
+```python
+ProgramCompositionGrower()
+```
+
+Default deterministic grower backed by validated program composition.
+
+
+Methods:
+
+- `grow(self, programs: 'Sequence[TreeProgram]', *, options: 'GrowthOptions') -> 'TransformResult[TreeProgram]'`
 
 ## `ReplayMismatchError`
 
@@ -718,6 +758,36 @@ transformation root.
 Methods:
 
 - `child(self, segment: 'TreePathSegment') -> 'TreePath'` — Return a new path extended by one field name or sequence index.
+
+## `TreeGrower`
+
+**Class** · `treelang.trees.strategies`
+
+```python
+TreeGrower(*args, **kwargs)
+```
+
+Synchronous deterministic program-growth strategy.
+
+
+Methods:
+
+- `grow(self, programs: 'Sequence[TreeProgram]', *, options: 'GrowthOptions') -> 'TransformResult[TreeProgram]'`
+
+## `TreePruner`
+
+**Class** · `treelang.trees.strategies`
+
+```python
+TreePruner(*args, **kwargs)
+```
+
+Strategy that returns a tree and reproducible pruning lineage.
+
+
+Methods:
+
+- `prune(self, tree: 'GeneratedTree') -> 'TransformResult[TreeNode] | TransformResult[TreeProgram]'`
 
 ## `TreeProgram`
 

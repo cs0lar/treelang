@@ -266,7 +266,7 @@ and an expression with deterministic transformation records.
 
 Combine schema v2 programs in single or parallel mode. Merge their function
 definitions, alpha-rename collisions, update calls and lexical references, and
-preserve deterministic definition ordering.
+preserve deterministic definition ordering. Complete through PR #136.
 
 Exit criteria: independently valid programs compose without name capture, source
 mutation, or application-level changes to their external tool providers.
