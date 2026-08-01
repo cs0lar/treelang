@@ -28,6 +28,7 @@ Python 3.12 or newer is required.
 - Configure editors with the [canonical JSON Schema artifacts](json-schema.md).
 - Follow the [end-to-end cookbook learning path](cookbooks.md).
 - Build integrations with the [extension and provider guide](extensions.md).
+- Simplify programs with [conservative tree transformations](tree-transformations.md).
 - Learn the [execution and replay semantics](execution-resilience.md).
 - Compare model integrations in the [provider compatibility matrix](provider-matrix.md).
 - Follow the [1.0 migration guide](migration-1.0.md) when upgrading.

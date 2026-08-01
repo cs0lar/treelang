@@ -10,6 +10,8 @@ def test_public_api_exports_core_types():
     assert treelang.TreeChange is not None
     assert treelang.TransformationRecord is not None
     assert treelang.TransformResult is not None
+    assert treelang.ConservativeTreePruner is not None
+    assert treelang.prune_tree is not None
     assert treelang.ExecutionLimits is not None
     assert treelang.ExecutionPolicy is not None
     assert treelang.RetryPolicy is not None

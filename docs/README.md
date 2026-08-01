@@ -11,6 +11,8 @@
   through model-backed MCP workflows.
 - [Extensions and provider contributions](extensions.md) — implementation
   contracts, testing expectations, and contribution checklist.
+- [Tree transformations](tree-transformations.md) — immutable change records and
+  conservative schema v2 pruning.
 - [Supported API reference](api.md) — generated from `treelang.__all__`.
 - [Migration guide 1.0](migration-1.0.md) — stability contract and upgrade
   guidance for the first major release.

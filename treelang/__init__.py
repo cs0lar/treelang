@@ -44,6 +44,7 @@ from treelang.schema_artifacts import (
 )
 from treelang.trees.budget import ExecutionLimits
 from treelang.trees.policy import BranchOutcome, ExecutionPolicy, RetryPolicy
+from treelang.trees.pruning import ConservativeTreePruner, prune_tree
 from treelang.trees.schemas import CURRENT_SCHEMA_VERSION, ast_examples, ast_json_schema
 from treelang.trees.schemas.v1 import (
     TreeConditional,
@@ -78,6 +79,7 @@ __all__ = [
     "AnthropicTransport",
     "BranchOutcome",
     "CapabilityAwareTransport",
+    "ConservativeTreePruner",
     "CURRENT_SCHEMA_VERSION",
     "DefaultModelCapabilityNegotiator",
     "ExecutionLimitError",
@@ -133,4 +135,5 @@ __all__ = [
     "ast_json_schema",
     "json_schema_text",
     "load_json_schema",
+    "prune_tree",
 ]

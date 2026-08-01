@@ -45,6 +45,7 @@ def test_documentation_site_includes_generated_reference_and_guides():
     assert "JSON Schema and editor validation: json-schema.md" in configuration
     assert "End-to-end cookbooks: cookbooks.md" in configuration
     assert "Extensions and provider contributions: extensions.md" in configuration
+    assert "Tree transformations: tree-transformations.md" in configuration
     assert "Migration guide 1.0: migration-1.0.md" in configuration
     assert "Migration guide 0.10: migration-0.10.md" in configuration
     assert "adr/0004-recursive-schema-and-execution.md" in configuration

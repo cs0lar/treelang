@@ -235,7 +235,7 @@ Define immutable, schema-neutral tree paths, typed change and lineage records,
 and transformation results. Keep this phase free of rewriting behavior so the
 public contracts can be reviewed independently. Document and test path identity,
 root/child handling, deterministic reporting, and compatibility with both schema
-versions.
+versions. Complete through PR #132.
 
 Exit criteria: later transformations can identify nodes and report reproducible
 changes without depending on an AI provider or mutating an input tree.
@@ -248,7 +248,8 @@ literal boolean conditions. Validate every output and report each change. Keep
 schema v1 pruning as a no-op unless a rewrite is equally unambiguous.
 
 Exit criteria: pruning is idempotent, does not mutate its input, preserves tested
-execution results, and never removes or combines external tool calls.
+execution results, and never evaluates, combines, or directly rewrites external
+tool calls.
 
 ### Phase 12: Expression Grafting
 
@@ -288,21 +289,3 @@ is provably safe under the declared effects and execution policy.
 
 Exit criteria: duplicate pure computations can execute once and be reused, while
 effectful or undeclared tools are never deduplicated by default.
-
-### Phase 16: Evolutionary Transformation Primitives
-
-Implement seeded mutation and type/scope-compatible subtree crossover using the
-same validated grafting foundation. Record parentage, random seeds, rejected
-candidates, and transformation lineage for deterministic replay.
-
-Exit criteria: mutation and crossover never return a statically invalid program,
-respect structural budgets, and reproduce the same candidates from the same seed.
-
-### Phase 17: Fitness Search & End-to-End Guidance
-
-Add pluggable fitness evaluation and candidate selection without coupling them to
-a model provider. Cover deterministic offline search in CI and publish a cookbook
-showing composition, pruning, mutation, replay, and optional live-model scoring.
-
-Exit criteria: users can evolve and reproduce a population of valid programs with
-explicit quality, cost, and execution budgets and no credentials in normal CI.
