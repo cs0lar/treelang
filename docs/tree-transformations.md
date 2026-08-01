@@ -154,3 +154,40 @@ inside their original function scope, and external tool names are never renamed.
 The returned transformation record identifies inserted definitions and body
 expressions at their output paths, plus every hygienic rename. The input programs
 remain unchanged. `TransformationLimits` apply to the complete combined result.
+
+## Arborist strategies
+
+`BaseArborist` delegates transformations to injected, provider-independent
+strategies. Its default pruner is `ConservativeTreePruner`, and its default
+synchronous grower is `ProgramCompositionGrower`.
+
+The compatibility methods return trees directly:
+
+```python
+pruned_tree = arborist.prune(program)
+combined_tree = arborist.grow(first_program, second_program, mode="parallel")
+```
+
+Use the result-oriented methods when change records are required:
+
+```python
+pruning = arborist.prune_result(program)
+growth = arborist.grow_result(
+    [first_program, second_program],
+    name="Combined program",
+)
+```
+
+Custom synchronous strategies implement `TreePruner` or `TreeGrower` and are
+injected as `pruning_strategy=` or `growth_strategy=`. Model-specific Arborists
+therefore do not need to own deterministic rewriting logic.
+
+Model-guided or evaluation-guided growth has a separate `AsyncTreeGrower`
+contract and the `agrow()`/`agrow_result()` methods. Calling those methods without
+an injected `async_growth_strategy` raises `NotImplementedError`; Treelang does
+not silently introduce model calls into deterministic composition.
+
+Historically, `OpenAIArborist.grow()` accepted no arguments and returned `None`.
+That call remains a no-op with a `DeprecationWarning`; pass at least two schema v2
+programs to use deterministic growth. The base-class zero-argument call continues
+to raise `NotImplementedError`.

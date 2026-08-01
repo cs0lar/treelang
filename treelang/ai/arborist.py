@@ -1,7 +1,9 @@
 """Arborist orchestration for generating and evaluating AST programs."""
 
 import json
-from typing import Any
+import warnings
+from collections.abc import Sequence
+from typing import Any, Literal
 
 from treelang.ai.capabilities import (
     DefaultModelCapabilityNegotiator,
@@ -29,6 +31,7 @@ from treelang.exceptions import StructuredOutputUnsupportedError
 from treelang.observability import Observability
 from treelang.trees.budget import ExecutionLimits
 from treelang.trees.execution_v2 import execute_v2
+from treelang.trees.pruning import ConservativeTreePruner
 from treelang.trees.schemas import (
     ast_examples,
     ast_json_schema,
@@ -38,9 +41,16 @@ from treelang.trees.schemas import (
 from treelang.trees.schemas.v1 import TreeNode
 from treelang.trees.schemas.v2 import AST as ASTV2
 from treelang.trees.schemas.v2 import TreeProgram as TreeProgramV2
+from treelang.trees.strategies import (
+    AsyncTreeGrower,
+    GeneratedTree,
+    GrowthOptions,
+    ProgramCompositionGrower,
+    TreeGrower,
+    TreePruner,
+)
+from treelang.trees.transforms import TransformationLimits, TransformResult
 from treelang.trees.tree import AST
-
-type GeneratedTree = TreeNode | TreeProgramV2
 
 
 class BaseArborist:
@@ -54,6 +64,10 @@ class BaseArborist:
         provider: ToolProvider,
         selector: BaseToolSelector | None = None,
         execution_limits: ExecutionLimits | None = None,
+        *,
+        pruning_strategy: TreePruner | None = None,
+        growth_strategy: TreeGrower | None = None,
+        async_growth_strategy: AsyncTreeGrower | None = None,
     ) -> None:
         self.model = model
         self.system_prompt = system_prompt
@@ -61,12 +75,95 @@ class BaseArborist:
         self.provider = provider
         self.selector = selector or AllToolsSelector()
         self.execution_limits = execution_limits
+        self.pruning_strategy = pruning_strategy or ConservativeTreePruner()
+        self.growth_strategy = growth_strategy or ProgramCompositionGrower()
+        self.async_growth_strategy = async_growth_strategy
 
     def prune(self, tree: GeneratedTree) -> GeneratedTree:
-        return tree
+        """Prune and return only the tree for compatibility with existing callers."""
 
-    def grow(self) -> None:
-        raise NotImplementedError()
+        return self.prune_result(tree).tree
+
+    def prune_result(
+        self, tree: GeneratedTree
+    ) -> TransformResult[TreeNode] | TransformResult[TreeProgramV2]:
+        """Prune a tree and retain its deterministic transformation lineage."""
+
+        return self.pruning_strategy.prune(tree)
+
+    def grow_result(
+        self,
+        programs: Sequence[TreeProgramV2],
+        *,
+        mode: Literal["single", "parallel"] = "single",
+        name: str | None = None,
+        description: str | None = None,
+        limits: TransformationLimits | None = None,
+    ) -> TransformResult[TreeProgramV2]:
+        """Compose programs through the configured synchronous growth strategy."""
+
+        return self.growth_strategy.grow(
+            programs,
+            options=GrowthOptions(mode, name, description, limits),
+        )
+
+    def grow(
+        self,
+        *programs: TreeProgramV2,
+        mode: Literal["single", "parallel"] = "single",
+        name: str | None = None,
+        description: str | None = None,
+        limits: TransformationLimits | None = None,
+    ) -> TreeProgramV2 | None:
+        """Grow programs synchronously; subclasses define legacy zero-arg behavior."""
+
+        if not programs:
+            raise NotImplementedError("grow() requires at least two schema v2 programs")
+        return self.grow_result(
+            list(programs),
+            mode=mode,
+            name=name,
+            description=description,
+            limits=limits,
+        ).tree
+
+    async def agrow_result(
+        self,
+        programs: Sequence[TreeProgramV2],
+        *,
+        mode: Literal["single", "parallel"] = "single",
+        name: str | None = None,
+        description: str | None = None,
+        limits: TransformationLimits | None = None,
+    ) -> TransformResult[TreeProgramV2]:
+        """Grow through an explicitly configured asynchronous strategy."""
+
+        if self.async_growth_strategy is None:
+            raise NotImplementedError("No asynchronous growth strategy is configured")
+        return await self.async_growth_strategy.grow(
+            programs,
+            options=GrowthOptions(mode, name, description, limits),
+        )
+
+    async def agrow(
+        self,
+        *programs: TreeProgramV2,
+        mode: Literal["single", "parallel"] = "single",
+        name: str | None = None,
+        description: str | None = None,
+        limits: TransformationLimits | None = None,
+    ) -> TreeProgramV2:
+        """Return only the asynchronously grown tree."""
+
+        return (
+            await self.agrow_result(
+                list(programs),
+                mode=mode,
+                name=name,
+                description=description,
+                limits=limits,
+            )
+        ).tree
 
     async def walk(self, tree: GeneratedTree) -> Any:
         if isinstance(tree, TreeProgramV2):
@@ -103,6 +200,9 @@ class OpenAIArborist(BaseArborist):
         observability: Observability | None = None,
         execution_limits: ExecutionLimits | None = None,
         capability_negotiator: ModelCapabilityNegotiator | None = None,
+        pruning_strategy: TreePruner | None = None,
+        growth_strategy: TreeGrower | None = None,
+        async_growth_strategy: AsyncTreeGrower | None = None,
     ) -> None:
         runtime_config = config or ArboristConfig.from_env(model)
         if runtime_config.schema_version == "2.0":
@@ -120,6 +220,9 @@ class OpenAIArborist(BaseArborist):
             provider,
             selector,
             execution_limits,
+            pruning_strategy=pruning_strategy,
+            growth_strategy=growth_strategy,
+            async_growth_strategy=async_growth_strategy,
         )
         self.config = runtime_config
         self.transport = transport or OpenAITransport(
@@ -133,8 +236,31 @@ class OpenAIArborist(BaseArborist):
             capability_negotiator or DefaultModelCapabilityNegotiator()
         )
 
-    def grow(self) -> None:
-        return None
+    def grow(
+        self,
+        *programs: TreeProgramV2,
+        mode: Literal["single", "parallel"] = "single",
+        name: str | None = None,
+        description: str | None = None,
+        limits: TransformationLimits | None = None,
+    ) -> TreeProgramV2 | None:
+        """Grow programs while preserving the legacy no-argument no-op."""
+
+        if not programs:
+            warnings.warn(
+                "Zero-argument OpenAIArborist.grow() is deprecated; pass at least "
+                "two schema v2 programs.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            return None
+        return super().grow(
+            *programs,
+            mode=mode,
+            name=name,
+            description=description,
+            limits=limits,
+        )
 
     @staticmethod
     def supports_temperature(model_name: str) -> bool:
