@@ -73,6 +73,8 @@ complete Treelang schema version 2 program.
   `conditional`. Conditions and both branches are complete expressions.
 - Use mode `single` for one root computation and `parallel` only for independent
   root computations.
+- Do not generate `memo` expressions; deterministic transformations add them only
+  for tools with declared effect guarantees.
 
 The JSON MUST conform to this JSON Schema:
 {schema}

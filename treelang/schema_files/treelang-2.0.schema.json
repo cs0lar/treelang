@@ -6,6 +6,7 @@
           "call": "#/$defs/TreeCall",
           "conditional": "#/$defs/TreeConditional",
           "literal": "#/$defs/TreeLiteral",
+          "memo": "#/$defs/TreeMemo",
           "tool_call": "#/$defs/TreeToolCall",
           "variable": "#/$defs/TreeVariable"
         },
@@ -26,6 +27,9 @@
         },
         {
           "$ref": "#/$defs/TreeConditional"
+        },
+        {
+          "$ref": "#/$defs/TreeMemo"
         }
       ]
     },
@@ -172,6 +176,33 @@
         "value"
       ],
       "title": "TreeLiteral",
+      "type": "object"
+    },
+    "TreeMemo": {
+      "additionalProperties": false,
+      "description": "Memoize one closed expression within a program invocation.",
+      "properties": {
+        "type": {
+          "const": "memo",
+          "default": "memo",
+          "title": "Type",
+          "type": "string"
+        },
+        "key": {
+          "minLength": 1,
+          "pattern": "^[A-Za-z_][A-Za-z0-9_]*$",
+          "title": "Key",
+          "type": "string"
+        },
+        "expression": {
+          "$ref": "#/$defs/Expression"
+        }
+      },
+      "required": [
+        "key",
+        "expression"
+      ],
+      "title": "TreeMemo",
       "type": "object"
     },
     "TreeProgram": {

@@ -11,7 +11,7 @@ from treelang.ai.capabilities import (
     StructuredOutputSelection,
 )
 from treelang.ai.provider import MCPToolProvider, ToolOutput, ToolProvider
-from treelang.ai.tool import ToolDefinition, ToolProperty
+from treelang.ai.tool import ToolDefinition, ToolEffects, ToolProperty
 from treelang.ai.transport import ModelTransport, ModelUsage, UsageAwareTransport
 from treelang.exceptions import (
     ASTCompilationError,
@@ -45,6 +45,7 @@ from treelang.schema_artifacts import (
 )
 from treelang.trees.budget import ExecutionLimits
 from treelang.trees.composition import compose_programs
+from treelang.trees.deduplication import deduplicate_pure_tool_calls
 from treelang.trees.grafting import graft_expression, wrap_expression
 from treelang.trees.policy import BranchOutcome, ExecutionPolicy, RetryPolicy
 from treelang.trees.pruning import ConservativeTreePruner, prune_tree
@@ -92,6 +93,7 @@ __all__ = [
     "BranchOutcome",
     "CapabilityAwareTransport",
     "compose_programs",
+    "deduplicate_pure_tool_calls",
     "ConservativeTreePruner",
     "CURRENT_SCHEMA_VERSION",
     "DefaultModelCapabilityNegotiator",
@@ -122,6 +124,7 @@ __all__ = [
     "SUPPORTED_SCHEMA_VERSIONS",
     "ToolExecutionError",
     "ToolDefinition",
+    "ToolEffects",
     "ToolNotFoundError",
     "ToolOutput",
     "ToolProperty",
