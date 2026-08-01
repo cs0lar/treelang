@@ -245,7 +245,8 @@ changes without depending on an AI provider or mutating an input tree.
 Implement a deterministic schema v2 pruner with only locally provable rewrites:
 remove unreachable user-function definitions and simplify conditionals with
 literal boolean conditions. Validate every output and report each change. Keep
-schema v1 pruning as a no-op unless a rewrite is equally unambiguous.
+schema v1 pruning as a no-op unless a rewrite is equally unambiguous. Complete
+through PR #134.
 
 Exit criteria: pruning is idempotent, does not mutate its input, preserves tested
 execution results, and never evaluates, combines, or directly rewrites external

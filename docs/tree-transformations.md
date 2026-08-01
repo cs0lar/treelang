@@ -61,3 +61,64 @@ discard its unreachable branch, just as normal execution would skip that branch.
 Pruning can reduce node and depth consumption. Applications that treat an exact
 execution-budget failure as part of their observable behavior should evaluate
 the original program instead.
+
+## Expression grafting
+
+Schema version 2 expressions can be replaced immutably using a `TreePath`:
+
+```python
+from treelang import TreePath, graft_expression
+from treelang.trees.schemas.v2 import TreeLiteral, TreeProgram
+
+program = TreeProgram(body=[TreeLiteral(value=1)])
+result = graft_expression(
+    program,
+    TreeLiteral(value=42),
+    at=TreePath(("body", 0)),
+)
+```
+
+Paths must identify expressions rather than program fields or argument
+containers. Grafts into function bodies may refer to parameters in that lexical
+scope. Grafts elsewhere containing unbound variables, calls with invalid arity,
+or references to unknown user functions are rejected by complete-program
+validation.
+
+Use `wrap_expression()` when the existing expression should be nested inside a
+larger expression. Every variable matching the chosen placeholder is replaced:
+
+```python
+from treelang import wrap_expression
+from treelang.trees.schemas.v2 import TreeToolCall, TreeVariable
+
+wrapper = TreeToolCall(
+    tool="square",
+    arguments={"value": TreeVariable(name="input")},
+)
+wrapped = wrap_expression(
+    program,
+    wrapper,
+    at=TreePath(("body", 0)),
+    placeholder="input",
+)
+```
+
+The placeholder must occur at least once and is removed before lexical-scope
+validation. Wrapping does not call the referenced tool or assume anything about
+its effects.
+
+### Structural limits
+
+`TransformationLimits` can reject a result whose static program structure is too
+large or deep:
+
+```python
+from treelang import TransformationLimits
+
+limits = TransformationLimits(max_nodes=100, max_depth=12)
+```
+
+The node count includes the program, function definitions, and expressions.
+Depth starts at one for the program; root body expressions are at depth two and
+function bodies are at depth three. Limits are inclusive and are separate from
+dynamic execution budgets such as recursive call depth and tool-call count.
