@@ -14,6 +14,11 @@ def test_public_api_exports_core_types():
     assert treelang.prune_tree is not None
     assert treelang.graft_expression is not None
     assert treelang.compose_programs is not None
+    assert treelang.TreePruner is not None
+    assert treelang.TreeGrower is not None
+    assert treelang.AsyncTreeGrower is not None
+    assert treelang.GrowthOptions is not None
+    assert treelang.ProgramCompositionGrower is not None
     assert treelang.wrap_expression is not None
     assert treelang.TransformationLimits is not None
     assert issubclass(treelang.TreeTransformationError, ValueError)

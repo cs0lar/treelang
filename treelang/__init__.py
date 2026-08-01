@@ -60,6 +60,13 @@ from treelang.trees.schemas.v1 import (
     TreeReduce,
     TreeValue,
 )
+from treelang.trees.strategies import (
+    AsyncTreeGrower,
+    GrowthOptions,
+    ProgramCompositionGrower,
+    TreeGrower,
+    TreePruner,
+)
 from treelang.trees.transforms import (
     TransformationLimits,
     TransformationRecord,
@@ -80,6 +87,7 @@ __all__ = [
     "ASTCompilationError",
     "ASTExecutionError",
     "ASTValidationError",
+    "AsyncTreeGrower",
     "AnthropicTransport",
     "BranchOutcome",
     "CapabilityAwareTransport",
@@ -90,6 +98,7 @@ __all__ = [
     "ExecutionLimitError",
     "ExecutionLimits",
     "ExecutionPolicy",
+    "GrowthOptions",
     "MCPToolProvider",
     "ModelAuthenticationError",
     "ModelCapabilities",
@@ -105,6 +114,7 @@ __all__ = [
     "NoOpTraceSink",
     "Observability",
     "ProviderResponseError",
+    "ProgramCompositionGrower",
     "ReplayMismatchError",
     "RetryPolicy",
     "StructuredOutputUnsupportedError",
@@ -131,6 +141,8 @@ __all__ = [
     "TreeMap",
     "TreeNode",
     "TreePath",
+    "TreeGrower",
+    "TreePruner",
     "TreeProgram",
     "TreeReduce",
     "TreeValue",
