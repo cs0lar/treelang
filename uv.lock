@@ -2844,6 +2844,7 @@ anthropic = [
 [package.dev-dependencies]
 dev = [
     { name = "anthropic" },
+    { name = "anyio" },
     { name = "build" },
     { name = "hypothesis" },
     { name = "ipykernel" },
@@ -2878,6 +2879,7 @@ provides-extras = ["anthropic"]
 [package.metadata.requires-dev]
 dev = [
     { name = "anthropic", specifier = ">=0.104,<1" },
+    { name = "anyio", specifier = ">=4.5,<5" },
     { name = "build", specifier = ">=1.4,<2" },
     { name = "hypothesis", specifier = ">=6.135,<7" },
     { name = "ipykernel", specifier = ">=6.29,<8" },
