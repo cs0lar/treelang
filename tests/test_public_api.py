@@ -6,6 +6,10 @@ def test_public_api_exports_core_types():
     assert treelang.AnthropicTransport is not None
     assert treelang.TreeProgram is not None
     assert treelang.ToolProvider is not None
+    assert treelang.TreePath is not None
+    assert treelang.TreeChange is not None
+    assert treelang.TransformationRecord is not None
+    assert treelang.TransformResult is not None
     assert treelang.ExecutionLimits is not None
     assert treelang.ExecutionPolicy is not None
     assert treelang.RetryPolicy is not None

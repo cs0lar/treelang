@@ -499,6 +499,26 @@ Methods:
 
 - `record(self, event: str, attributes: collections.abc.Mapping[str, typing.Any]) -> None`
 
+## `TransformResult`
+
+**Class** · `treelang.trees.transforms`
+
+```python
+TransformResult(tree: 'TreeT', lineage: 'tuple[TransformationRecord, ...]' = ()) -> None
+```
+
+A transformed tree together with its complete reproducible lineage.
+
+## `TransformationRecord`
+
+**Class** · `treelang.trees.transforms`
+
+```python
+TransformationRecord(name: 'str', changes: 'tuple[TreeChange, ...]' = (), seed: 'int | None' = None) -> None
+```
+
+Named transformation step and the changes it produced.
+
 ## `TreeConditional`
 
 **Class** · `treelang.trees.schemas.v1`
@@ -520,6 +540,26 @@ Fields:
 Methods:
 
 - `eval(self, provider: treelang.ai.provider.ToolProvider, context: 'ExecutionContext | None' = None) -> Any`
+
+## `TreeChange`
+
+**Class** · `treelang.trees.transforms`
+
+```python
+TreeChange(kind: 'TreeChangeKind', path: 'TreePath', description: 'str', source_path: 'TreePath | None' = None) -> None
+```
+
+One deterministic structural change made by a transformation.
+
+## `TreeChangeKind`
+
+**Class** · `treelang.trees.transforms`
+
+```python
+TreeChangeKind(*values)
+```
+
+Structural operations that a transformation can report.
 
 ## `TreeFilter`
 
@@ -624,6 +664,25 @@ Methods:
 
 - `eval(self, provider: treelang.ai.provider.ToolProvider, context: 'ExecutionContext | None' = None) -> Any`
 - `hash(self) -> str`
+
+## `TreePath`
+
+**Class** · `treelang.trees.transforms`
+
+```python
+TreePath(segments: 'tuple[TreePathSegment, ...]' = ()) -> None
+```
+
+Identify a node by field names and zero-based sequence indexes.
+
+Paths are structural rather than object-identity based, so they remain stable
+across serialization and immutable model copies. The empty path identifies the
+transformation root.
+
+
+Methods:
+
+- `child(self, segment: 'TreePathSegment') -> 'TreePath'` — Return a new path extended by one field name or sequence index.
 
 ## `TreeProgram`
 
