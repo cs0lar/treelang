@@ -115,6 +115,16 @@ compose_programs(programs: 'Sequence[TreeProgram]', *, mode: "Literal['single', 
 
 Combine independent programs with hygienic user-function names.
 
+## `deduplicate_pure_tool_calls`
+
+**Function** · `treelang.trees.deduplication`
+
+```python
+deduplicate_pure_tool_calls(program: 'TreeProgram', tools: 'Sequence[ToolDefinition]', *, limits: 'TransformationLimits | None' = None) -> 'TransformResult[TreeProgram]'
+```
+
+Memoize repeated closed calls to declared pure deterministic tools.
+
 ## `ConservativeTreePruner`
 
 **Class** · `treelang.trees.pruning`
@@ -450,6 +460,20 @@ Fields:
 - `properties: Required[dict[str, treelang.ai.tool.ToolProperty]]`
 - `description: NotRequired[str | None]`
 - `input_schema: NotRequired[dict[str, Any]]`
+- `effects: NotRequired[ForwardRef('ToolEffects')]`
+
+## `ToolEffects`
+
+**Typed dictionary** · `treelang.ai.tool`
+
+Optional behavioral guarantees used by safe transformations.
+
+
+Fields:
+
+- `pure: bool`
+- `deterministic: bool`
+- `idempotent: bool`
 
 ## `ToolNotFoundError`
 

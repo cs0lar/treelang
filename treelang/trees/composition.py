@@ -12,6 +12,7 @@ from treelang.trees.schemas.v2 import (
     TreeCall,
     TreeConditional,
     TreeFunctionDefinition,
+    TreeMemo,
     TreeProgram,
     TreeToolCall,
 )
@@ -159,6 +160,10 @@ def _rename_calls(expression: Expression, mapping: dict[str, str]) -> Expression
                 "true_branch": _rename_calls(expression.true_branch, mapping),
                 "false_branch": _rename_calls(expression.false_branch, mapping),
             }
+        )
+    if isinstance(expression, TreeMemo):
+        return expression.model_copy(
+            update={"expression": _rename_calls(expression.expression, mapping)}
         )
     return expression
 

@@ -18,6 +18,7 @@ from treelang.trees.schemas.v2 import (
     TreeConditional,
     TreeFunctionDefinition,
     TreeLiteral,
+    TreeMemo,
     TreeProgram,
     TreeToolCall,
     TreeVariable,
@@ -80,10 +81,21 @@ class _Interpreter:
         self.provider = provider
         self.budget = budget
         self.policy = policy
+        self.memo: dict[str, Any] = {}
+        self.memo_locks: dict[str, asyncio.Lock] = {}
 
-    async def evaluate(self, expression: Expression, *, depth: int = 2) -> Any:
+    async def evaluate(
+        self,
+        expression: Expression,
+        *,
+        depth: int = 2,
+        bindings: Mapping[str, Any] | None = None,
+        call_depth: int = 0,
+    ) -> Any:
         """Evaluate one expression without growing the Python call stack."""
-        frames: list[_Frame] = [_EvalFrame(expression, {}, depth, 0)]
+        frames: list[_Frame] = [
+            _EvalFrame(expression, bindings or {}, depth, call_depth)
+        ]
         values: list[Any] = []
         processed_frames = 0
 
@@ -167,6 +179,17 @@ class _Interpreter:
                                 frame.call_depth,
                             )
                         )
+                elif isinstance(node, TreeMemo):
+                    lock = self.memo_locks.setdefault(node.key, asyncio.Lock())
+                    async with lock:
+                        if node.key not in self.memo:
+                            self.memo[node.key] = await self.evaluate(
+                                node.expression,
+                                depth=frame.depth + 1,
+                                bindings=frame.bindings,
+                                call_depth=frame.call_depth,
+                            )
+                        values.append(self.memo[node.key])
                 else:  # pragma: no cover - the discriminated schema is exhaustive
                     raise TypeError(f"Unsupported v2 expression: {type(node).__name__}")
                 continue

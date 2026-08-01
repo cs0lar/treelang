@@ -49,6 +49,15 @@ class ToolDefinition(TypedDict, total=False):
     properties: Required[dict[str, ToolProperty]]
     description: NotRequired[str | None]
     input_schema: NotRequired[dict[str, Any]]
+    effects: NotRequired["ToolEffects"]
+
+
+class ToolEffects(TypedDict, total=False):
+    """Optional behavioral guarantees used by safe transformations."""
+
+    pure: bool
+    deterministic: bool
+    idempotent: bool
 
 
 def normalize_tool_definition(
@@ -75,6 +84,17 @@ def normalize_tool_definition(
         raise ProviderResponseError(
             f"Tool '{raw_name}' has no valid description definition"
         )
+
+    raw_effects = value.get("effects")
+    effects: ToolEffects | None = None
+    if raw_effects is not None:
+        if not isinstance(raw_effects, Mapping) or any(
+            name not in {"pure", "deterministic", "idempotent"}
+            or not isinstance(effect, bool)
+            for name, effect in raw_effects.items()
+        ):
+            raise ProviderResponseError(f"Tool '{raw_name}' has invalid effects")
+        effects = cast(ToolEffects, dict(raw_effects))
 
     raw_input_schema = value.get("input_schema")
     if raw_input_schema is not None:
@@ -147,6 +167,8 @@ def normalize_tool_definition(
         definition["description"] = raw_description
     if input_schema is not None:
         definition["input_schema"] = input_schema
+    if effects is not None:
+        definition["effects"] = effects
     return definition
 
 
