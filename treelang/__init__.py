@@ -56,6 +56,13 @@ from treelang.trees.schemas.v1 import (
     TreeReduce,
     TreeValue,
 )
+from treelang.trees.transforms import (
+    TransformationRecord,
+    TransformResult,
+    TreeChange,
+    TreeChangeKind,
+    TreePath,
+)
 from treelang.trees.tree import AST
 
 try:
@@ -105,12 +112,17 @@ __all__ = [
     "ToolReplayEntry",
     "ToolReplayProvider",
     "TraceSink",
+    "TransformResult",
+    "TransformationRecord",
     "TreeConditional",
+    "TreeChange",
+    "TreeChangeKind",
     "TreeFilter",
     "TreeFunction",
     "TreeLambda",
     "TreeMap",
     "TreeNode",
+    "TreePath",
     "TreeProgram",
     "TreeReduce",
     "TreeValue",
