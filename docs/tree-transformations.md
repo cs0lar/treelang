@@ -191,3 +191,22 @@ Historically, `OpenAIArborist.grow()` accepted no arguments and returned `None`.
 That call remains a no-op with a `DeprecationWarning`; pass at least two schema v2
 programs to use deterministic growth. The base-class zero-argument call continues
 to raise `NotImplementedError`.
+
+## Effects and duplicate computation
+
+Tool definitions may declare `effects` containing `pure`, `deterministic`, and
+`idempotent` boolean guarantees. These declarations are optional and conservative:
+missing guarantees are treated as false.
+
+`deduplicate_pure_tool_calls()` finds structurally identical, closed tool-call
+expressions and wraps them in schema-v2 `memo` expressions only when every tool
+in the expression declares both `pure=True` and `deterministic=True`. Calls using
+lexical variables, user functions, undeclared tools, or incomplete guarantees are
+left unchanged.
+
+Memo values are isolated to one program invocation. Concurrent occurrences share
+an async lock, so a successful expression executes once even in parallel mode;
+failures and cancellation release the lock normally. Memo expressions must be
+closed, and one key cannot identify different expressions. Arborist prompts do
+not generate memo nodes directly: validated deterministic transformations add
+them from trusted effect metadata.

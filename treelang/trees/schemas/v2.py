@@ -51,6 +51,14 @@ class TreeToolCall(TreeExpression):
     arguments: dict[Identifier, "Expression"] = Field(default_factory=dict)
 
 
+class TreeMemo(TreeExpression):
+    """Memoize one closed expression within a program invocation."""
+
+    type: Literal["memo"] = "memo"
+    key: Identifier
+    expression: "Expression"
+
+
 class TreeConditional(TreeExpression):
     """A lazily evaluated conditional expression."""
 
@@ -61,7 +69,7 @@ class TreeConditional(TreeExpression):
 
 
 type Expression = Annotated[
-    TreeLiteral | TreeVariable | TreeCall | TreeToolCall | TreeConditional,
+    TreeLiteral | TreeVariable | TreeCall | TreeToolCall | TreeConditional | TreeMemo,
     Field(discriminator="type"),
 ]
 
@@ -100,6 +108,7 @@ class TreeProgram(BaseModel):
 TreeCall.model_rebuild()
 TreeToolCall.model_rebuild()
 TreeConditional.model_rebuild()
+TreeMemo.model_rebuild()
 TreeFunctionDefinition.model_rebuild()
 TreeProgram.model_rebuild()
 
@@ -116,6 +125,30 @@ class AST(RootModel[TreeProgram]):
                     f"Function definition '{definition.name}' must be unique."
                 )
             definitions[definition.name] = definition
+
+        memo_expressions: dict[str, str] = {}
+
+        def contains_variable(expression: Expression) -> bool:
+            if isinstance(expression, TreeVariable):
+                return True
+            if isinstance(expression, TreeCall):
+                return any(contains_variable(item) for item in expression.arguments)
+            if isinstance(expression, TreeToolCall):
+                return any(
+                    contains_variable(item) for item in expression.arguments.values()
+                )
+            if isinstance(expression, TreeConditional):
+                return any(
+                    contains_variable(item)
+                    for item in (
+                        expression.condition,
+                        expression.true_branch,
+                        expression.false_branch,
+                    )
+                )
+            if isinstance(expression, TreeMemo):
+                return contains_variable(expression.expression)
+            return False
 
         def walk(expression: Expression, scope: frozenset[str]) -> None:
             if isinstance(expression, TreeVariable):
@@ -144,6 +177,17 @@ class AST(RootModel[TreeProgram]):
                 walk(expression.condition, scope)
                 walk(expression.true_branch, scope)
                 walk(expression.false_branch, scope)
+                return
+            if isinstance(expression, TreeMemo):
+                if contains_variable(expression.expression):
+                    raise ValueError("Memoized expressions must be closed.")
+                canonical = expression.expression.model_dump_json()
+                previous = memo_expressions.setdefault(expression.key, canonical)
+                if previous != canonical:
+                    raise ValueError(
+                        f"Memo key '{expression.key}' identifies different expressions."
+                    )
+                walk(expression.expression, scope)
 
         for definition in definitions.values():
             walk(definition.body, frozenset(definition.params))
@@ -217,6 +261,7 @@ __all__ = [
     "TreeConditional",
     "TreeFunctionDefinition",
     "TreeLiteral",
+    "TreeMemo",
     "TreeProgram",
     "TreeToolCall",
     "TreeVariable",

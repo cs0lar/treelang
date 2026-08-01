@@ -10,6 +10,7 @@ from treelang.trees.schemas.v2 import (
     Expression,
     TreeCall,
     TreeConditional,
+    TreeMemo,
     TreeProgram,
     TreeToolCall,
 )
@@ -66,6 +67,8 @@ def _expression_size(expression: Expression, depth: int) -> tuple[int, int]:
             expression.true_branch,
             expression.false_branch,
         ]
+    elif isinstance(expression, TreeMemo):
+        children = [expression.expression]
     else:
         children = []
     nodes = 1

@@ -12,6 +12,7 @@ from treelang.trees.schemas.v2 import (
     TreeConditional,
     TreeFunctionDefinition,
     TreeLiteral,
+    TreeMemo,
     TreeProgram,
     TreeToolCall,
 )
@@ -141,6 +142,14 @@ def _simplify_expression(
         return expression.model_copy(update={"arguments": tool_arguments})
 
     if not isinstance(expression, TreeConditional):
+        if isinstance(expression, TreeMemo):
+            return expression.model_copy(
+                update={
+                    "expression": _simplify_expression(
+                        expression.expression, path.child("expression"), changes
+                    )
+                }
+            )
         return expression
 
     condition = _simplify_expression(
@@ -209,6 +218,8 @@ def _called_functions(expression: Expression) -> set[str]:
             | _called_functions(expression.true_branch)
             | _called_functions(expression.false_branch)
         )
+    if isinstance(expression, TreeMemo):
+        return _called_functions(expression.expression)
     return set()
 
 

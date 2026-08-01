@@ -277,6 +277,7 @@ Introduce injectable pruner and grower protocols and make `BaseArborist.prune()`
 and `grow()` compatibility-preserving delegates. Keep deterministic local
 transformations synchronous; provide a separate asynchronous boundary for
 model-guided or evaluation-guided growth.
+Complete through PR #137.
 
 Exit criteria: model-specific Arborists do not implement tree rewriting directly,
 existing `prune()` callers remain compatible, and the legacy no-argument `grow()`
