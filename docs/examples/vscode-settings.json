@@ -2,11 +2,11 @@
   "json.schemas": [
     {
       "fileMatch": ["**/program-v1.json", "**/programs/v1/*.json"],
-      "url": "https://csolar.github.io/treelang/latest/schemas/treelang-1.0.schema.json"
+      "url": "https://cs0lar.github.io/treelang/latest/schemas/treelang-1.0.schema.json"
     },
     {
       "fileMatch": ["**/program-v2.json", "**/programs/v2/*.json"],
-      "url": "https://csolar.github.io/treelang/latest/schemas/treelang-2.0.schema.json"
+      "url": "https://cs0lar.github.io/treelang/latest/schemas/treelang-2.0.schema.json"
     }
   ]
 }

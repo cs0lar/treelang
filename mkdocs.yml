@@ -1,6 +1,6 @@
 site_name: Treelang
 site_description: Generate, validate, inspect, and execute AST programs with model providers.
-site_url: https://csolar.github.io/treelang/
+site_url: https://cs0lar.github.io/treelang/
 repo_url: https://github.com/cs0lar/treelang
 repo_name: csolar/treelang
 edit_uri: edit/dev/docs/

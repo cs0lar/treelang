@@ -37,7 +37,7 @@ def test_documentation_site_includes_generated_reference_and_guides():
     configuration = Path("mkdocs.yml").read_text(encoding="utf-8")
     landing_page = Path("docs/index.md").read_text(encoding="utf-8")
 
-    assert "site_url: https://csolar.github.io/treelang/" in configuration
+    assert "site_url: https://cs0lar.github.io/treelang/" in configuration
     assert "provider: mike" in configuration
     assert "Supported API: api.md" in configuration
     assert "Command-line interface: cli.md" in configuration
