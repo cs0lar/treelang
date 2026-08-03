@@ -6,6 +6,24 @@ def test_public_api_exports_core_types():
     assert treelang.AnthropicTransport is not None
     assert treelang.TreeProgram is not None
     assert treelang.ToolProvider is not None
+    assert treelang.TreePath is not None
+    assert treelang.TreeChange is not None
+    assert treelang.TransformationRecord is not None
+    assert treelang.TransformResult is not None
+    assert treelang.ConservativeTreePruner is not None
+    assert treelang.prune_tree is not None
+    assert treelang.graft_expression is not None
+    assert treelang.compose_programs is not None
+    assert treelang.TreePruner is not None
+    assert treelang.TreeGrower is not None
+    assert treelang.AsyncTreeGrower is not None
+    assert treelang.GrowthOptions is not None
+    assert treelang.ProgramCompositionGrower is not None
+    assert treelang.ToolEffects is not None
+    assert treelang.deduplicate_pure_tool_calls is not None
+    assert treelang.wrap_expression is not None
+    assert treelang.TransformationLimits is not None
+    assert issubclass(treelang.TreeTransformationError, ValueError)
     assert treelang.ExecutionLimits is not None
     assert treelang.ExecutionPolicy is not None
     assert treelang.RetryPolicy is not None

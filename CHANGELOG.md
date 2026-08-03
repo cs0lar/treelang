@@ -1,5 +1,37 @@
 # Changelog
 
+## [1.1.0] - 2026-08-03
+
+### Added
+
+- Added immutable, schema-neutral tree paths, typed transformation changes,
+  lineage records, and validated transformation results.
+- Added conservative schema version 2 pruning for unreachable function
+  definitions and literal conditionals.
+- Added immutable expression replacement, wrapping, and grafting with structural
+  and lexical validation.
+- Added deterministic schema version 2 program composition with collision-safe
+  identifier renaming and preserved lexical references.
+- Added injectable pruning and growth strategies for Arborists, including a
+  separate asynchronous boundary for guided transformations.
+- Added provider-neutral tool-effect metadata and opt-in local bindings for safe
+  common-subexpression elimination of pure, deterministic computations.
+
+### Changed
+
+- Bounded notebook execution, MCP startup, individual MCP operations, and MCP
+  cleanup in cookbook integration checks so stalled examples fail predictably.
+- Updated development dependencies within their supported compatibility ranges.
+
+### Compatibility
+
+- Existing schema version 1 and version 2 programs remain compatible; bindings
+  and transformation APIs are opt-in.
+- Existing Arborist `prune()` callers remain compatible, and legacy no-argument
+  `grow()` behavior retains its documented migration path.
+- Tools without explicit safe effect declarations are never deduplicated.
+- Python 3.12 or newer remains required.
+
 ## [1.0.0] - 2026-07-27
 
 Treelang 1.0 establishes the version 1 language, supported root API, execution

@@ -11,7 +11,7 @@ from treelang.ai.capabilities import (
     StructuredOutputSelection,
 )
 from treelang.ai.provider import MCPToolProvider, ToolOutput, ToolProvider
-from treelang.ai.tool import ToolDefinition, ToolProperty
+from treelang.ai.tool import ToolDefinition, ToolEffects, ToolProperty
 from treelang.ai.transport import ModelTransport, ModelUsage, UsageAwareTransport
 from treelang.exceptions import (
     ASTCompilationError,
@@ -29,6 +29,7 @@ from treelang.exceptions import (
     ToolExecutionError,
     ToolNotFoundError,
     TreelangError,
+    TreeTransformationError,
 )
 from treelang.observability import NoOpTraceSink, Observability, TraceSink
 from treelang.replay import (
@@ -43,7 +44,11 @@ from treelang.schema_artifacts import (
     load_json_schema,
 )
 from treelang.trees.budget import ExecutionLimits
+from treelang.trees.composition import compose_programs
+from treelang.trees.deduplication import deduplicate_pure_tool_calls
+from treelang.trees.grafting import graft_expression, wrap_expression
 from treelang.trees.policy import BranchOutcome, ExecutionPolicy, RetryPolicy
+from treelang.trees.pruning import ConservativeTreePruner, prune_tree
 from treelang.trees.schemas import CURRENT_SCHEMA_VERSION, ast_examples, ast_json_schema
 from treelang.trees.schemas.v1 import (
     TreeConditional,
@@ -55,6 +60,21 @@ from treelang.trees.schemas.v1 import (
     TreeProgram,
     TreeReduce,
     TreeValue,
+)
+from treelang.trees.strategies import (
+    AsyncTreeGrower,
+    GrowthOptions,
+    ProgramCompositionGrower,
+    TreeGrower,
+    TreePruner,
+)
+from treelang.trees.transforms import (
+    TransformationLimits,
+    TransformationRecord,
+    TransformResult,
+    TreeChange,
+    TreeChangeKind,
+    TreePath,
 )
 from treelang.trees.tree import AST
 
@@ -68,14 +88,19 @@ __all__ = [
     "ASTCompilationError",
     "ASTExecutionError",
     "ASTValidationError",
+    "AsyncTreeGrower",
     "AnthropicTransport",
     "BranchOutcome",
     "CapabilityAwareTransport",
+    "compose_programs",
+    "deduplicate_pure_tool_calls",
+    "ConservativeTreePruner",
     "CURRENT_SCHEMA_VERSION",
     "DefaultModelCapabilityNegotiator",
     "ExecutionLimitError",
     "ExecutionLimits",
     "ExecutionPolicy",
+    "GrowthOptions",
     "MCPToolProvider",
     "ModelAuthenticationError",
     "ModelCapabilities",
@@ -91,6 +116,7 @@ __all__ = [
     "NoOpTraceSink",
     "Observability",
     "ProviderResponseError",
+    "ProgramCompositionGrower",
     "ReplayMismatchError",
     "RetryPolicy",
     "StructuredOutputUnsupportedError",
@@ -98,6 +124,7 @@ __all__ = [
     "SUPPORTED_SCHEMA_VERSIONS",
     "ToolExecutionError",
     "ToolDefinition",
+    "ToolEffects",
     "ToolNotFoundError",
     "ToolOutput",
     "ToolProperty",
@@ -105,20 +132,32 @@ __all__ = [
     "ToolReplayEntry",
     "ToolReplayProvider",
     "TraceSink",
+    "TransformationLimits",
+    "TransformResult",
+    "TransformationRecord",
     "TreeConditional",
+    "TreeChange",
+    "TreeChangeKind",
     "TreeFilter",
     "TreeFunction",
     "TreeLambda",
     "TreeMap",
     "TreeNode",
+    "TreePath",
+    "TreeGrower",
+    "TreePruner",
     "TreeProgram",
     "TreeReduce",
     "TreeValue",
     "TreelangError",
+    "TreeTransformationError",
     "UsageAwareTransport",
     "__version__",
     "ast_examples",
     "ast_json_schema",
+    "graft_expression",
     "json_schema_text",
     "load_json_schema",
+    "prune_tree",
+    "wrap_expression",
 ]

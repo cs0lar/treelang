@@ -1,12 +1,19 @@
 import sys
+from contextlib import asynccontextmanager
 from pathlib import Path
 
+import anyio
 import nbformat
 import pytest
-from mcp import ClientSession, StdioServerParameters, stdio_client
+from mcp import StdioServerParameters
 
 from scripts.check_cookbooks import (
+    MCP_OPERATION_TIMEOUT_SECONDS,
+    NOTEBOOK_KERNEL_STARTUP_TIMEOUT_SECONDS,
+    CookbookTimeoutError,
     CookbookValidationError,
+    await_cookbook_operation,
+    cookbook_mcp_session,
     executable_notebook_paths,
     execute_notebook,
     notebook_paths,
@@ -59,6 +66,75 @@ def test_notebook_validation_rejects_execution_state(tmp_path):
         validate_notebook(path)
 
 
+def test_notebook_execution_has_startup_and_overall_deadlines(tmp_path, monkeypatch):
+    notebook = nbformat.v4.new_notebook()
+    path = tmp_path / "stalled.ipynb"
+    nbformat.write(notebook, path)
+    received = {}
+
+    class StalledNotebookClient:
+        def __init__(self, notebook, **kwargs):
+            received.update(kwargs)
+
+        async def async_execute(self):
+            await anyio.sleep_forever()
+
+    monkeypatch.setattr("scripts.check_cookbooks.NotebookClient", StalledNotebookClient)
+
+    with pytest.raises(
+        CookbookTimeoutError,
+        match=r"stalled\.ipynb: timed out during notebook execution after 0\.01 seconds",
+    ):
+        execute_notebook(path, overall_timeout_seconds=0.01)
+
+    assert received["startup_timeout"] == NOTEBOOK_KERNEL_STARTUP_TIMEOUT_SECONDS
+
+
+@pytest.mark.asyncio
+async def test_mcp_timeout_closes_session_and_stdio(monkeypatch):
+    closed = []
+
+    @asynccontextmanager
+    async def fake_stdio_client(parameters):
+        try:
+            yield object(), object()
+        finally:
+            closed.append("stdio")
+
+    class StalledSession:
+        def __init__(self, read, write):
+            pass
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, exc_type, exc, traceback):
+            closed.append("session")
+
+        async def initialize(self):
+            await anyio.sleep_forever()
+
+    monkeypatch.setattr("scripts.check_cookbooks.stdio_client", fake_stdio_client)
+    monkeypatch.setattr("scripts.check_cookbooks.ClientSession", StalledSession)
+    parameters = StdioServerParameters(command=sys.executable, args=[])
+
+    with pytest.raises(
+        CookbookTimeoutError,
+        match=r"stalled\.py: timed out during initialization after 0\.01 seconds",
+    ):
+        async with cookbook_mcp_session(
+            parameters, server="stalled.py", timeout_seconds=0.01
+        ) as session:
+            await await_cookbook_operation(
+                session.initialize(),
+                target="stalled.py",
+                operation="initialization",
+                timeout_seconds=0.01,
+            )
+
+    assert closed == ["session", "stdio"]
+
+
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
     ("server", "calls"),
@@ -86,13 +162,22 @@ async def test_cookbook_mcp_servers(server, calls):
         env=None,
     )
 
-    async with stdio_client(parameters) as (read, write):
-        async with ClientSession(read, write) as session:
-            await session.initialize()
-            provider = MCPToolProvider(session)
-            definitions = await provider.list_tools()
-            names = {definition["name"] for definition in definitions}
+    async with cookbook_mcp_session(parameters, server=server) as session:
+        await await_cookbook_operation(
+            session.initialize(), target=server, operation="initialization"
+        )
+        provider = MCPToolProvider(session)
+        definitions = await await_cookbook_operation(
+            provider.list_tools(), target=server, operation="tool discovery"
+        )
+        names = {definition["name"] for definition in definitions}
 
-            for name, arguments, expected in calls:
-                assert name in names
-                assert (await provider.call_tool(name, arguments)).content == expected
+        for name, arguments, expected in calls:
+            assert name in names
+            result = await await_cookbook_operation(
+                provider.call_tool(name, arguments),
+                target=server,
+                operation=f"tool call {name!r}",
+                timeout_seconds=MCP_OPERATION_TIMEOUT_SECONDS,
+            )
+            assert result.content == expected

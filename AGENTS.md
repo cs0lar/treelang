@@ -103,7 +103,15 @@ through PR #124, the CLI through PR #125, downstream testing fixtures and
 provider contracts through PR #126, and distributed JSON Schema artifacts
 through PR #127. Tested end-to-end cookbooks and extension/provider contribution
 workflows are merged through PR #128. Release v1.0.0 metadata, changelog, and
-migration guidance are prepared for promotion from `dev` to `main`.
+migration guidance were promoted to `main`, and v1.0.0 has been released.
+
+Phases 10 through 15 are complete through PR #139. They provide immutable
+transformation contracts, conservative pruning, validated expression grafting,
+collision-safe program composition, injectable Arborist transformation
+strategies, and effect-aware elimination of duplicate pure computations.
+Cookbook integration deadlines are merged through PR #138. Release v1.1.0 is
+the next planned promotion from `dev` to `main`.
+
 Before new work, update `dev` and run:
 
 ```sh
@@ -228,3 +236,68 @@ providers without application-level changes.
 
 Exit criteria: a new user can install Treelang, execute and inspect a validated
 program, build a provider, and reproduce benchmarks using documented workflows.
+
+### Phase 10: Tree Transformation Foundation
+
+Define immutable, schema-neutral tree paths, typed change and lineage records,
+and transformation results. Keep this phase free of rewriting behavior so the
+public contracts can be reviewed independently. Document and test path identity,
+root/child handling, deterministic reporting, and compatibility with both schema
+versions. Complete through PR #132.
+
+Exit criteria: later transformations can identify nodes and report reproducible
+changes without depending on an AI provider or mutating an input tree.
+
+### Phase 11: Conservative Pruning
+
+Implement a deterministic schema v2 pruner with only locally provable rewrites:
+remove unreachable user-function definitions and simplify conditionals with
+literal boolean conditions. Validate every output and report each change. Keep
+schema v1 pruning as a no-op unless a rewrite is equally unambiguous. Complete
+through PR #134.
+
+Exit criteria: pruning is idempotent, does not mutate its input, preserves tested
+execution results, and never evaluates, combines, or directly rewrites external
+tool calls.
+
+### Phase 12: Expression Grafting
+
+Add immutable path-based replacement, wrapping, and grafting for schema v2
+expressions. Reject missing paths, incompatible node locations, unbound variables,
+invalid call arity, and results exceeding configured structural limits. Complete
+through PR #135.
+
+Exit criteria: callers can construct a larger valid program from a base program
+and an expression with deterministic transformation records.
+
+### Phase 13: Program Composition & Identifier Hygiene
+
+Combine schema v2 programs in single or parallel mode. Merge their function
+definitions, alpha-rename collisions, update calls and lexical references, and
+preserve deterministic definition ordering. Complete through PR #136.
+
+Exit criteria: independently valid programs compose without name capture, source
+mutation, or application-level changes to their external tool providers.
+
+### Phase 14: Arborist Transformation Strategies
+
+Introduce injectable pruner and grower protocols and make `BaseArborist.prune()`
+and `grow()` compatibility-preserving delegates. Keep deterministic local
+transformations synchronous; provide a separate asynchronous boundary for
+model-guided or evaluation-guided growth.
+Complete through PR #137.
+
+Exit criteria: model-specific Arborists do not implement tree rewriting directly,
+existing `prune()` callers remain compatible, and the legacy no-argument `grow()`
+behavior has a documented migration path.
+
+### Phase 15: Effects, Bindings & Duplicate Computation
+
+Define provider-neutral tool effect metadata for purity, determinism, and
+idempotency. Add an opt-in schema construct for local binding or explicit
+memoization, then implement common-subexpression elimination only when evaluation
+is provably safe under the declared effects and execution policy.
+Complete through PR #139.
+
+Exit criteria: duplicate pure computations can execute once and be reused, while
+effectful or undeclared tools are never deduplicated by default.

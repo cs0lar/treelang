@@ -41,6 +41,21 @@ Raised when an AST fails during execution.
 
 Raised when an AST violates a runtime tool contract.
 
+## `AsyncTreeGrower`
+
+**Class** · `treelang.trees.strategies`
+
+```python
+AsyncTreeGrower(*args, **kwargs)
+```
+
+Asynchronous boundary for model- or evaluation-guided growth.
+
+
+Methods:
+
+- `grow(self, programs: 'Sequence[TreeProgram]', *, options: 'GrowthOptions') -> 'TransformResult[TreeProgram]'`
+
 ## `AnthropicTransport`
 
 **Class** · `treelang.ai.anthropic`
@@ -89,6 +104,41 @@ Optional transport extension for model-specific capability discovery.
 Methods:
 
 - `capabilities(self, model: 'str') -> 'ModelCapabilities'`
+
+## `compose_programs`
+
+**Function** · `treelang.trees.composition`
+
+```python
+compose_programs(programs: 'Sequence[TreeProgram]', *, mode: "Literal['single', 'parallel']" = 'single', name: 'str | None' = None, description: 'str | None' = None, limits: 'TransformationLimits | None' = None) -> 'TransformResult[TreeProgram]'
+```
+
+Combine independent programs with hygienic user-function names.
+
+## `deduplicate_pure_tool_calls`
+
+**Function** · `treelang.trees.deduplication`
+
+```python
+deduplicate_pure_tool_calls(program: 'TreeProgram', tools: 'Sequence[ToolDefinition]', *, limits: 'TransformationLimits | None' = None) -> 'TransformResult[TreeProgram]'
+```
+
+Memoize repeated closed calls to declared pure deterministic tools.
+
+## `ConservativeTreePruner`
+
+**Class** · `treelang.trees.pruning`
+
+```python
+ConservativeTreePruner()
+```
+
+Apply only locally provable rewrites without evaluating external tools.
+
+
+Methods:
+
+- `prune(self, tree: 'TreeProgram | TreeNode') -> 'TransformResult[TreeProgram] | TransformResult[TreeNode]'` — Return a validated pruned copy, or the original version 1 tree.
 
 ## `CURRENT_SCHEMA_VERSION`
 
@@ -145,6 +195,16 @@ ExecutionPolicy(retry: 'RetryPolicy' = <factory>, parallel_failures: "Literal['r
 ```
 
 Opt-in retry and parallel partial-failure behavior.
+
+## `GrowthOptions`
+
+**Class** · `treelang.trees.strategies`
+
+```python
+GrowthOptions(mode: "Literal['single', 'parallel']" = 'single', name: 'str | None' = None, description: 'str | None' = None, limits: 'TransformationLimits | None' = None) -> None
+```
+
+Deterministic options shared by synchronous and asynchronous growers.
 
 ## `MCPToolProvider`
 
@@ -328,6 +388,21 @@ Methods:
 
 Raised when a provider returns an invalid response.
 
+## `ProgramCompositionGrower`
+
+**Class** · `treelang.trees.strategies`
+
+```python
+ProgramCompositionGrower()
+```
+
+Default deterministic grower backed by validated program composition.
+
+
+Methods:
+
+- `grow(self, programs: 'Sequence[TreeProgram]', *, options: 'GrowthOptions') -> 'TransformResult[TreeProgram]'`
+
 ## `ReplayMismatchError`
 
 **Class** · `treelang.exceptions`
@@ -385,6 +460,20 @@ Fields:
 - `properties: Required[dict[str, treelang.ai.tool.ToolProperty]]`
 - `description: NotRequired[str | None]`
 - `input_schema: NotRequired[dict[str, Any]]`
+- `effects: NotRequired[ForwardRef('ToolEffects')]`
+
+## `ToolEffects`
+
+**Typed dictionary** · `treelang.ai.tool`
+
+Optional behavioral guarantees used by safe transformations.
+
+
+Fields:
+
+- `pure: bool`
+- `deterministic: bool`
+- `idempotent: bool`
 
 ## `ToolNotFoundError`
 
@@ -499,6 +588,36 @@ Methods:
 
 - `record(self, event: str, attributes: collections.abc.Mapping[str, typing.Any]) -> None`
 
+## `TransformationLimits`
+
+**Class** · `treelang.trees.transforms`
+
+```python
+TransformationLimits(max_nodes: 'int | None' = None, max_depth: 'int | None' = None) -> None
+```
+
+Optional inclusive structural limits for a transformed program.
+
+## `TransformResult`
+
+**Class** · `treelang.trees.transforms`
+
+```python
+TransformResult(tree: 'TreeT', lineage: 'tuple[TransformationRecord, ...]' = ()) -> None
+```
+
+A transformed tree together with its complete reproducible lineage.
+
+## `TransformationRecord`
+
+**Class** · `treelang.trees.transforms`
+
+```python
+TransformationRecord(name: 'str', changes: 'tuple[TreeChange, ...]' = (), seed: 'int | None' = None) -> None
+```
+
+Named transformation step and the changes it produced.
+
 ## `TreeConditional`
 
 **Class** · `treelang.trees.schemas.v1`
@@ -520,6 +639,26 @@ Fields:
 Methods:
 
 - `eval(self, provider: treelang.ai.provider.ToolProvider, context: 'ExecutionContext | None' = None) -> Any`
+
+## `TreeChange`
+
+**Class** · `treelang.trees.transforms`
+
+```python
+TreeChange(kind: 'TreeChangeKind', path: 'TreePath', description: 'str', source_path: 'TreePath | None' = None) -> None
+```
+
+One deterministic structural change made by a transformation.
+
+## `TreeChangeKind`
+
+**Class** · `treelang.trees.transforms`
+
+```python
+TreeChangeKind(*values)
+```
+
+Structural operations that a transformation can report.
 
 ## `TreeFilter`
 
@@ -625,6 +764,55 @@ Methods:
 - `eval(self, provider: treelang.ai.provider.ToolProvider, context: 'ExecutionContext | None' = None) -> Any`
 - `hash(self) -> str`
 
+## `TreePath`
+
+**Class** · `treelang.trees.transforms`
+
+```python
+TreePath(segments: 'tuple[TreePathSegment, ...]' = ()) -> None
+```
+
+Identify a node by field names and zero-based sequence indexes.
+
+Paths are structural rather than object-identity based, so they remain stable
+across serialization and immutable model copies. The empty path identifies the
+transformation root.
+
+
+Methods:
+
+- `child(self, segment: 'TreePathSegment') -> 'TreePath'` — Return a new path extended by one field name or sequence index.
+
+## `TreeGrower`
+
+**Class** · `treelang.trees.strategies`
+
+```python
+TreeGrower(*args, **kwargs)
+```
+
+Synchronous deterministic program-growth strategy.
+
+
+Methods:
+
+- `grow(self, programs: 'Sequence[TreeProgram]', *, options: 'GrowthOptions') -> 'TransformResult[TreeProgram]'`
+
+## `TreePruner`
+
+**Class** · `treelang.trees.strategies`
+
+```python
+TreePruner(*args, **kwargs)
+```
+
+Strategy that returns a tree and reproducible pruning lineage.
+
+
+Methods:
+
+- `prune(self, tree: 'GeneratedTree') -> 'TransformResult[TreeNode] | TransformResult[TreeProgram]'`
+
 ## `TreeProgram`
 
 **Class** · `treelang.trees.schemas.v1`
@@ -697,6 +885,12 @@ Methods:
 
 Base class for errors raised by Treelang.
 
+## `TreeTransformationError`
+
+**Class** · `treelang.exceptions`
+
+Raised when a requested tree transformation cannot produce a valid tree.
+
 ## `UsageAwareTransport`
 
 **Class** · `treelang.ai.transport`
@@ -716,7 +910,7 @@ Methods:
 
 **Constant** · `treelang`
 
-Current value: `'1.0.0'`
+Current value: `'1.1.0'`
 
 ## `ast_examples`
 
@@ -738,6 +932,16 @@ ast_json_schema() -> str
 
 Return the JSON schema for the Treelang AST model.
 
+## `graft_expression`
+
+**Function** · `treelang.trees.grafting`
+
+```python
+graft_expression(program: 'TreeProgram', graft: 'Expression', *, at: 'TreePath', limits: 'TransformationLimits | None' = None) -> 'TransformResult[TreeProgram]'
+```
+
+Replace the expression at ``at`` with ``graft`` and validate the result.
+
 ## `json_schema_text`
 
 **Function** · `treelang.schema_artifacts`
@@ -757,3 +961,23 @@ load_json_schema(version: 'SupportedSchemaVersion') -> 'dict[str, Any]'
 ```
 
 Load one canonical schema as a JSON-compatible mapping.
+
+## `prune_tree`
+
+**Function** · `treelang.trees.pruning`
+
+```python
+prune_tree(tree: 'TreeProgram | TreeNode') -> 'TransformResult[TreeProgram] | TransformResult[TreeNode]'
+```
+
+Prune a version 2 program, preserving version 1 trees unchanged.
+
+## `wrap_expression`
+
+**Function** · `treelang.trees.grafting`
+
+```python
+wrap_expression(program: 'TreeProgram', wrapper: 'Expression', *, at: 'TreePath', placeholder: 'str' = 'graft', limits: 'TransformationLimits | None' = None) -> 'TransformResult[TreeProgram]'
+```
+
+Replace placeholder variables in ``wrapper`` with the expression at ``at``.

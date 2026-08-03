@@ -62,6 +62,7 @@ nav:
       - JSON Schema and editor validation: json-schema.md
       - End-to-end cookbooks: cookbooks.md
       - Extensions and provider contributions: extensions.md
+      - Tree transformations: tree-transformations.md
       - Recursive programs: recursive-programs.md
       - Structured model output: structured-output.md
       - Tool input validation: tool-input-validation.md

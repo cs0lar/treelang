@@ -1,7 +1,7 @@
 [project]
 name = "treelang"
-version = "1.0.0"
-description = "LLM function calling on steroids using Abstract Syntax Trees."
+version = "1.1.0"
+description = "A typed orchestration language for AI-generated, validated tool programs that execute locally—without model round-trips between steps."
 authors = [
     { name = "csolar", email = "cristiano.solarino@brightminded.com" },
 ]
@@ -30,6 +30,7 @@ Documentation = "https://csolar.github.io/treelang/"
 [dependency-groups]
 dev = [
     "anthropic>=0.104,<1",
+    "anyio>=4.5,<5",
     "build>=1.4,<2",
     "hypothesis>=6.135,<7",
     "ipykernel>=6.29,<8",
