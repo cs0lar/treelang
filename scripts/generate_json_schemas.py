@@ -15,7 +15,7 @@ ROOT = Path(__file__).parents[1]
 PACKAGE_DIRECTORY = ROOT / "treelang" / "schema_files"
 DOCUMENTATION_DIRECTORY = ROOT / "docs" / "schemas"
 SCHEMA_DIALECT = "https://json-schema.org/draft/2020-12/schema"
-SCHEMA_BASE_URL = "https://csolar.github.io/treelang/latest/schemas"
+SCHEMA_BASE_URL = "https://cs0lar.github.io/treelang/latest/schemas"
 GENERATORS: dict[str, Callable[[], dict[str, Any]]] = {
     "1.0": ASTV1.model_json_schema,
     "2.0": ASTV2.model_json_schema,

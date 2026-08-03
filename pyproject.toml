@@ -25,7 +25,7 @@ treelang = "treelang.cli:main"
 [project.urls]
 Homepage = "https://github.com/cs0lar/treelang"
 Issues = "https://github.com/cs0lar/treelang/issues"
-Documentation = "https://csolar.github.io/treelang/"
+Documentation = "https://cs0lar.github.io/treelang/"
 
 [dependency-groups]
 dev = [

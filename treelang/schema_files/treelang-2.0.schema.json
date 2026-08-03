@@ -339,5 +339,5 @@
   "description": "Validate the complete static contract of a version 2 program.",
   "title": "Treelang AST Program 2.0",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://csolar.github.io/treelang/latest/schemas/treelang-2.0.schema.json"
+  "$id": "https://cs0lar.github.io/treelang/latest/schemas/treelang-2.0.schema.json"
 }
