@@ -243,7 +243,7 @@ formats, and additional-property rules; see the
 
 ## Resources & examples
 
-- **Documentation** ([published site](https://csolar.github.io/treelang/)) contains the [supported API reference](docs/api.md),
+- **Documentation** ([published site](https://cs0lar.github.io/treelang/)) contains the [supported API reference](docs/api.md),
   [architecture decisions](docs/README.md), and the
   [1.0 migration guide](docs/migration-1.0.md).
 - **Cookbook notebooks** (`cookbook/`) provide a

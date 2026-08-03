@@ -109,8 +109,9 @@ Phases 10 through 15 are complete through PR #139. They provide immutable
 transformation contracts, conservative pruning, validated expression grafting,
 collision-safe program composition, injectable Arborist transformation
 strategies, and effect-aware elimination of duplicate pure computations.
-Cookbook integration deadlines are merged through PR #138. Release v1.1.0 is
-the next planned promotion from `dev` to `main`.
+Cookbook integration deadlines are merged through PR #138. Release v1.1.0 has
+been published. The documentation-site and distributed-schema URL correction is
+merged through PR #143, and v1.1.1 is the next planned patch release.
 
 Before new work, update `dev` and run:
 

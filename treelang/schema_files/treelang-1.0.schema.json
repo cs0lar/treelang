@@ -331,5 +331,5 @@
   "description": "Root wrapper for top level node validation.",
   "title": "Treelang AST Program 1.0",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://csolar.github.io/treelang/latest/schemas/treelang-1.0.schema.json"
+  "$id": "https://cs0lar.github.io/treelang/latest/schemas/treelang-1.0.schema.json"
 }

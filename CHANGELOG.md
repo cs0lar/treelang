@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.1.1] - 2026-08-03
+
+### Fixed
+
+- Corrected the GitHub Pages owner in the README, package metadata, MkDocs
+  configuration, editor examples, and canonical JSON Schema identifiers so
+  documentation and schema links resolve at `https://cs0lar.github.io/treelang/`.
+
 ## [1.1.0] - 2026-08-03
 
 ### Added

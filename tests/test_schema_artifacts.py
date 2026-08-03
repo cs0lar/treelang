@@ -66,8 +66,8 @@ def test_vscode_example_maps_both_published_schema_urls():
     mappings = settings["json.schemas"]
     assert len(mappings) == 2
     assert {mapping["url"] for mapping in mappings} == {
-        "https://csolar.github.io/treelang/latest/schemas/treelang-1.0.schema.json",
-        "https://csolar.github.io/treelang/latest/schemas/treelang-2.0.schema.json",
+        "https://cs0lar.github.io/treelang/latest/schemas/treelang-1.0.schema.json",
+        "https://cs0lar.github.io/treelang/latest/schemas/treelang-2.0.schema.json",
     }
 
 
