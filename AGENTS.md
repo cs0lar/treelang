@@ -104,6 +104,14 @@ provider contracts through PR #126, and distributed JSON Schema artifacts
 through PR #127. Tested end-to-end cookbooks and extension/provider contribution
 workflows are merged through PR #128. Release v1.0.0 metadata, changelog, and
 migration guidance were promoted to `main`, and v1.0.0 has been released.
+
+Phases 10 through 15 are complete through PR #139. They provide immutable
+transformation contracts, conservative pruning, validated expression grafting,
+collision-safe program composition, injectable Arborist transformation
+strategies, and effect-aware elimination of duplicate pure computations.
+Cookbook integration deadlines are merged through PR #138. Release v1.1.0 is
+the next planned promotion from `dev` to `main`.
+
 Before new work, update `dev` and run:
 
 ```sh
@@ -289,6 +297,7 @@ Define provider-neutral tool effect metadata for purity, determinism, and
 idempotency. Add an opt-in schema construct for local binding or explicit
 memoization, then implement common-subexpression elimination only when evaluation
 is provably safe under the declared effects and execution policy.
+Complete through PR #139.
 
 Exit criteria: duplicate pure computations can execute once and be reused, while
 effectful or undeclared tools are never deduplicated by default.
