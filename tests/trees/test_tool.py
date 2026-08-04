@@ -1,5 +1,6 @@
 import asyncio
 import unittest
+from inspect import Parameter, signature
 from unittest.mock import AsyncMock
 
 import mcp.types as types
@@ -396,3 +397,320 @@ class TestToolMethod(unittest.IsolatedAsyncioTestCase):
 
         with self.assertRaises(RuntimeError):
             await tool_function(a=5, b=10)
+
+
+class TestToolLiteralDefaults(unittest.IsolatedAsyncioTestCase):
+    def _provider(self, tool_name: str, properties: dict[str, dict[str, str]]):
+        provider = AsyncMock(spec=ToolProvider)
+        provider.get_tool_definition.return_value = {
+            "name": tool_name,
+            "properties": properties,
+        }
+        provider.call_tool.side_effect = lambda _, arguments: ToolOutput(
+            content=arguments
+        )
+        return provider
+
+    async def test_signature_required_and_default_parameters(self):
+        ast = TreeProgram(
+            body=[
+                TreeFunction(
+                    name="configure",
+                    params=[
+                        TreeValue(name="temperature", value=None),
+                        TreeValue(name="scale", value=0.5),
+                    ],
+                )
+            ],
+            mode="single",
+            name="configure_tool",
+            description="Configures a model",
+        )
+        tool_function = await AST.tool(
+            ast,
+            self._provider(
+                "configure",
+                {
+                    "temperature": {"type": "number"},
+                    "scale": {"type": "number"},
+                },
+            ),
+        )
+        tool_signature = signature(tool_function)
+        temperature = tool_signature.parameters["temperature"]
+        scale = tool_signature.parameters["scale"]
+
+        self.assertEqual(temperature.default, Parameter.empty)
+        self.assertEqual(scale.default, 0.5)
+        self.assertEqual(temperature.kind, Parameter.KEYWORD_ONLY)
+        self.assertEqual(scale.kind, Parameter.KEYWORD_ONLY)
+
+    async def test_falsey_literal_defaults_are_optional(self):
+        ast = TreeProgram(
+            body=[
+                TreeFunction(
+                    name="flags",
+                    params=[
+                        TreeValue(name="count", value=0),
+                        TreeValue(name="enabled", value=False),
+                        TreeValue(name="label", value=""),
+                    ],
+                )
+            ],
+            mode="single",
+            name="flags_tool",
+            description="Reports flag values",
+        )
+        tool_function = await AST.tool(
+            ast,
+            self._provider(
+                "flags",
+                {
+                    "count": {"type": "integer"},
+                    "enabled": {"type": "boolean"},
+                    "label": {"type": "string"},
+                },
+            ),
+        )
+        parameters = signature(tool_function).parameters
+        self.assertEqual(parameters["count"].default, 0)
+        self.assertEqual(parameters["enabled"].default, False)
+        self.assertEqual(parameters["label"].default, "")
+
+        result = await tool_function()
+        self.assertEqual(result, {"count": 0, "enabled": False, "label": ""})
+
+    async def test_explicit_argument_overrides_literal_default(self):
+        ast = TreeProgram(
+            body=[
+                TreeFunction(
+                    name="configure",
+                    params=[TreeValue(name="scale", value=0.5)],
+                )
+            ],
+            mode="single",
+            name="configure_tool",
+            description="Configures a model",
+        )
+        tool_function = await AST.tool(
+            ast,
+            self._provider("configure", {"scale": {"type": "number"}}),
+        )
+
+        result = await tool_function(scale=2.0)
+        self.assertEqual(result, {"scale": 2.0})
+
+    async def test_json_type_annotations_are_preserved(self):
+        ast = TreeProgram(
+            body=[
+                TreeFunction(
+                    name="typed",
+                    params=[
+                        TreeValue(name="count", value=1),
+                        TreeValue(name="label", value="x"),
+                        TreeValue(name="enabled", value=True),
+                        TreeValue(name="ratio", value=0.5),
+                        TreeValue(name="tags", value=["a"]),
+                        TreeValue(name="options", value={"mode": "safe"}),
+                    ],
+                )
+            ],
+            mode="single",
+            name="typed_tool",
+            description="Typed defaults",
+        )
+        tool_function = await AST.tool(
+            ast,
+            self._provider(
+                "typed",
+                {
+                    "count": {"type": "integer"},
+                    "label": {"type": "string"},
+                    "enabled": {"type": "boolean"},
+                    "ratio": {"type": "number"},
+                    "tags": {"type": "array"},
+                    "options": {"type": "object"},
+                },
+            ),
+        )
+        parameters = signature(tool_function).parameters
+        self.assertIs(parameters["count"].annotation, int)
+        self.assertIs(parameters["label"].annotation, str)
+        self.assertIs(parameters["enabled"].annotation, bool)
+        self.assertIs(parameters["ratio"].annotation, float)
+        self.assertIs(parameters["tags"].annotation, list)
+        self.assertIs(parameters["options"].annotation, dict)
+
+    async def test_duplicate_names_keep_deterministic_defaults(self):
+        ast = TreeProgram(
+            body=[
+                TreeFunction(
+                    name="duplicate",
+                    params=[
+                        TreeValue(name="value", value=None),
+                        TreeValue(name="value", value=2),
+                    ],
+                )
+            ],
+            mode="single",
+            name="duplicate_tool",
+            description="Duplicate names",
+        )
+        tool_function = await AST.tool(
+            ast,
+            self._provider("duplicate", {"value": {"type": "integer"}}),
+        )
+        parameters = signature(tool_function).parameters
+        self.assertEqual(list(parameters), ["value", "value_2"])
+        self.assertEqual(parameters["value"].default, Parameter.empty)
+        self.assertEqual(parameters["value_2"].default, 2)
+
+        bound = signature(tool_function).bind(value=1)
+        bound.apply_defaults()
+        self.assertEqual(bound.arguments["value"], 1)
+        self.assertEqual(bound.arguments["value_2"], 2)
+
+        bound = signature(tool_function).bind(value=1, value_2=9)
+        self.assertEqual(bound.arguments["value_2"], 9)
+
+        with self.assertRaises(TypeError):
+            signature(tool_function).bind()
+
+    async def test_missing_required_parameter_preserves_binding_error(self):
+        ast = TreeProgram(
+            body=[
+                TreeFunction(
+                    name="configure",
+                    params=[
+                        TreeValue(name="temperature", value=None),
+                        TreeValue(name="scale", value=0.5),
+                    ],
+                )
+            ],
+            mode="single",
+            name="configure_tool",
+            description="Configures a model",
+        )
+        tool_function = await AST.tool(
+            ast,
+            self._provider(
+                "configure",
+                {
+                    "temperature": {"type": "number"},
+                    "scale": {"type": "number"},
+                },
+            ),
+        )
+
+        with self.assertRaisesRegex(
+            TypeError, "Argument binding failed for configure_tool\\(\\):"
+        ):
+            await tool_function(scale=0.5)
+
+    async def test_mutable_default_is_isolated_across_sequential_invocations(self):
+        default_tags = ["a", "b"]
+        nested_default = {"options": {"tags": ["a", "b"]}}
+        ast = TreeProgram(
+            body=[
+                TreeFunction(
+                    name="tag",
+                    params=[
+                        TreeValue(name="tags", value=default_tags),
+                        TreeValue(name="payload", value=nested_default),
+                    ],
+                )
+            ],
+            mode="single",
+            name="tag_tool",
+            description="Tags values",
+        )
+        source_tags = ast.body[0].params[0]
+        source_payload = ast.body[0].params[1]
+        tool_function = await AST.tool(
+            ast,
+            self._provider(
+                "tag",
+                {
+                    "tags": {"type": "array"},
+                    "payload": {"type": "object"},
+                },
+            ),
+        )
+
+        first = await tool_function()
+        first["tags"].append("c")
+        first["payload"]["options"]["tags"].append("c")
+
+        second = await tool_function()
+        self.assertEqual(second["tags"], ["a", "b"])
+        self.assertEqual(second["payload"], {"options": {"tags": ["a", "b"]}})
+        self.assertEqual(source_tags.value, ["a", "b"])
+        self.assertEqual(source_payload.value, {"options": {"tags": ["a", "b"]}})
+
+    async def test_compilation_does_not_mutate_source_ast(self):
+        default_tags = ["a", "b"]
+        ast = TreeProgram(
+            body=[
+                TreeFunction(
+                    name="tag",
+                    params=[TreeValue(name="tags", value=default_tags)],
+                )
+            ],
+            mode="single",
+            name="tag_tool",
+            description="Tags values",
+        )
+        source_tags = ast.body[0].params[0]
+
+        await AST.tool(
+            ast,
+            self._provider("tag", {"tags": {"type": "array"}}),
+        )
+
+        self.assertEqual(source_tags.value, ["a", "b"])
+
+    async def test_concurrent_invocations_do_not_share_mutable_defaults(self):
+        default_tags = ["a", "b"]
+        ast = TreeProgram(
+            body=[
+                TreeFunction(
+                    name="tag",
+                    params=[TreeValue(name="tags", value=default_tags)],
+                )
+            ],
+            mode="single",
+            name="tag_tool",
+            description="Tags values",
+        )
+        source_tags = ast.body[0].params[0]
+        first_ready = asyncio.Event()
+        second_ready = asyncio.Event()
+        observed: list[list[str]] = []
+
+        class MutableDefaultProvider(ToolProvider):
+            async def list_tools(self):
+                return []
+
+            async def get_tool_definition(self, name):
+                return {"name": name, "properties": {"tags": {"type": "array"}}}
+
+            async def call_tool(self, name, arguments):
+                tags = arguments["tags"]
+                observed.append(tags)
+                if len(observed) == 1:
+                    first_ready.set()
+                    await second_ready.wait()
+                    tags.append("first")
+                    return ToolOutput(content=tags)
+                second_ready.set()
+                await first_ready.wait()
+                tags.append("second")
+                return ToolOutput(content=tags)
+
+        tool_function = await AST.tool(ast, MutableDefaultProvider())
+        first, second = await asyncio.gather(tool_function(), tool_function())
+
+        self.assertEqual(first, ["a", "b", "first"])
+        self.assertEqual(second, ["a", "b", "second"])
+        self.assertEqual(source_tags.value, ["a", "b"])
+        self.assertNotEqual(observed[0], observed[1])
