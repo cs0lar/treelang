@@ -230,7 +230,7 @@ formats, and additional-property rules; see the
 1. **Generate** – `OpenAIArborist` assembles an AST using your available tools.
 2. **Inspect** – represent the tree as JSON, describe it with `EvalResponse.describe()`, or pretty-print it using `AST.repr()`.
 3. **Evaluate** – `AST.eval(tree, provider)` asynchronously executes every node; the LLM never sees intermediate values.
-4. **Package** – `await AST.tool(tree, provider)` turns a tree into a callable tool so you can add it back to your MCP server.
+4. **Package** – `await AST.tool(tree, provider)` turns a tree into a callable tool so you can add it back to your MCP server. Non-null `TreeValue` literals become keyword-only parameter defaults that callers can override; omitted mutable defaults are deep-copied for each invocation so later calls and the source AST stay isolated.
 
 ## Architecture at a glance
 

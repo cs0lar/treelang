@@ -1,5 +1,32 @@
 # Changelog
 
+## [1.2.0] - 2026-08-07
+
+### Added
+
+- Added overridable keyword-only defaults to compiled tools for non-null AST
+  literals. Required placeholders remain required, while mutable defaults are
+  snapshotted and deep-copied for every invocation.
+
+### Changed
+
+- Tree descriptions now use the original user query as the source of workflow
+  intent and the AST as implementation evidence, producing reusable
+  `snake_case` names instead of names derived from low-level tool calls or
+  instance-specific values.
+
+### Compatibility
+
+- Existing compiled-tool arguments remain valid; callers may now omit arguments
+  backed by non-null AST literals or explicitly override their defaults.
+- `EvalResponse.describe()` retains its existing signature and return type.
+- Schema versions 1.0 and 2.0 remain unchanged.
+
+### Security
+
+- Updated the locked transitive `cryptography` dependency to 50.0.0 to address
+  `PYSEC-2026-3552` and `CVE-2026-69247`.
+
 ## [1.1.1] - 2026-08-03
 
 ### Fixed

@@ -1,6 +1,7 @@
 """Compile version 1 AST programs into async Python callables."""
 
 from collections.abc import Awaitable, Callable
+from copy import deepcopy
 from inspect import Parameter, Signature
 from typing import Any
 
@@ -54,6 +55,7 @@ async def compile_tool(
     program_description = ast.description
     parameters: list[Parameter] = []
     bindings: list[tuple[str, TreeValue]] = []
+    default_templates: dict[str, Any] = {}
     property_stack: list[dict[str, Any]] = []
     argument_names: list[str] = []
 
@@ -82,16 +84,22 @@ async def compile_tool(
         property_type = properties[node.name].get("type")
         argument_names.append(parameter_name)
         bindings.append((parameter_name, node))
+        annotation = (
+            JSON_TYPE_ANNOTATIONS.get(property_type, Any)
+            if isinstance(property_type, str)
+            else Any
+        )
+        parameter_kwargs: dict[str, Any] = {
+            "name": parameter_name,
+            "kind": Parameter.KEYWORD_ONLY,
+            "annotation": annotation,
+        }
+        if node.value is not None:
+            snapshot = deepcopy(node.value)
+            default_templates[parameter_name] = snapshot
+            parameter_kwargs["default"] = deepcopy(snapshot)
         try:
-            parameter = Parameter(
-                parameter_name,
-                Parameter.KEYWORD_ONLY,
-                annotation=(
-                    JSON_TYPE_ANNOTATIONS.get(property_type, Any)
-                    if isinstance(property_type, str)
-                    else Any
-                ),
-            )
+            parameter = Parameter(**parameter_kwargs)
         except ValueError as error:
             raise ASTCompilationError(
                 f"Invalid function signature for {program_name}"
@@ -111,6 +119,9 @@ async def compile_tool(
         try:
             bound_args = signature.bind(*args, **kwargs)
             bound_args.apply_defaults()
+            for parameter_name, template in default_templates.items():
+                if parameter_name not in kwargs:
+                    bound_args.arguments[parameter_name] = deepcopy(template)
         except TypeError as error:
             raise TypeError(
                 f"Argument binding failed for {program_name}(): {error}"
