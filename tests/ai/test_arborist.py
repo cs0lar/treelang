@@ -17,6 +17,7 @@ from treelang.ai.arborist import (
 )
 from treelang.ai.capabilities import ModelCapabilities, StructuredOutputSelection
 from treelang.ai.memory import ChatMessage, Memory
+from treelang.ai.prompt import TREE_DESCRIPTOR_SYSTEM_PROMPT
 from treelang.ai.provider import ToolOutput, ToolProvider
 from treelang.ai.responses import TreeDescription
 from treelang.ai.transport import OpenAITransport
@@ -735,6 +736,45 @@ async def test_eval_response_describe_updates_tree():
     assert await response.describe() is tree
     assert (tree.name, tree.description) == ("Answer", "Returns 42")
     assert TreeDescription(name="name", description="description").properties == {}
+
+    request = transport.requests[0]
+    user_prompt = request["messages"][1]["content"]
+    assert "REQUEST:\nquestion" in user_prompt
+    assert "IMPLEMENTATION TREE:" in user_prompt
+    assert "answer" in user_prompt
+
+
+@pytest.mark.asyncio
+async def test_eval_response_describe_uses_request_intent_not_instance_values():
+    tree = TreeProgram(
+        body=[TreeValue(name="supersede_by_name", value="Acme")], mode="single"
+    )
+    transport = FakeTransport(
+        '{"name":"record_a_stage","description":"Records a company stage."}'
+    )
+    response = EvalResponse(
+        query="record that Acme is at the prospect stage",
+        type=EvalType.TREE,
+        content=tree,
+        config=ArboristConfig(model="model"),
+        transport=transport,
+    )
+
+    await response.describe()
+
+    request = transport.requests[0]
+    assert request["messages"][0]["content"] == TREE_DESCRIPTOR_SYSTEM_PROMPT
+    user_prompt = request["messages"][1]["content"]
+    assert "record that Acme is at the prospect stage" in user_prompt
+    assert "supersede_by_name" in user_prompt
+    assert "workflow kind rather than this particular invocation" in (
+        TREE_DESCRIPTOR_SYSTEM_PROMPT
+    )
+    assert "Reflect what the user asked" in TREE_DESCRIPTOR_SYSTEM_PROMPT
+    assert (tree.name, tree.description) == (
+        "record_a_stage",
+        "Records a company stage.",
+    )
 
 
 @pytest.mark.asyncio

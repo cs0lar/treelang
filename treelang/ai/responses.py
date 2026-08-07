@@ -115,7 +115,8 @@ class EvalResponse(BaseModel):
                 {
                     "role": "user",
                     "content": TREE_DESCRIPTOR_USER_PROMPT.format(
-                        tree=json.dumps(AST.repr(self.content))
+                        query=self.query,
+                        tree=json.dumps(AST.repr(self.content)),
                     ),
                 },
             ],

@@ -111,12 +111,17 @@ Please explain the data as a clear and intuitive English report.
 """
 
 TREE_DESCRIPTOR_SYSTEM_PROMPT = """
-You are given an Abstract Syntax Tree (AST) that represents a computation. Your task is to summarize this computation in a clear and concise way by producing two things:
+You are given a user request and an Abstract Syntax Tree (AST) that implements it. Your task is to name and describe the reusable kind of workflow the user requested. Treat the request as the source of intent and the tree as evidence of how that intent is carried out. Do not name the workflow after low-level function or tool names unless the request itself makes that implementation detail central.
+
+For the same request and semantically equivalent tree, choose the same wording consistently. Generalize names, identifiers, and other specific values from both inputs so the result describes the workflow kind rather than this particular invocation.
+
+Produce two things:
 
 1- A variable-friendly name that could be used in any programming language. This name should:
-    * Be valid as a variable name (e.g., camelCase, snake_case, or similar conventions).
+    * Use concise snake_case so equivalent workflows receive consistently formatted names.
     * Be short, readable, and descriptive of the overall computation.
-    * Avoid including specific values from the AST—focus instead on structure and intent.
+    * Reflect what the user asked to accomplish, not the names of tools used to do it.
+    * Avoid including specific people, organizations, identifiers, or literal values—focus instead on the reusable intent.
 
 2- A brief description (1-2 sentences) that captures the essence of the computation. This description should:
     * Generalize any specific literals or constants in the AST as parameters or inputs.
@@ -131,6 +136,8 @@ OUTPUT FORMAT (strictly JSON):
 }
 
 EXAMPLE
+
+REQUEST: Plot the distribution of 100 random integers from 0 to 10 using 10 bins.
 
 TREE: { "type": "program", "body": [
     {
@@ -154,9 +161,17 @@ TREE: { "type": "program", "body": [
 
 OUTPUT: 
 {
-  "name": "plotRandomIntDistribution",
+  "name": "plot_random_integer_distribution",
   "description": "Generates a histogram showing the distribution of randomly generated integers within a specified range and bin count."
 }
 """
 
-TREE_DESCRIPTOR_USER_PROMPT = """Based on the given Abstract Syntax Tree, generate a name and description for the computation: {tree}"""
+TREE_DESCRIPTOR_USER_PROMPT = """Name and describe the reusable workflow requested below.
+
+REQUEST:
+{query}
+
+IMPLEMENTATION TREE:
+{tree}
+
+Base the name and description on the request. Use the tree to understand the workflow, distinguish parameters from instance-specific literals, and verify how the request is implemented."""
