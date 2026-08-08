@@ -114,8 +114,10 @@ been published. The documentation-site and distributed-schema URL correction is
 merged through PR #143, and v1.1.1 has been published. Compiled AST literal
 defaults are merged through PR #152, the `cryptography` 50.0.0 security update
 and branch reconciliation through PRs #153 and #154, and query-intent-based tree
-descriptions through PR #156. Release v1.2.0 is the next planned promotion from
-`dev` to `main`.
+descriptions through PR #156. Release v1.2.0 has been published. Strict
+structured-output schema generation, safe tool-schema fallback, and persistent
+provider-rejection negotiation are fixed through PR #162. Release v1.2.1 is the
+next planned promotion from `dev` to `main`.
 
 Before new work, update `dev` and run:
 
