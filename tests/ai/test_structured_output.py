@@ -3,7 +3,11 @@ from typing import Any
 
 import pytest
 
-from treelang.ai.structured_output import strict_ast_schema, strict_response_format
+from treelang.ai.structured_output import (
+    strict_ast_schema,
+    strict_ast_schema_supported,
+    strict_response_format,
+)
 
 TOOLS = [
     {
@@ -81,3 +85,78 @@ def test_response_format_uses_named_strict_json_schema():
     assert response_format["type"] == "json_schema"
     assert response_format["json_schema"]["name"] == "treelang_ast_v2"
     assert response_format["json_schema"]["strict"] is True
+
+
+OBJECT_TOOLS = [
+    {
+        "name": "commit",
+        "description": "Record a typed literal",
+        "properties": {
+            "object": {
+                "type": "object",
+                "description": "A typed literal.",
+                "properties": {
+                    "kind": {"type": "string", "enum": ["text", "int64"]},
+                    "value": {"description": "Interpreted according to kind."},
+                },
+                "required": ["kind", "value"],
+            }
+        },
+    }
+]
+
+
+@pytest.mark.parametrize("version", ["1.0", "2.0"])
+def test_a_ref_is_left_standing_alone_because_a_sibling_voids_the_schema(version):
+    """The provider rejects the whole document for one stray keyword.
+
+    Pydantic emits the root as `{"$ref": ..., "$defs": ..., "description": ...}`
+    and OpenAI answers `$ref cannot have keywords {'description'}`, so every
+    strict request was refused and silently retried in compatibility mode.
+    """
+    schema = strict_ast_schema(version, TOOLS)
+
+    def refs(value: Any):
+        if isinstance(value, Mapping):
+            if "$ref" in value:
+                yield value
+            for child in value.values():
+                yield from refs(child)
+        elif isinstance(value, list):
+            for child in value:
+                yield from refs(child)
+
+    for reference in refs(schema):
+        assert set(reference) <= {"$ref", "$defs"}, reference
+    # `$defs` has to survive at the root, or every reference is stranded.
+    assert "$defs" in schema
+
+
+def test_tools_taking_an_object_cannot_be_expressed_in_the_strict_subset():
+    """The check that stops a schema the model satisfies and the walk rejects.
+
+    `JsonValue` loses its object alternative in the projection, so a tool with
+    an object-typed parameter can never be given a value -- and that failure
+    surfaces at walk time, which no retry and no provider error can reach.
+    """
+    assert strict_ast_schema_supported(TOOLS)
+    assert not strict_ast_schema_supported(OBJECT_TOOLS)
+    # Reached through a union too: an optional object is still an object.
+    assert not strict_ast_schema_supported(
+        [
+            {
+                "name": "t",
+                "properties": {"x": {"anyOf": [{"type": "null"}, {"type": "object"}]}},
+            }
+        ]
+    )
+    # Reached through a type union too: ToolProperty permits JSON Schema's
+    # array form, and a nullable object remains object-capable.
+    assert not strict_ast_schema_supported(
+        [
+            {
+                "name": "t",
+                "properties": {"x": {"type": ["object", "null"]}},
+            }
+        ]
+    )

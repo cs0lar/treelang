@@ -151,10 +151,16 @@ Current value: `'1.0'`
 **Class** · `treelang.ai.capabilities`
 
 ```python
-DefaultModelCapabilityNegotiator()
+DefaultModelCapabilityNegotiator() -> 'None'
 ```
 
 Conservative capability and structured-output policy.
+
+Stateful in one respect: a provider that rejects the strict schema is not
+asked again for the same model and schema version. Without that, a
+rejection costs a wasted round trip on *every* subsequent request for the
+life of the negotiator -- the fallback is per-request and nothing has ever
+written the answer down.
 
 
 Methods:
@@ -430,7 +436,7 @@ Raised when a provider rejects strict structured-output configuration.
 **Class** · `treelang.ai.capabilities`
 
 ```python
-StructuredOutputSelection(response_format: 'dict[str, Any]', mode: 'SelectedOutputMode', fallback_reason: 'str | None' = None) -> None
+StructuredOutputSelection(response_format: 'dict[str, Any]', mode: 'SelectedOutputMode', fallback_reason: 'str | None' = None, negotiated_for: 'tuple[str, SchemaVersion] | None' = None) -> None
 ```
 
 Negotiated response format and the reason for compatibility fallback.
