@@ -219,3 +219,23 @@ def test_strict_output_is_declined_for_tools_the_subset_cannot_express():
             schema_version="1.0",
             tools=OBJECT_TOOLS,
         )
+
+
+def test_strict_output_is_declined_for_object_type_unions():
+    negotiator = DefaultModelCapabilityNegotiator()
+
+    selection = negotiator.structured_output(
+        ModelCapabilities(strict_json_schema=True),
+        model="model",
+        configured_mode="auto",
+        schema_version="1.0",
+        tools=[
+            {
+                "name": "commit",
+                "properties": {"payload": {"type": ["object", "null"]}},
+            }
+        ],
+    )
+
+    assert selection.mode == "compatibility"
+    assert selection.fallback_reason == "tool_schema_unsupported"

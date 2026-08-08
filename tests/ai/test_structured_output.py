@@ -150,3 +150,13 @@ def test_tools_taking_an_object_cannot_be_expressed_in_the_strict_subset():
             }
         ]
     )
+    # Reached through a type union too: ToolProperty permits JSON Schema's
+    # array form, and a nullable object remains object-capable.
+    assert not strict_ast_schema_supported(
+        [
+            {
+                "name": "t",
+                "properties": {"x": {"type": ["object", "null"]}},
+            }
+        ]
+    )

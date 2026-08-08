@@ -143,7 +143,12 @@ def strict_ast_schema_supported(tools: Sequence[ToolDefinition]) -> bool:
 def _accepts_object(parameter: Any) -> bool:
     if not isinstance(parameter, Mapping):
         return False
-    if parameter.get("type") == "object" or "properties" in parameter:
+    parameter_type = parameter.get("type")
+    if (
+        parameter_type == "object"
+        or (isinstance(parameter_type, list) and "object" in parameter_type)
+        or "properties" in parameter
+    ):
         return True
     nested = [
         *parameter.get("anyOf", []),
