@@ -1,5 +1,24 @@
 # Changelog
 
+## [1.2.1] - 2026-08-08
+
+### Fixed
+
+- Corrected strict JSON Schema generation so references no longer carry
+  provider-rejected sibling keywords, allowing supported OpenAI models to use
+  strict structured output without an unnecessary compatibility retry.
+- Select compatibility output before a request when a tool accepts object
+  parameters that the strict AST projection cannot express, including nullable
+  object type unions.
+- Remember provider rejection of strict output per model and schema version so
+  subsequent requests do not repeat a known-to-fail round trip.
+
+### Compatibility
+
+- Existing structured-output configuration and negotiator method signatures
+  remain unchanged.
+- Schema versions 1.0 and 2.0 remain unchanged.
+
 ## [1.2.0] - 2026-08-07
 
 ### Added
