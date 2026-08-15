@@ -44,6 +44,10 @@ from treelang.schema_artifacts import (
     load_json_schema,
 )
 from treelang.trees.budget import ExecutionLimits
+from treelang.trees.compilation import (
+    CompiledParameterSource,
+    compiled_parameter_sources,
+)
 from treelang.trees.composition import compose_programs
 from treelang.trees.deduplication import deduplicate_pure_tool_calls
 from treelang.trees.grafting import graft_expression, wrap_expression
@@ -93,6 +97,8 @@ __all__ = [
     "BranchOutcome",
     "CapabilityAwareTransport",
     "compose_programs",
+    "CompiledParameterSource",
+    "compiled_parameter_sources",
     "deduplicate_pure_tool_calls",
     "ConservativeTreePruner",
     "CURRENT_SCHEMA_VERSION",

@@ -7,12 +7,25 @@ import mcp.types as types
 
 from treelang.ai.provider import ToolOutput, ToolProvider
 from treelang.exceptions import ASTCompilationError
+from treelang.trees.compilation import compiled_parameter_sources
 from treelang.trees.schemas.v1 import (
     TreeConditional,
     TreeFunction,
     TreeLambda,
     TreeProgram,
     TreeValue,
+)
+from treelang.trees.schemas.v2 import (
+    TreeCall as TreeCallV2,
+)
+from treelang.trees.schemas.v2 import (
+    TreeFunctionDefinition,
+    TreeLiteral,
+    TreeToolCall,
+    TreeVariable,
+)
+from treelang.trees.schemas.v2 import (
+    TreeProgram as TreeProgramV2,
 )
 from treelang.trees.tree import AST
 
@@ -63,6 +76,298 @@ class TestToolMethod(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(callable(tool_function))
         self.assertIn("a", tool_function.__signature__.parameters)
         self.assertIn("b", tool_function.__signature__.parameters)
+
+    async def test_v2_tool_uses_named_literal_arguments_as_defaults(self):
+        program = TreeProgramV2(
+            body=[
+                TreeToolCall(
+                    tool="subtract",
+                    arguments={
+                        "minuend": TreeLiteral(value=10),
+                        "subtrahend": TreeLiteral(value=3),
+                    },
+                )
+            ],
+            name="subtract_values",
+            description="Subtract two values.",
+        )
+        provider = AsyncMock(spec=ToolProvider)
+        provider.get_tool_definition.return_value = {
+            "name": "subtract",
+            "properties": {
+                "minuend": {"type": "integer"},
+                "subtrahend": {"type": "integer"},
+            },
+        }
+        provider.call_tool.side_effect = lambda _, arguments: ToolOutput(
+            content=arguments["minuend"] - arguments["subtrahend"]
+        )
+
+        tool_function = await AST.tool(program, provider)
+
+        self.assertEqual(
+            list(signature(tool_function).parameters), ["minuend", "subtrahend"]
+        )
+        self.assertEqual(await tool_function(), 7)
+        self.assertEqual(await tool_function(subtrahend=4, minuend=20), 16)
+        self.assertEqual(program.body[0].arguments["minuend"].value, 10)
+
+    async def test_v2_root_user_call_uses_definition_parameter_names(self):
+        program = TreeProgramV2(
+            definitions=[
+                TreeFunctionDefinition(
+                    name="identity",
+                    params=["payload"],
+                    body=TreeToolCall(
+                        tool="echo",
+                        arguments={"value": TreeVariable(name="payload")},
+                    ),
+                )
+            ],
+            body=[
+                TreeCallV2(
+                    function="identity",
+                    arguments=[TreeLiteral(value="default")],
+                )
+            ],
+            name="echo_value",
+            description="Echo a value.",
+        )
+        provider = AsyncMock(spec=ToolProvider)
+        provider.get_tool_definition.return_value = {
+            "name": "echo",
+            "properties": {"value": {"type": "string"}},
+        }
+        provider.call_tool.side_effect = lambda _, arguments: ToolOutput(
+            content=arguments["value"]
+        )
+
+        tool_function = await AST.tool(program, provider)
+
+        self.assertEqual(list(signature(tool_function).parameters), ["payload"])
+        self.assertEqual(await tool_function(), "default")
+        self.assertEqual(await tool_function(payload="override"), "override")
+
+    async def test_v2_mutable_literal_default_is_isolated_per_invocation(self):
+        tags_literal = TreeLiteral(value=["a", "b"])
+        program = TreeProgramV2(
+            body=[
+                TreeToolCall(
+                    tool="tag",
+                    arguments={"tags": tags_literal},
+                )
+            ],
+            name="tag_values",
+            description="Tag values.",
+        )
+
+        class MutatingProvider(ToolProvider):
+            async def list_tools(self):
+                return []
+
+            async def get_tool_definition(self, name):
+                return {"name": name, "properties": {"tags": {"type": "array"}}}
+
+            async def call_tool(self, name, arguments):
+                arguments["tags"].append("called")
+                return ToolOutput(content=arguments["tags"])
+
+        tool_function = await AST.tool(program, MutatingProvider())
+
+        self.assertEqual(await tool_function(), ["a", "b", "called"])
+        self.assertEqual(await tool_function(), ["a", "b", "called"])
+        self.assertEqual(tags_literal.value, ["a", "b"])
+
+    async def test_v1_compiled_parameter_sources_preserve_provider_schema(self):
+        provider = AsyncMock(spec=ToolProvider)
+        provider.get_tool_definition.return_value = {
+            "name": "add",
+            "properties": {
+                "a": {"type": "integer", "description": "First value."},
+                "b": {"type": "integer", "description": "Second value."},
+            },
+        }
+
+        tool_function = await AST.tool(self.ast, provider)
+        sources = compiled_parameter_sources(tool_function)
+
+        self.assertEqual(list(sources), list(signature(tool_function).parameters))
+        self.assertEqual(
+            sources["a"],
+            {
+                "argument_name": "a",
+                "tool_name": "add",
+                "function_name": None,
+                "property_schema": {
+                    "type": "integer",
+                    "description": "First value.",
+                },
+            },
+        )
+        self.assertEqual(getattr(tool_function, "__treelang_parameters__"), sources)
+        property_schema = sources["a"]["property_schema"]
+        self.assertIsNotNone(property_schema)
+        assert property_schema is not None
+        property_schema["description"] = "changed"
+        fresh_property_schema = compiled_parameter_sources(tool_function)["a"][
+            "property_schema"
+        ]
+        self.assertIsNotNone(fresh_property_schema)
+        assert fresh_property_schema is not None
+        self.assertEqual(
+            fresh_property_schema["description"],
+            "First value.",
+        )
+
+    async def test_v1_values_after_sibling_nested_calls_restore_enclosing_tool(self):
+        ast = TreeProgram(
+            body=[
+                TreeFunction(
+                    name="merge_entities",
+                    params=[
+                        TreeFunction(
+                            name="find_entity",
+                            params=[TreeValue(name="name", value="Acme")],
+                        ),
+                        TreeFunction(
+                            name="intern_entity",
+                            params=[TreeValue(name="name", value="Acme Corporation")],
+                        ),
+                        TreeValue(name="merged_at", value=1_700_000_000),
+                    ],
+                )
+            ],
+            mode="single",
+            name="merge_entities_workflow",
+            description="Merge two entities.",
+        )
+        definitions = {
+            "find_entity": {
+                "name": "find_entity",
+                "properties": {"name": {"type": "string"}},
+            },
+            "intern_entity": {
+                "name": "intern_entity",
+                "properties": {"name": {"type": "string"}},
+            },
+            "merge_entities": {
+                "name": "merge_entities",
+                "properties": {
+                    "absorb": {"type": "integer"},
+                    "keep": {"type": "integer"},
+                    "merged_at": {"type": "integer", "description": "When."},
+                },
+            },
+        }
+        provider = AsyncMock(spec=ToolProvider)
+        provider.get_tool_definition.side_effect = definitions.__getitem__
+
+        tool_function = await AST.tool(ast, provider)
+        sources = compiled_parameter_sources(tool_function)
+
+        self.assertEqual(
+            list(signature(tool_function).parameters),
+            ["name", "name_2", "merged_at"],
+        )
+        self.assertEqual(sources["name"]["tool_name"], "find_entity")
+        self.assertEqual(sources["name_2"]["tool_name"], "intern_entity")
+        self.assertEqual(sources["merged_at"]["tool_name"], "merge_entities")
+        self.assertEqual(
+            sources["merged_at"]["property_schema"],
+            {"type": "integer", "description": "When."},
+        )
+
+    async def test_v1_unknown_value_parameter_has_contextual_compilation_error(self):
+        ast = TreeProgram(
+            body=[
+                TreeFunction(
+                    name="add",
+                    params=[TreeValue(name="unknown", value=1)],
+                )
+            ],
+            mode="single",
+            name="invalid_tool",
+            description="Invalid tool.",
+        )
+        provider = AsyncMock(spec=ToolProvider)
+        provider.get_tool_definition.return_value = {
+            "name": "add",
+            "properties": {"a": {"type": "integer"}},
+        }
+
+        with self.assertRaisesRegex(
+            ASTCompilationError,
+            "Value 'unknown' does not name a parameter of any enclosing tool",
+        ):
+            await AST.tool(ast, provider)
+
+    async def test_v2_parameter_sources_match_compiler_filter_and_order(self):
+        program = TreeProgramV2(
+            definitions=[
+                TreeFunctionDefinition(
+                    name="helper",
+                    params=["unused"],
+                    body=TreeToolCall(
+                        tool="intern_entity",
+                        arguments={"name": TreeLiteral(value="inside_definition")},
+                    ),
+                )
+            ],
+            body=[
+                TreeLiteral(value="never_a_parameter"),
+                TreeToolCall(
+                    tool="intern_entity",
+                    arguments={"name": TreeLiteral(value="in_body")},
+                ),
+                TreeCallV2(
+                    function="helper",
+                    arguments=[TreeLiteral(value="at_call_site")],
+                ),
+            ],
+            name="intern_entities",
+            description="Intern entities.",
+        )
+        provider = AsyncMock(spec=ToolProvider)
+        provider.get_tool_definition.return_value = {
+            "name": "intern_entity",
+            "properties": {"name": {"type": "string", "description": "Entity name."}},
+        }
+
+        tool_function = await AST.tool(program, provider)
+        sources = compiled_parameter_sources(tool_function)
+
+        self.assertEqual(
+            list(sources),
+            ["name", "unused", "name_2"],
+        )
+        self.assertEqual(list(sources), list(signature(tool_function).parameters))
+        self.assertEqual(
+            sources["name"],
+            {
+                "argument_name": "name",
+                "tool_name": "intern_entity",
+                "function_name": None,
+                "property_schema": {
+                    "type": "string",
+                    "description": "Entity name.",
+                },
+            },
+        )
+        self.assertEqual(
+            sources["unused"],
+            {
+                "argument_name": "unused",
+                "tool_name": None,
+                "function_name": "helper",
+                "property_schema": None,
+            },
+        )
+        self.assertEqual(sources["name_2"]["tool_name"], "intern_entity")
+        self.assertEqual(sources["name_2"]["argument_name"], "name")
+
+    def test_parameter_sources_reject_non_treelang_callable(self):
+        with self.assertRaisesRegex(ValueError, "no Treelang compiled parameter"):
+            compiled_parameter_sources(lambda: None)
 
     async def test_duplicate_parameters_are_stable_without_mutating_ast(self):
         ast = TreeProgram(

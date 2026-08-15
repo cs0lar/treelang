@@ -2,8 +2,9 @@
 
 Treelang schema version 2 is an opt-in preview. It supports declared user
 functions, lexical parameters, user calls, external tool calls, literals, and
-lazy conditionals. Version 1 remains the current root API and the default format
-produced by `OpenAIArborist`.
+lazy conditionals. Version 1 remains the default format produced by
+`OpenAIArborist`; root `AST` helpers dispatch explicit version 2 programs to the
+v2 implementation.
 
 To opt into model generation, select schema version 2 and provide mandatory
 runtime limits before using `WALK`:
@@ -113,5 +114,50 @@ All limits and counters are shared across the program invocation.
 
 The version 2 interpreter uses explicit frames rather than Python recursion, but
 recursive programs should always configure call-depth, node, tool-call, and
-wall-clock limits. Compilation into tools, traversal helpers, tree descriptions,
-and the stable root API do not support version 2 yet.
+wall-clock limits.
+
+## Parse, traverse, compile, and describe
+
+`AST.parse()` detects an explicit `schema_version: "2.0"`; `AST.repr()`,
+`AST.eval()`, `AST.visit()`, `AST.avisit()`, and `AST.tool()` then accept the
+validated v2 program. `EvalResponse.describe()` returns a new described program
+because v2 models are immutable, and also replaces `response.content` with that
+new value. The original program is never mutated.
+
+V2 compilation preserves closed lexical scope: literals are constants, not free
+variables. A literal occupying a named external-tool argument becomes an
+overridable keyword-only default using that argument name. A literal passed
+directly to a user function uses the corresponding declared parameter name.
+Nested computations expose their own named argument slots, while literals in
+unnamed positions remain constants. Duplicate names receive stable `_2`, `_3`,
+and subsequent suffixes. Mutable defaults are deep-copied for every invocation.
+
+```python
+program = AST.parse(program_json)
+compiled = await AST.tool(program, provider, limits=limits)
+
+# Uses the literal embedded in the saved program.
+default_result = await compiled()
+
+# Overrides a named root user-function argument without changing the program.
+custom_result = await compiled(n=25)
+```
+
+Consumers advertising the compiled callable as another tool can obtain the
+compiler-authoritative parameter mapping without repeating its traversal:
+
+```python
+from treelang import compiled_parameter_sources
+
+sources = compiled_parameter_sources(compiled)
+name_schema = sources["name"]["property_schema"]
+```
+
+The mapping order exactly matches `inspect.signature(compiled).parameters`.
+Each entry records `argument_name`, `tool_name`, `function_name`, and a copied
+`property_schema`. Direct provider-tool arguments retain their full property
+schema, including descriptions and constraints. User-function arguments have a
+`function_name` and `property_schema=None` unless a future compiler can prove a
+provider property origin. The callable also carries the same mapping on
+`__treelang_parameters__`; the accessor is preferred because it returns an
+isolated deep copy.

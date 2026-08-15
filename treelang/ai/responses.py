@@ -22,6 +22,7 @@ from treelang.ai.transport import (
 )
 from treelang.observability import Observability
 from treelang.trees.schemas.v1 import TreeNode, TreeProgram
+from treelang.trees.schemas.v2 import TreeProgram as TreeProgramV2
 from treelang.trees.tree import AST
 
 
@@ -99,12 +100,12 @@ class EvalResponse(BaseModel):
         ):
             yield content.encode()
 
-    async def describe(self) -> TreeNode:
+    async def describe(self) -> TreeNode | TreeProgramV2:
         if self.type == EvalType.WALK:
             raise ValueError("Only tree responses can be described.")
         if not self.content:
             raise ValueError("No JSON representation of the tree available.")
-        if not isinstance(self.content, TreeProgram):
+        if not isinstance(self.content, (TreeProgram, TreeProgramV2)):
             raise ValueError("Only TreeProgram instances can be described.")
 
         config, transport = self._runtime()
@@ -126,6 +127,15 @@ class EvalResponse(BaseModel):
             transport, request, config.timeout, self.observability
         )
         description = TreeDescription.model_validate_json(content)
+        if isinstance(self.content, TreeProgramV2):
+            described = self.content.model_copy(
+                update={
+                    "name": description.name,
+                    "description": description.description,
+                }
+            )
+            self.content = described
+            return described
         self.content.name = description.name
         self.content.description = description.description
         return self.content

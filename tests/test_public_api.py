@@ -14,6 +14,8 @@ def test_public_api_exports_core_types():
     assert treelang.prune_tree is not None
     assert treelang.graft_expression is not None
     assert treelang.compose_programs is not None
+    assert treelang.CompiledParameterSource is not None
+    assert treelang.compiled_parameter_sources is not None
     assert treelang.TreePruner is not None
     assert treelang.TreeGrower is not None
     assert treelang.AsyncTreeGrower is not None
