@@ -7,6 +7,7 @@ import mcp.types as types
 
 from treelang.ai.provider import ToolOutput, ToolProvider
 from treelang.exceptions import ASTCompilationError
+from treelang.trees.compilation import compiled_parameter_sources
 from treelang.trees.schemas.v1 import (
     TreeConditional,
     TreeFunction,
@@ -176,6 +177,115 @@ class TestToolMethod(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(await tool_function(), ["a", "b", "called"])
         self.assertEqual(await tool_function(), ["a", "b", "called"])
         self.assertEqual(tags_literal.value, ["a", "b"])
+
+    async def test_v1_compiled_parameter_sources_preserve_provider_schema(self):
+        provider = AsyncMock(spec=ToolProvider)
+        provider.get_tool_definition.return_value = {
+            "name": "add",
+            "properties": {
+                "a": {"type": "integer", "description": "First value."},
+                "b": {"type": "integer", "description": "Second value."},
+            },
+        }
+
+        tool_function = await AST.tool(self.ast, provider)
+        sources = compiled_parameter_sources(tool_function)
+
+        self.assertEqual(list(sources), list(signature(tool_function).parameters))
+        self.assertEqual(
+            sources["a"],
+            {
+                "argument_name": "a",
+                "tool_name": "add",
+                "function_name": None,
+                "property_schema": {
+                    "type": "integer",
+                    "description": "First value.",
+                },
+            },
+        )
+        self.assertEqual(getattr(tool_function, "__treelang_parameters__"), sources)
+        property_schema = sources["a"]["property_schema"]
+        self.assertIsNotNone(property_schema)
+        assert property_schema is not None
+        property_schema["description"] = "changed"
+        fresh_property_schema = compiled_parameter_sources(tool_function)["a"][
+            "property_schema"
+        ]
+        self.assertIsNotNone(fresh_property_schema)
+        assert fresh_property_schema is not None
+        self.assertEqual(
+            fresh_property_schema["description"],
+            "First value.",
+        )
+
+    async def test_v2_parameter_sources_match_compiler_filter_and_order(self):
+        program = TreeProgramV2(
+            definitions=[
+                TreeFunctionDefinition(
+                    name="helper",
+                    params=["unused"],
+                    body=TreeToolCall(
+                        tool="intern_entity",
+                        arguments={"name": TreeLiteral(value="inside_definition")},
+                    ),
+                )
+            ],
+            body=[
+                TreeLiteral(value="never_a_parameter"),
+                TreeToolCall(
+                    tool="intern_entity",
+                    arguments={"name": TreeLiteral(value="in_body")},
+                ),
+                TreeCallV2(
+                    function="helper",
+                    arguments=[TreeLiteral(value="at_call_site")],
+                ),
+            ],
+            name="intern_entities",
+            description="Intern entities.",
+        )
+        provider = AsyncMock(spec=ToolProvider)
+        provider.get_tool_definition.return_value = {
+            "name": "intern_entity",
+            "properties": {"name": {"type": "string", "description": "Entity name."}},
+        }
+
+        tool_function = await AST.tool(program, provider)
+        sources = compiled_parameter_sources(tool_function)
+
+        self.assertEqual(
+            list(sources),
+            ["name", "unused", "name_2"],
+        )
+        self.assertEqual(list(sources), list(signature(tool_function).parameters))
+        self.assertEqual(
+            sources["name"],
+            {
+                "argument_name": "name",
+                "tool_name": "intern_entity",
+                "function_name": None,
+                "property_schema": {
+                    "type": "string",
+                    "description": "Entity name.",
+                },
+            },
+        )
+        self.assertEqual(
+            sources["unused"],
+            {
+                "argument_name": "unused",
+                "tool_name": None,
+                "function_name": "helper",
+                "property_schema": None,
+            },
+        )
+        self.assertEqual(sources["name_2"]["tool_name"], "intern_entity")
+        self.assertEqual(sources["name_2"]["argument_name"], "name")
+
+    def test_parameter_sources_reject_non_treelang_callable(self):
+        with self.assertRaisesRegex(ValueError, "no Treelang compiled parameter"):
+            compiled_parameter_sources(lambda: None)
 
     async def test_duplicate_parameters_are_stable_without_mutating_ast(self):
         ast = TreeProgram(
