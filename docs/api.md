@@ -16,12 +16,12 @@ Represents an Abstract Syntax Tree (AST) for a very simple programming language.
 
 Methods:
 
-- `parse(cls, ast: Union[Dict[str, Any], List[Dict[str, Any]]]) -> treelang.trees.schemas.v1.TreeNode | list[treelang.trees.schemas.v1.TreeNode]` — Parses the given dictionary or list into a TreeNode.
-- `eval(cls, ast: treelang.trees.schemas.v1.TreeNode, provider: treelang.ai.provider.ToolProvider, *, limits: treelang.trees.budget.ExecutionLimits | None = None, policy: treelang.trees.policy.ExecutionPolicy | None = None) -> Any` — Evaluates the given AST.
-- `visit(cls, ast: treelang.trees.schemas.v1.TreeNode, op: collections.abc.Callable[[treelang.trees.schemas.v1.TreeNode], None]) -> None` — Performs a depth-first visit of the AST and applies the given operation to each node.
-- `avisit(cls, ast: treelang.trees.schemas.v1.TreeNode, op: collections.abc.Callable[[treelang.trees.schemas.v1.TreeNode], None]) -> None` — Performs an asynchronous depth-first visit of the AST and applies the given operation to each node.
-- `repr(cls, ast: treelang.trees.schemas.v1.TreeNode) -> str` — Returns a string representation of the AST.
-- `tool(ast: treelang.trees.schemas.v1.TreeNode, provider: treelang.ai.provider.ToolProvider, *, limits: treelang.trees.budget.ExecutionLimits | None = None, policy: treelang.trees.policy.ExecutionPolicy | None = None) -> collections.abc.Callable[..., typing.Any]` — Converts the given AST into a callable function that can be added as a tool.
+- `parse(cls, ast: Union[Dict[str, Any], List[Dict[str, Any]]]) -> SupportedTree | list[SupportedTree]` — Parses the given dictionary or list into a TreeNode.
+- `eval(cls, ast: SupportedTree, provider: treelang.ai.provider.ToolProvider, *, limits: treelang.trees.budget.ExecutionLimits | None = None, policy: treelang.trees.policy.ExecutionPolicy | None = None) -> Any` — Evaluates the given AST.
+- `visit(cls, ast: TraversableNode, op: collections.abc.Callable[[TraversableNode], None] | collections.abc.Callable[[treelang.trees.schemas.v1.TreeNode], None] | collections.abc.Callable[[TreeNodeV2], None]) -> None` — Performs a depth-first visit of the AST and applies the given operation to each node.
+- `avisit(cls, ast: TraversableNode, op: collections.abc.Callable[[TraversableNode], None] | collections.abc.Callable[[treelang.trees.schemas.v1.TreeNode], None] | collections.abc.Callable[[TreeNodeV2], None] | collections.abc.Callable[[TraversableNode], collections.abc.Awaitable[None]] | collections.abc.Callable[[treelang.trees.schemas.v1.TreeNode], collections.abc.Awaitable[None]] | collections.abc.Callable[[TreeNodeV2], collections.abc.Awaitable[None]]) -> None` — Performs an asynchronous depth-first visit of the AST and applies the given operation to each node.
+- `repr(cls, ast: SupportedTree) -> str` — Returns a string representation of the AST.
+- `tool(ast: SupportedTree, provider: treelang.ai.provider.ToolProvider, *, limits: treelang.trees.budget.ExecutionLimits | None = None, policy: treelang.trees.policy.ExecutionPolicy | None = None) -> collections.abc.Callable[..., typing.Any]` — Converts the given AST into a callable function that can be added as a tool.
 
 ## `ASTCompilationError`
 

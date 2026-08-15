@@ -74,6 +74,7 @@ class _Interpreter:
         provider: ToolProvider,
         budget: ExecutionBudget,
         policy: ExecutionPolicy,
+        literal_bindings: Mapping[int, Any] | None = None,
     ) -> None:
         self.definitions = {
             definition.name: definition for definition in program.definitions
@@ -81,6 +82,7 @@ class _Interpreter:
         self.provider = provider
         self.budget = budget
         self.policy = policy
+        self.literal_bindings = literal_bindings or {}
         self.memo: dict[str, Any] = {}
         self.memo_locks: dict[str, asyncio.Lock] = {}
 
@@ -110,7 +112,7 @@ class _Interpreter:
                 self.budget.consume_node(frame.depth)
                 node = frame.expression
                 if isinstance(node, TreeLiteral):
-                    values.append(node.value)
+                    values.append(self.literal_bindings.get(id(node), node.value))
                 elif isinstance(node, TreeVariable):
                     values.append(frame.bindings[node.name])
                 elif isinstance(node, TreeConditional):
@@ -280,13 +282,21 @@ async def execute_v2(
     *,
     limits: ExecutionLimits | None = None,
     policy: ExecutionPolicy | None = None,
+    literal_bindings: Mapping[int, Any] | None = None,
 ) -> Any:
-    """Validate and execute a version 2 program with one shared budget."""
+    """Validate and execute a version 2 program with one shared budget.
+
+    ``literal_bindings`` provides per-invocation literal overrides for compiled
+    tools. It is keyed by node identity so the immutable source program is never
+    changed or shared invocation state introduced.
+    """
     program = ast.root if isinstance(ast, AST) else AST(root=ast).root
     budget = ExecutionBudget(limits or ExecutionLimits())
     execution_policy = policy or ExecutionPolicy()
     budget.consume_node(1)
-    interpreter = _Interpreter(program, provider, budget, execution_policy)
+    interpreter = _Interpreter(
+        program, provider, budget, execution_policy, literal_bindings
+    )
 
     async def run() -> Any:
         operations = [
