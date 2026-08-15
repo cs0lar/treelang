@@ -51,9 +51,10 @@ budgets remain shared across the complete invocation. Recursive execution must
 not ship until call depth is enforceable.
 
 Version 2 execution is available through the opt-in
-`treelang.trees.execution_v2.execute_v2` API. It is not accepted by
-`treelang.AST.parse` or `treelang.AST.eval`, sent to model providers, or exported
-as the current root API.
+`treelang.trees.execution_v2.execute_v2` API and through `treelang.AST` when a
+program explicitly declares `schema_version: "2.0"`. Parsing, representation,
+evaluation, traversal, and callable compilation dispatch by the typed program
+version; model generation remains an explicit Arborist configuration choice.
 
 ## Consequences
 

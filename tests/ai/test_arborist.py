@@ -745,6 +745,32 @@ async def test_eval_response_describe_updates_tree():
 
 
 @pytest.mark.asyncio
+async def test_eval_response_describe_returns_updated_immutable_v2_tree():
+    tree = TreeProgramV2(
+        body=[{"type": "literal", "value": 42}],
+        mode="single",
+    )
+    transport = FakeTransport('{"name":"answer","description":"Returns 42"}')
+    response = EvalResponse(
+        query="return the answer",
+        type=EvalType.TREE,
+        content=tree,
+        config=ArboristConfig(model="model", schema_version="2.0"),
+        transport=transport,
+    )
+
+    described = await response.describe()
+
+    assert isinstance(described, TreeProgramV2)
+    assert described is response.content
+    assert (described.name, described.description) == ("answer", "Returns 42")
+    assert (tree.name, tree.description) == (None, None)
+    user_prompt = transport.requests[0]["messages"][1]["content"]
+    assert "schema_version" in user_prompt
+    assert "2.0" in user_prompt
+
+
+@pytest.mark.asyncio
 async def test_eval_response_describe_uses_request_intent_not_instance_values():
     tree = TreeProgram(
         body=[TreeValue(name="supersede_by_name", value="Acme")], mode="single"

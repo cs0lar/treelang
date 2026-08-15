@@ -17,6 +17,18 @@ from treelang.trees.schemas.v1 import (
     TreeReduce,
     TreeValue,
 )
+from treelang.trees.schemas.v2 import (
+    TreeCall as TreeCallV2,
+)
+from treelang.trees.schemas.v2 import (
+    TreeFunctionDefinition,
+    TreeLiteral,
+    TreeToolCall,
+    TreeVariable,
+)
+from treelang.trees.schemas.v2 import (
+    TreeProgram as TreeProgramV2,
+)
 from treelang.trees.tree import AST
 
 
@@ -50,6 +62,58 @@ class TestAST(unittest.TestCase):
         ast_dict = {"type": "program", "body": [], "mode": "single"}
         result = AST.parse(ast_dict)
         self.assertIsInstance(result, TreeProgram)
+
+    def test_parse_repr_and_visit_v2_program(self):
+        payload = {
+            "type": "program",
+            "schema_version": "2.0",
+            "mode": "single",
+            "definitions": [
+                {
+                    "type": "function_definition",
+                    "name": "increment",
+                    "params": ["value"],
+                    "body": {
+                        "type": "tool_call",
+                        "tool": "add",
+                        "arguments": {
+                            "a": {"type": "variable", "name": "value"},
+                            "b": {"type": "literal", "value": 1},
+                        },
+                    },
+                }
+            ],
+            "body": [
+                {
+                    "type": "call",
+                    "function": "increment",
+                    "arguments": [{"type": "literal", "value": 4}],
+                }
+            ],
+            "name": "increment_value",
+            "description": "Increment a value.",
+        }
+
+        program = AST.parse(payload)
+
+        self.assertIsInstance(program, TreeProgramV2)
+        self.assertEqual(AST.parse(program.model_dump(mode="json")), program)
+        self.assertEqual(AST.repr(program), program.model_dump_json(indent=2))
+
+        visited = []
+        AST.visit(program, visited.append)
+        self.assertEqual(
+            [type(node) for node in visited],
+            [
+                TreeProgramV2,
+                TreeFunctionDefinition,
+                TreeToolCall,
+                TreeVariable,
+                TreeLiteral,
+                TreeCallV2,
+                TreeLiteral,
+            ],
+        )
 
     def test_contextual_tool_arity_validation(self):
         ast = {
@@ -756,3 +820,35 @@ class TestAST(unittest.TestCase):
         op.assert_any_call(function)
         op.assert_any_call(iterable)
         self.assertEqual(op.call_count, 6)
+
+
+class TestASTV2Async(unittest.IsolatedAsyncioTestCase):
+    async def test_avisit_walks_v2_nodes_depth_first(self):
+        program = TreeProgramV2(
+            body=[TreeToolCall(tool="echo", arguments={"value": TreeLiteral(value=1)})]
+        )
+        visited = []
+
+        async def collect(node):
+            visited.append(node)
+
+        await AST.avisit(program, collect)
+
+        self.assertEqual(
+            [type(node) for node in visited],
+            [TreeProgramV2, TreeToolCall, TreeLiteral],
+        )
+
+    async def test_eval_dispatches_v2_program(self):
+        program = TreeProgramV2(
+            body=[TreeToolCall(tool="echo", arguments={"value": TreeLiteral(value=1)})]
+        )
+        provider = AsyncMock(spec=ToolProvider)
+        provider.get_tool_definition.return_value = {
+            "name": "echo",
+            "properties": {"value": {"type": "integer"}},
+        }
+        provider.call_tool.return_value = ToolOutput(content=1)
+
+        self.assertEqual(await AST.eval(program, provider), 1)
+        provider.call_tool.assert_awaited_once_with("echo", {"value": 1})
