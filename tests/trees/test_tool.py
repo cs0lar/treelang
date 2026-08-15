@@ -219,6 +219,88 @@ class TestToolMethod(unittest.IsolatedAsyncioTestCase):
             "First value.",
         )
 
+    async def test_v1_values_after_sibling_nested_calls_restore_enclosing_tool(self):
+        ast = TreeProgram(
+            body=[
+                TreeFunction(
+                    name="merge_entities",
+                    params=[
+                        TreeFunction(
+                            name="find_entity",
+                            params=[TreeValue(name="name", value="Acme")],
+                        ),
+                        TreeFunction(
+                            name="intern_entity",
+                            params=[TreeValue(name="name", value="Acme Corporation")],
+                        ),
+                        TreeValue(name="merged_at", value=1_700_000_000),
+                    ],
+                )
+            ],
+            mode="single",
+            name="merge_entities_workflow",
+            description="Merge two entities.",
+        )
+        definitions = {
+            "find_entity": {
+                "name": "find_entity",
+                "properties": {"name": {"type": "string"}},
+            },
+            "intern_entity": {
+                "name": "intern_entity",
+                "properties": {"name": {"type": "string"}},
+            },
+            "merge_entities": {
+                "name": "merge_entities",
+                "properties": {
+                    "absorb": {"type": "integer"},
+                    "keep": {"type": "integer"},
+                    "merged_at": {"type": "integer", "description": "When."},
+                },
+            },
+        }
+        provider = AsyncMock(spec=ToolProvider)
+        provider.get_tool_definition.side_effect = definitions.__getitem__
+
+        tool_function = await AST.tool(ast, provider)
+        sources = compiled_parameter_sources(tool_function)
+
+        self.assertEqual(
+            list(signature(tool_function).parameters),
+            ["name", "name_2", "merged_at"],
+        )
+        self.assertEqual(sources["name"]["tool_name"], "find_entity")
+        self.assertEqual(sources["name_2"]["tool_name"], "intern_entity")
+        self.assertEqual(sources["merged_at"]["tool_name"], "merge_entities")
+        self.assertEqual(
+            sources["merged_at"]["property_schema"],
+            {"type": "integer", "description": "When."},
+        )
+
+    async def test_v1_unknown_value_parameter_has_contextual_compilation_error(self):
+        ast = TreeProgram(
+            body=[
+                TreeFunction(
+                    name="add",
+                    params=[TreeValue(name="unknown", value=1)],
+                )
+            ],
+            mode="single",
+            name="invalid_tool",
+            description="Invalid tool.",
+        )
+        provider = AsyncMock(spec=ToolProvider)
+        provider.get_tool_definition.return_value = {
+            "name": "add",
+            "properties": {"a": {"type": "integer"}},
+        }
+
+        with self.assertRaisesRegex(
+            ASTCompilationError,
+            "Value 'unknown' does not name a parameter of any enclosing tool",
+        ):
+            await AST.tool(ast, provider)
+
     async def test_v2_parameter_sources_match_compiler_filter_and_order(self):
         program = TreeProgramV2(
             definitions=[

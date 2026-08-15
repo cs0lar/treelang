@@ -109,8 +109,7 @@ async def _compile_v1_tool(
     parameters: list[Parameter] = []
     bindings: list[tuple[str, TreeValue]] = []
     default_templates: dict[str, Any] = {}
-    property_stack: list[dict[str, Any]] = []
-    tool_stack: list[str] = []
+    tool_stack: list[tuple[str, dict[str, Any]]] = []
     argument_names: list[str] = []
     parameter_sources: dict[str, CompiledParameterSource] = {}
 
@@ -126,24 +125,26 @@ async def _compile_v1_tool(
                 await provider.get_tool_definition(node.name), expected_name=node.name
             )
             properties = definition["properties"]
-            property_stack.append(properties)
-            tool_stack.append(node.name)
+            tool_stack.append((node.name, properties))
 
         if not isinstance(node, TreeValue):
             return
 
-        if node.name not in property_stack[-1]:
-            property_stack.pop()
+        while len(tool_stack) > 1 and node.name not in tool_stack[-1][1]:
             tool_stack.pop()
+        if not tool_stack or node.name not in tool_stack[-1][1]:
+            raise ASTCompilationError(
+                f"Value '{node.name}' does not name a parameter of any enclosing tool"
+            )
 
-        properties = property_stack[-1]
+        tool_name, properties = tool_stack[-1]
         parameter_name = _unique_name(node.name, argument_names)
         property_type = properties[node.name].get("type")
         argument_names.append(parameter_name)
         bindings.append((parameter_name, node))
         parameter_sources[parameter_name] = {
             "argument_name": node.name,
-            "tool_name": tool_stack[-1],
+            "tool_name": tool_name,
             "function_name": None,
             "property_schema": deepcopy(dict(properties[node.name])),
         }
