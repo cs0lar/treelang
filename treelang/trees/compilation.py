@@ -3,7 +3,7 @@
 from collections.abc import Awaitable, Callable
 from copy import deepcopy
 from inspect import Parameter, Signature
-from typing import Any
+from typing import Any, TypedDict
 
 from treelang.ai.provider import ToolProvider
 from treelang.ai.tool import normalize_tool_definition
@@ -41,6 +41,18 @@ from treelang.trees.traversal import avisit
 
 CompiledTool = Callable[..., Awaitable[Any]]
 
+
+class CompiledParameterSource(TypedDict):
+    """Origin metadata for one parameter on a compiled Treelang callable."""
+
+    argument_name: str
+    tool_name: str | None
+    function_name: str | None
+    property_schema: dict[str, Any] | None
+
+
+_PARAMETER_SOURCES_ATTRIBUTE = "__treelang_parameters__"
+
 JSON_TYPE_ANNOTATIONS: dict[str, object] = {
     "string": str,
     "integer": int,
@@ -49,6 +61,21 @@ JSON_TYPE_ANNOTATIONS: dict[str, object] = {
     "array": list,
     "object": dict,
 }
+
+
+def compiled_parameter_sources(
+    compiled: Callable[..., Any],
+) -> dict[str, CompiledParameterSource]:
+    """Return an isolated parameter-to-origin mapping for a compiled tool.
+
+    Raises:
+        ValueError: If ``compiled`` was not created by a supporting Treelang
+            compiler.
+    """
+    sources = getattr(compiled, _PARAMETER_SOURCES_ATTRIBUTE, None)
+    if not isinstance(sources, dict):
+        raise ValueError("Callable has no Treelang compiled parameter metadata")
+    return deepcopy(sources)
 
 
 async def compile_tool(
@@ -83,7 +110,9 @@ async def _compile_v1_tool(
     bindings: list[tuple[str, TreeValue]] = []
     default_templates: dict[str, Any] = {}
     property_stack: list[dict[str, Any]] = []
+    tool_stack: list[str] = []
     argument_names: list[str] = []
+    parameter_sources: dict[str, CompiledParameterSource] = {}
 
     async def collect_parameter(node: TreeNode) -> None:
         if isinstance(node, (TreeLambda, TreeMap)):
@@ -98,18 +127,26 @@ async def _compile_v1_tool(
             )
             properties = definition["properties"]
             property_stack.append(properties)
+            tool_stack.append(node.name)
 
         if not isinstance(node, TreeValue):
             return
 
         if node.name not in property_stack[-1]:
             property_stack.pop()
+            tool_stack.pop()
 
         properties = property_stack[-1]
         parameter_name = _unique_name(node.name, argument_names)
         property_type = properties[node.name].get("type")
         argument_names.append(parameter_name)
         bindings.append((parameter_name, node))
+        parameter_sources[parameter_name] = {
+            "argument_name": node.name,
+            "tool_name": tool_stack[-1],
+            "function_name": None,
+            "property_schema": deepcopy(dict(properties[node.name])),
+        }
         annotation = (
             JSON_TYPE_ANNOTATIONS.get(property_type, Any)
             if isinstance(property_type, str)
@@ -171,6 +208,7 @@ async def _compile_v1_tool(
     wrapper.__name__ = program_name
     wrapper.__doc__ = program_description
     setattr(wrapper, "__signature__", signature)
+    setattr(wrapper, _PARAMETER_SOURCES_ATTRIBUTE, deepcopy(parameter_sources))
     return wrapper
 
 
@@ -194,6 +232,7 @@ async def _compile_v2_tool(
     collected_literals: set[int] = set()
     definitions = {definition.name: definition for definition in ast.definitions}
     tool_properties: dict[str, dict[str, Any]] = {}
+    parameter_sources: dict[str, CompiledParameterSource] = {}
 
     async def properties_for(tool_name: str) -> dict[str, Any]:
         properties = tool_properties.get(tool_name)
@@ -207,7 +246,12 @@ async def _compile_v2_tool(
         return properties
 
     def add_parameter(
-        name: str, literal: TreeLiteral, property_metadata: dict[str, Any] | None
+        name: str,
+        literal: TreeLiteral,
+        property_metadata: dict[str, Any] | None,
+        *,
+        tool_name: str | None,
+        function_name: str | None,
     ) -> None:
         if id(literal) in collected_literals:
             return
@@ -237,16 +281,30 @@ async def _compile_v2_tool(
         parameters.append(parameter)
         bindings.append((parameter_name, literal))
         default_templates[parameter_name] = snapshot
+        parameter_sources[parameter_name] = {
+            "argument_name": name,
+            "tool_name": tool_name,
+            "function_name": function_name,
+            "property_schema": deepcopy(property_metadata),
+        }
 
     async def collect_expression(
         expression: Expression,
         *,
         slot_name: str | None = None,
         property_metadata: dict[str, Any] | None = None,
+        tool_name: str | None = None,
+        function_name: str | None = None,
     ) -> None:
         if isinstance(expression, TreeLiteral):
             if slot_name is not None:
-                add_parameter(slot_name, expression, property_metadata)
+                add_parameter(
+                    slot_name,
+                    expression,
+                    property_metadata,
+                    tool_name=tool_name,
+                    function_name=function_name,
+                )
             return
         if isinstance(expression, TreeToolCall):
             properties = await properties_for(expression.tool)
@@ -255,6 +313,7 @@ async def _compile_v2_tool(
                     argument,
                     slot_name=name,
                     property_metadata=properties.get(name),
+                    tool_name=expression.tool,
                 )
             return
         if isinstance(expression, TreeCall):
@@ -262,7 +321,11 @@ async def _compile_v2_tool(
             for name, argument in zip(
                 definition.params, expression.arguments, strict=True
             ):
-                await collect_expression(argument, slot_name=name)
+                await collect_expression(
+                    argument,
+                    slot_name=name,
+                    function_name=expression.function,
+                )
             return
         if isinstance(expression, TreeConditionalV2):
             await collect_expression(expression.condition)
@@ -320,6 +383,7 @@ async def _compile_v2_tool(
     wrapper.__name__ = program_name
     wrapper.__doc__ = ast.description
     setattr(wrapper, "__signature__", signature)
+    setattr(wrapper, _PARAMETER_SOURCES_ATTRIBUTE, deepcopy(parameter_sources))
     return wrapper
 
 
@@ -330,3 +394,11 @@ def _unique_name(name: str, existing_names: list[str]) -> str:
         candidate = f"{name}_{suffix}"
         suffix += 1
     return candidate
+
+
+__all__ = [
+    "CompiledParameterSource",
+    "CompiledTool",
+    "compile_tool",
+    "compiled_parameter_sources",
+]

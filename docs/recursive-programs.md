@@ -142,3 +142,22 @@ default_result = await compiled()
 # Overrides a named root user-function argument without changing the program.
 custom_result = await compiled(n=25)
 ```
+
+Consumers advertising the compiled callable as another tool can obtain the
+compiler-authoritative parameter mapping without repeating its traversal:
+
+```python
+from treelang import compiled_parameter_sources
+
+sources = compiled_parameter_sources(compiled)
+name_schema = sources["name"]["property_schema"]
+```
+
+The mapping order exactly matches `inspect.signature(compiled).parameters`.
+Each entry records `argument_name`, `tool_name`, `function_name`, and a copied
+`property_schema`. Direct provider-tool arguments retain their full property
+schema, including descriptions and constraints. User-function arguments have a
+`function_name` and `property_schema=None` unless a future compiler can prove a
+provider property origin. The callable also carries the same mapping on
+`__treelang_parameters__`; the accessor is preferred because it returns an
+isolated deep copy.

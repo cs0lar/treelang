@@ -115,6 +115,34 @@ compose_programs(programs: 'Sequence[TreeProgram]', *, mode: "Literal['single', 
 
 Combine independent programs with hygienic user-function names.
 
+## `CompiledParameterSource`
+
+**Typed dictionary** · `treelang.trees.compilation`
+
+Origin metadata for one parameter on a compiled Treelang callable.
+
+
+Fields:
+
+- `argument_name: str`
+- `tool_name: str | None`
+- `function_name: str | None`
+- `property_schema: dict[str, Any] | None`
+
+## `compiled_parameter_sources`
+
+**Function** · `treelang.trees.compilation`
+
+```python
+compiled_parameter_sources(compiled: collections.abc.Callable[..., typing.Any]) -> dict[str, treelang.trees.compilation.CompiledParameterSource]
+```
+
+Return an isolated parameter-to-origin mapping for a compiled tool.
+
+Raises:
+    ValueError: If ``compiled`` was not created by a supporting Treelang
+        compiler.
+
 ## `deduplicate_pure_tool_calls`
 
 **Function** · `treelang.trees.deduplication`
