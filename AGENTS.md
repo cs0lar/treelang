@@ -116,8 +116,11 @@ defaults are merged through PR #152, the `cryptography` 50.0.0 security update
 and branch reconciliation through PRs #153 and #154, and query-intent-based tree
 descriptions through PR #156. Release v1.2.0 has been published. Strict
 structured-output schema generation, safe tool-schema fallback, and persistent
-provider-rejection negotiation are fixed through PR #162. Release v1.2.1 is the
-next planned promotion from `dev` to `main`.
+provider-rejection negotiation are fixed through PR #162. Release v1.2.1 has
+been published. Schema v2 root API, traversal, compilation, and description
+parity is merged through PR #167; compiler-authoritative parameter metadata
+through PR #169; and nested schema v1 compilation repair through PR #171.
+Release v1.3.0 is the next planned promotion from `dev` to `main`.
 
 Before new work, update `dev` and run:
 

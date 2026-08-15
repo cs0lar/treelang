@@ -1,5 +1,37 @@
 # Changelog
 
+## [1.3.0] - 2026-08-15
+
+### Added
+
+- Added schema version 2 support to the root `AST` parsing, representation,
+  evaluation, synchronous and asynchronous traversal, and callable compilation
+  APIs.
+- Added schema version 2 tree descriptions that preserve immutable source
+  programs while retaining the described copy on the response.
+- Added typed compiler-authoritative parameter source metadata for schema
+  versions 1 and 2 through `CompiledParameterSource`,
+  `compiled_parameter_sources()`, and `__treelang_parameters__`.
+- Added named, overridable schema version 2 literal defaults for external-tool
+  arguments and direct user-function call arguments, with isolated mutable
+  defaults and deterministic duplicate-name suffixes.
+
+### Fixed
+
+- Fixed schema version 1 compilation after multiple sibling nested calls by
+  unwinding all completed tool frames before resolving a following value.
+- Replaced leaked `KeyError` failures for values that name no enclosing tool
+  parameter with contextual `ASTCompilationError` failures.
+
+### Compatibility
+
+- Schema version 1 parsing, execution, traversal, callable signatures, and
+  descriptions retain their existing behavior.
+- Schema version 2 remains opt-in through an explicit `schema_version: "2.0"`.
+- Existing compiled callables remain valid; parameter-source metadata and v2
+  support are additive.
+- Schema versions 1.0 and 2.0 remain unchanged.
+
 ## [1.2.1] - 2026-08-08
 
 ### Fixed
