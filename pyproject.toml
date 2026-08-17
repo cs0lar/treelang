@@ -11,7 +11,7 @@ requires-python = ">=3.12"
 dependencies = [
     "jsonschema>=4.23,<5",
     "mcp>=1.28.1,<2",
-    "openai>=1.68,<3",
+    "openai>=1.68,<4",
     "pydantic>=2.10,<3",
     "python-dotenv>=1.0,<2",
 ]
