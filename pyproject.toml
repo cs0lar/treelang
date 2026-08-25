@@ -17,7 +17,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-anthropic = ["anthropic>=0.104,<1"]
+anthropic = ["anthropic>=0.104,<2"]
 
 [project.scripts]
 treelang = "treelang.cli:main"
@@ -29,7 +29,7 @@ Documentation = "https://cs0lar.github.io/treelang/"
 
 [dependency-groups]
 dev = [
-    "anthropic>=0.104,<1",
+    "anthropic>=0.104,<2",
     "anyio>=4.5,<5",
     "build>=1.4,<2",
     "hypothesis>=6.135,<7",
