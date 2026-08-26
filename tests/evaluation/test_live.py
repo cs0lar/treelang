@@ -115,6 +115,8 @@ async def test_live_runner_records_quality_usage_cost_and_identity():
     assert result.mode == "live"
     assert result.model == "gpt-test"
     assert result.provider == "openai"
+    assert result.model_api == "chat_completions"
+    assert result.reasoning_effort is None
     assert result.passed == result.total == 1
     case = result.results[0]
     assert case.prompt_tokens == 100
@@ -203,3 +205,27 @@ def test_live_runtime_rejects_unknown_provider():
 
     with pytest.raises(ValueError, match="Unsupported model provider"):
         create_model_runtime("other", None)  # type: ignore[arg-type]
+
+
+def test_live_runtime_selects_openai_responses_and_reasoning(monkeypatch):
+    from evaluation.live_eval import create_model_runtime
+    from treelang.ai.transport import OpenAIResponsesTransport
+
+    monkeypatch.setenv("OPENAI_API_KEY", "test-key")
+    config, transport = create_model_runtime(
+        "openai",
+        "gpt-5.6-terra",
+        openai_api="responses",
+        reasoning_effort="medium",
+    )
+
+    assert config.openai_api == "responses"
+    assert config.reasoning_effort == "medium"
+    assert isinstance(transport, OpenAIResponsesTransport)
+
+
+def test_live_runtime_rejects_openai_options_for_anthropic():
+    from evaluation.live_eval import create_model_runtime
+
+    with pytest.raises(ValueError, match="require provider_name='openai'"):
+        create_model_runtime("anthropic", None, openai_api="responses")
