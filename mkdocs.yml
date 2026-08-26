@@ -65,6 +65,7 @@ nav:
       - Tree transformations: tree-transformations.md
       - Recursive programs: recursive-programs.md
       - Structured model output: structured-output.md
+      - OpenAI Responses API: openai-responses.md
       - Tool input validation: tool-input-validation.md
       - Execution resilience and replay: execution-resilience.md
   - Providers:

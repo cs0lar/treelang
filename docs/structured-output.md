@@ -45,3 +45,7 @@ Transports without that optional protocol are treated as compatibility-only.
 injected for provider-specific deployments. Selection and fallback events are
 emitted through the normal redacted observability hooks. See
 [Model capability negotiation](provider-capabilities.md).
+
+OpenAI users can also request strict AST generation through the Responses API,
+with selected operations represented as compiler context rather than function
+tools. See [OpenAI Responses API](openai-responses.md).

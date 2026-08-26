@@ -1,11 +1,14 @@
 import ast
 import json
+import typing
+from collections.abc import Callable
 from pathlib import Path
+from typing import Annotated, Any, Literal
 
 import pytest
 
 import treelang
-from scripts.generate_api_docs import render_api_reference
+from scripts.generate_api_docs import _annotation, _signature, render_api_reference
 from scripts.generate_provider_matrix import load_manifest, render_provider_matrix
 
 
@@ -13,6 +16,26 @@ def test_generated_api_reference_is_current():
     reference = Path("docs/api.md").read_text(encoding="utf-8")
 
     assert reference == render_api_reference()
+
+
+def test_api_annotation_rendering_is_python_version_independent():
+    annotation = dict[str, Any] | list[str | None]
+
+    assert _annotation(annotation) == "dict[str, Any] | list[str | None]"
+    assert _annotation(typing.Dict[str, Any]) == "dict[str, Any]"
+    assert _annotation(typing.Optional[str]) == "str | None"
+    assert _annotation(Annotated[str, "identifier"]) == "Annotated[str, 'identifier']"
+    assert _annotation(Literal["single", "parallel"]) == (
+        "Literal['single', 'parallel']"
+    )
+    assert _annotation(Callable[[str, int], bool]) == "Callable[[str, int], bool]"
+
+
+def test_api_signature_uses_canonical_annotations():
+    def example(value: dict[str, Any] | None) -> list[str]:
+        return list(value or {})
+
+    assert _signature(example) == "(value: dict[str, Any] | None) -> list[str]"
 
 
 def test_generated_api_reference_covers_every_supported_export():

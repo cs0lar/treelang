@@ -18,6 +18,7 @@ selected through declared capabilities; **unsupported** is rejected or omitted.
 | Normalized Errors | supported | supported |
 | Cancellation | supported | supported |
 | Live Evaluation | supported | supported |
+| Responses Api | supported | unsupported |
 
 ## Adapter details
 

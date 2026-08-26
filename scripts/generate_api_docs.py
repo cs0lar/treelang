@@ -4,8 +4,10 @@ from __future__ import annotations
 
 import argparse
 import inspect
+import types
+from collections.abc import Callable
 from pathlib import Path
-from typing import Any
+from typing import Annotated, Any, ForwardRef, Literal, Union, get_args, get_origin
 
 import treelang
 
@@ -13,15 +15,71 @@ ROOT = Path(__file__).parents[1]
 DEFAULT_OUTPUT = ROOT / "docs" / "api.md"
 
 
-def _signature(value: Any) -> str:
-    try:
-        return str(inspect.signature(value))
-    except (TypeError, ValueError):
-        return ""
+class _RenderedAnnotation:
+    """Annotation wrapper whose representation is independent of Python."""
+
+    def __init__(self, value: Any) -> None:
+        self.value = value
+
+    def __repr__(self) -> str:
+        return _annotation(self.value)
 
 
 def _annotation(value: Any) -> str:
+    if isinstance(value, str):
+        return value
+    if isinstance(value, (list, tuple)):
+        return f"[{', '.join(_annotation(item) for item in value)}]"
+    if isinstance(value, ForwardRef):
+        return value.__forward_arg__
+    if value is Ellipsis:
+        return "..."
+    if value is None or value is type(None):
+        return "None"
+
+    origin = get_origin(value)
+    arguments = get_args(value)
+    if origin in (Union, types.UnionType):
+        return " | ".join(_annotation(argument) for argument in arguments)
+    if origin is Annotated:
+        base, *metadata = arguments
+        rendered_metadata = ", ".join(repr(item) for item in metadata)
+        return f"Annotated[{_annotation(base)}, {rendered_metadata}]"
+    if origin is Literal:
+        return f"Literal[{', '.join(repr(item) for item in arguments)}]"
+    if origin is not None:
+        rendered_origin = (
+            "Callable" if origin is Callable else inspect.formatannotation(origin)
+        ).replace("typing.", "")
+        return (
+            f"{rendered_origin}[{', '.join(_annotation(item) for item in arguments)}]"
+        )
     return inspect.formatannotation(value).replace("typing.", "")
+
+
+def _signature(value: Any) -> str:
+    try:
+        signature = inspect.signature(value)
+    except (TypeError, ValueError):
+        return ""
+
+    parameters = [
+        parameter.replace(
+            annotation=_RenderedAnnotation(parameter.annotation)
+            if parameter.annotation is not inspect.Parameter.empty
+            else inspect.Parameter.empty
+        )
+        for parameter in signature.parameters.values()
+    ]
+    return_annotation = signature.return_annotation
+    if return_annotation is not inspect.Signature.empty:
+        return_annotation = _RenderedAnnotation(return_annotation)
+    return str(
+        signature.replace(
+            parameters=parameters,
+            return_annotation=return_annotation,
+        )
+    )
 
 
 def _kind(value: Any) -> str:
