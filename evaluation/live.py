@@ -67,6 +67,12 @@ class LiveBenchmarkRunner:
             duration_ms=max(0.0, (self.clock() - started) * 1000),
             model=self.arborist.model,
             provider=self.provider_name,
+            model_api=(
+                self.arborist.config.openai_api
+                if self.provider_name == "openai"
+                else None
+            ),
+            reasoning_effort=self.arborist.config.reasoning_effort,
             results=results,
         )
         self.observability.emit(
@@ -89,6 +95,12 @@ class LiveBenchmarkRunner:
             "latency_ms": 0.0,
             "model": self.arborist.model,
             "provider": self.provider_name,
+            "model_api": (
+                self.arborist.config.openai_api
+                if self.provider_name == "openai"
+                else None
+            ),
+            "reasoning_effort": self.arborist.config.reasoning_effort,
         }
         self.observability.emit(
             "benchmark.case.started",

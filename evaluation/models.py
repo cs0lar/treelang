@@ -58,6 +58,8 @@ class CaseResult(BaseModel):
     estimated_cost_usd: float = Field(default=0, ge=0)
     model: str
     provider: str
+    model_api: str | None = None
+    reasoning_effort: str | None = None
     failure_category: FailureCategory | None = None
     error: str | None = None
 
@@ -80,6 +82,8 @@ class BenchmarkResult(BaseModel):
     duration_ms: float = Field(ge=0)
     model: str
     provider: str
+    model_api: str | None = None
+    reasoning_effort: str | None = None
     results: list[CaseResult]
 
     @computed_field  # type: ignore[prop-decorator]

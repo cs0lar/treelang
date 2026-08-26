@@ -17,6 +17,19 @@ on:
         required: true
         default: gpt-4o-2024-11-20
         type: string
+      openai_api:
+        description: OpenAI generation API
+        required: true
+        default: chat_completions
+        type: choice
+        options:
+          - chat_completions
+          - responses
+      openai_reasoning_effort:
+        description: Responses reasoning effort (empty disables reasoning)
+        required: false
+        default: ""
+        type: string
       anthropic_model:
         description: Anthropic model identifier
         required: true
@@ -66,6 +79,8 @@ jobs:
       MODEL: ${{ matrix.provider == 'openai' && inputs.openai_model || inputs.anthropic_model }}
       INPUT_COST_PER_MILLION: ${{ matrix.provider == 'openai' && inputs.openai_input_cost_per_million || inputs.anthropic_input_cost_per_million }}
       OUTPUT_COST_PER_MILLION: ${{ matrix.provider == 'openai' && inputs.openai_output_cost_per_million || inputs.anthropic_output_cost_per_million }}
+      OPENAI_API: ${{ inputs.openai_api }}
+      OPENAI_REASONING_EFFORT: ${{ inputs.openai_reasoning_effort }}
     steps:
       - uses: actions/checkout@v7
       - uses: astral-sh/setup-uv@v7
@@ -83,6 +98,8 @@ jobs:
           --model "$MODEL"
           --input-cost-per-million "$INPUT_COST_PER_MILLION"
           --output-cost-per-million "$OUTPUT_COST_PER_MILLION"
+          ${{ matrix.provider == 'openai' && format('--openai-api "{0}"', env.OPENAI_API) || '' }}
+          ${{ matrix.provider == 'openai' && env.OPENAI_REASONING_EFFORT != '' && format('--reasoning-effort "{0}"', env.OPENAI_REASONING_EFFORT) || '' }}
       - uses: actions/upload-artifact@v7
         if: always()
         with:
