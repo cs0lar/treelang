@@ -8,6 +8,8 @@ from dotenv import load_dotenv
 
 type SchemaVersion = Literal["1.0", "2.0"]
 type StructuredOutputMode = Literal["auto", "required", "compatibility"]
+type OpenAIAPI = Literal["chat_completions", "responses"]
+type ReasoningEffort = Literal["none", "low", "medium", "high", "xhigh"]
 
 
 @dataclass(frozen=True, slots=True)
@@ -21,6 +23,8 @@ class ArboristConfig:
     validation_retries: int = 2
     schema_version: SchemaVersion = "1.0"
     structured_output_mode: StructuredOutputMode = "auto"
+    openai_api: OpenAIAPI = "chat_completions"
+    reasoning_effort: ReasoningEffort | None = None
 
     def __post_init__(self) -> None:
         if self.validation_retries < 0:
@@ -35,6 +39,19 @@ class ArboristConfig:
             raise ValueError(
                 "structured_output_mode must be 'auto', 'required', or 'compatibility'"
             )
+        if self.openai_api not in ("chat_completions", "responses"):
+            raise ValueError("openai_api must be 'chat_completions' or 'responses'")
+        if self.reasoning_effort not in (
+            None,
+            "none",
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+        ):
+            raise ValueError("reasoning_effort has an unsupported value")
+        if self.reasoning_effort is not None and self.openai_api != "responses":
+            raise ValueError("reasoning_effort requires openai_api='responses'")
 
     @classmethod
     def from_env(cls, model: str | None = None) -> "ArboristConfig":

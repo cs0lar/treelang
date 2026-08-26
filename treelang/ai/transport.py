@@ -11,6 +11,7 @@ from openai import AsyncOpenAI, BadRequestError
 
 from treelang.ai.capabilities import ModelCapabilities
 from treelang.ai.errors import translate_model_error
+from treelang.ai.tool import ToolDefinition, render_tool_catalog
 from treelang.exceptions import (
     ProviderResponseError,
     StructuredOutputUnsupportedError,
@@ -228,12 +229,140 @@ class OpenAITransport:
             raise translated from error
 
 
+class OpenAIResponsesTransport(OpenAITransport):
+    """OpenAI Responses API adapter for complete AST generation."""
+
+    async def complete(self, request: ModelRequest) -> str:
+        self._usage.set(ModelUsage())
+        arguments = _responses_arguments(request)
+        create = cast(Any, self.client.responses.create)
+        try:
+            response = await create(**arguments)
+        except Exception as error:
+            if (
+                isinstance(error, BadRequestError)
+                and _has_strict_response_format(arguments)
+                and _is_structured_output_rejection(error)
+            ):
+                raise StructuredOutputUnsupportedError(str(error)) from error
+            translated = translate_model_error("openai", error)
+            if translated is error:
+                raise
+            raise translated from error
+        usage = getattr(response, "usage", None)
+        self._usage.set(
+            ModelUsage(
+                prompt_tokens=(getattr(usage, "input_tokens", 0) or 0) if usage else 0,
+                completion_tokens=(
+                    (getattr(usage, "output_tokens", 0) or 0) if usage else 0
+                ),
+            )
+        )
+        content = getattr(response, "output_text", None)
+        if not isinstance(content, str) or not content:
+            raise ProviderResponseError("Model response contained no text content")
+        return content
+
+    async def stream(self, request: ModelRequest) -> AsyncIterator[str]:
+        self._usage.set(ModelUsage())
+        create = cast(Any, self.client.responses.create)
+        try:
+            response = await create(**_responses_arguments(request), stream=True)
+            async for event in response:
+                event_type = getattr(event, "type", None)
+                if event_type == "response.output_text.delta":
+                    delta = getattr(event, "delta", None)
+                    if isinstance(delta, str) and delta:
+                        yield delta
+                elif event_type == "response.completed":
+                    usage = getattr(getattr(event, "response", None), "usage", None)
+                    if usage is not None:
+                        self._usage.set(
+                            ModelUsage(
+                                prompt_tokens=getattr(usage, "input_tokens", 0) or 0,
+                                completion_tokens=(
+                                    getattr(usage, "output_tokens", 0) or 0
+                                ),
+                            )
+                        )
+        except Exception as error:
+            translated = translate_model_error("openai", error)
+            if translated is error:
+                raise
+            raise translated from error
+
+
+def _responses_arguments(request: ModelRequest) -> dict[str, Any]:
+    messages = request.get("messages", [])
+    if not isinstance(messages, list):
+        raise ValueError("Responses requests require a message list")
+    instructions: list[str] = []
+    input_messages: list[dict[str, str]] = []
+    for message in messages:
+        if not isinstance(message, Mapping):
+            raise ValueError("Responses request messages must be mappings")
+        role = message.get("role")
+        content = message.get("content")
+        if not isinstance(role, str) or not isinstance(content, str):
+            raise ValueError(
+                "Responses request messages require text roles and content"
+            )
+        if role == "system":
+            instructions.append(content)
+        else:
+            input_messages.append({"role": role, "content": content})
+
+    tools = request.get("treelang_tools", [])
+    if not isinstance(tools, list):
+        raise ValueError("treelang_tools must be a list")
+    if tools:
+        instructions.append(render_tool_catalog(cast(list[ToolDefinition], tools)))
+
+    arguments: dict[str, Any] = {
+        "model": request["model"],
+        "instructions": "\n\n".join(instructions),
+        "input": input_messages,
+    }
+    response_format = request.get("response_format")
+    if isinstance(response_format, Mapping):
+        if response_format.get("type") == "json_schema":
+            arguments["text"] = {
+                "format": {
+                    "type": "json_schema",
+                    **response_format["json_schema"],
+                }
+            }
+        elif response_format.get("type") == "json_object":
+            arguments["text"] = {"format": {"type": "json_object"}}
+    reasoning_effort = request.get("reasoning_effort")
+    if reasoning_effort is not None:
+        arguments["reasoning"] = {"effort": reasoning_effort}
+    if "temperature" in request:
+        arguments["temperature"] = request["temperature"]
+    return arguments
+
+
+def _has_strict_response_format(arguments: Mapping[str, Any]) -> bool:
+    text = arguments.get("text")
+    if not isinstance(text, Mapping):
+        return False
+    output_format = text.get("format")
+    return (
+        isinstance(output_format, Mapping)
+        and output_format.get("type") == "json_schema"
+    )
+
+
 def _is_structured_output_rejection(error: BadRequestError) -> bool:
     body = getattr(error, "body", None)
     code = body.get("code") if isinstance(body, Mapping) else None
     parameter = body.get("param") if isinstance(body, Mapping) else None
     message = str(error).lower()
-    return parameter == "response_format" or (
+    return parameter in {"response_format", "text.format"} or (
         code in {"invalid_parameter", "unsupported_value"}
-        and ("json_schema" in message or "response_format" in message)
+        and (
+            "json_schema" in message
+            or "response_format" in message
+            or "text.format" in message
+        )
     )
