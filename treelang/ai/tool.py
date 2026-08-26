@@ -185,6 +185,24 @@ def tool_input_schema(tool: ToolDefinition) -> JsonSchema:
     }
 
 
+def render_tool_catalog(tools: list[ToolDefinition]) -> str:
+    """Render selected tools as deterministic, lossless compiler vocabulary."""
+    catalog = [
+        {
+            "name": tool["name"],
+            "description": tool.get("description"),
+            "input_schema": tool_input_schema(tool),
+        }
+        for tool in tools
+    ]
+    return (
+        "AVAILABLE TREELANG OPERATIONS\n"
+        "Use these operations only to construct the requested Treelang AST. "
+        "Do not call them during generation.\n"
+        f"{json.dumps(catalog, indent=2, sort_keys=True)}"
+    )
+
+
 def validate_tool_arguments(tool: ToolDefinition, arguments: Mapping[str, Any]) -> None:
     """Validate evaluated arguments without exposing their values in errors."""
     schema = tool_input_schema(tool)
