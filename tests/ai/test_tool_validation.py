@@ -1,7 +1,10 @@
+import json
+
 import pytest
 
 from treelang.ai.tool import (
     normalize_tool_definition,
+    render_tool_catalog,
     tool_input_schema,
     validate_tool_arguments,
 )
@@ -62,6 +65,30 @@ def valid_arguments():
         "tags": ["one"],
         "profile": {"email": "person@example.com", "score": 1.5},
     }
+
+
+def test_tool_catalog_is_deterministic_and_preserves_complete_schema():
+    tool = constrained_tool()
+
+    rendered = render_tool_catalog([tool])
+    payload = json.loads(rendered[rendered.index("[") :])
+
+    assert rendered.startswith("AVAILABLE TREELANG OPERATIONS")
+    assert payload == [
+        {
+            "name": "submit",
+            "description": None,
+            "input_schema": tool_input_schema(tool),
+        }
+    ]
+    assert payload[0]["input_schema"]["additionalProperties"] is False
+    assert payload[0]["input_schema"]["required"] == [
+        "count",
+        "kind",
+        "code",
+        "tags",
+        "profile",
+    ]
 
 
 def test_complete_schema_accepts_valid_nested_arguments_and_optional_omission():
