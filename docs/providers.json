@@ -10,7 +10,8 @@
     "streaming_usage",
     "normalized_errors",
     "cancellation",
-    "live_evaluation"
+    "live_evaluation",
+    "responses_api"
   ],
   "providers": [
     {
@@ -31,7 +32,8 @@
         "streaming_usage": "supported",
         "normalized_errors": "supported",
         "cancellation": "supported",
-        "live_evaluation": "supported"
+        "live_evaluation": "supported",
+        "responses_api": "supported"
       },
       "model_profiles": [
         {
@@ -65,7 +67,8 @@
         "streaming_usage": "supported",
         "normalized_errors": "supported",
         "cancellation": "supported",
-        "live_evaluation": "supported"
+        "live_evaluation": "supported",
+        "responses_api": "unsupported"
       },
       "model_profiles": [
         {

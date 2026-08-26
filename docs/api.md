@@ -16,7 +16,7 @@ Represents an Abstract Syntax Tree (AST) for a very simple programming language.
 
 Methods:
 
-- `parse(cls, ast: Union[Dict[str, Any], List[Dict[str, Any]]]) -> SupportedTree | list[SupportedTree]` — Parses the given dictionary or list into a TreeNode.
+- `parse(cls, ast: Dict[str, Any] | List[Dict[str, Any]]) -> SupportedTree | list[SupportedTree]` — Parses the given dictionary or list into a TreeNode.
 - `eval(cls, ast: SupportedTree, provider: treelang.ai.provider.ToolProvider, *, limits: treelang.trees.budget.ExecutionLimits | None = None, policy: treelang.trees.policy.ExecutionPolicy | None = None) -> Any` — Evaluates the given AST.
 - `visit(cls, ast: TraversableNode, op: collections.abc.Callable[[TraversableNode], None] | collections.abc.Callable[[treelang.trees.schemas.v1.TreeNode], None] | collections.abc.Callable[[TreeNodeV2], None]) -> None` — Performs a depth-first visit of the AST and applies the given operation to each node.
 - `avisit(cls, ast: TraversableNode, op: collections.abc.Callable[[TraversableNode], None] | collections.abc.Callable[[treelang.trees.schemas.v1.TreeNode], None] | collections.abc.Callable[[TreeNodeV2], None] | collections.abc.Callable[[TraversableNode], collections.abc.Awaitable[None]] | collections.abc.Callable[[treelang.trees.schemas.v1.TreeNode], collections.abc.Awaitable[None]] | collections.abc.Callable[[TreeNodeV2], collections.abc.Awaitable[None]]) -> None` — Performs an asynchronous depth-first visit of the AST and applies the given operation to each node.
@@ -657,7 +657,7 @@ Named transformation step and the changes it produced.
 **Class** · `treelang.trees.schemas.v1`
 
 ```python
-TreeConditional(*, type: Literal['conditional'] = 'conditional', condition: Node, true_branch: Node, false_branch: Optional[Node] = None) -> None
+TreeConditional(*, type: Literal['conditional'] = 'conditional', condition: Node, true_branch: Node, false_branch: Node | None = None) -> None
 ```
 
 Represents a conditional statement in the AST.
@@ -668,7 +668,7 @@ Fields:
 - `type: Literal['conditional']`
 - `condition: 'Node'`
 - `true_branch: 'Node'`
-- `false_branch: Optional[ForwardRef('Node')]`
+- `false_branch: ForwardRef('Node') | None`
 
 Methods:
 
@@ -852,7 +852,7 @@ Methods:
 **Class** · `treelang.trees.schemas.v1`
 
 ```python
-TreeProgram(*, type: Literal['program'] = 'program', body: List[Node], mode: Literal['single', 'parallel'], name: Optional[str] = None, description: Optional[str] = None, schema_version: Literal['1.0'] = '1.0') -> None
+TreeProgram(*, type: Literal['program'] = 'program', body: List[Node], mode: Literal['single', 'parallel'], name: str | None = None, description: str | None = None, schema_version: Literal['1.0'] = '1.0') -> None
 ```
 
 Represents a program in the abstract syntax tree (AST).
@@ -863,8 +863,8 @@ Fields:
 - `type: Literal['program']`
 - `body: List[ForwardRef('Node')]`
 - `mode: Literal['single', 'parallel']`
-- `name: Optional[str]`
-- `description: Optional[str]`
+- `name: str | None`
+- `description: str | None`
 - `schema_version: Literal['1.0']`
 
 Methods:
