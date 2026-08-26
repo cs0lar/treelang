@@ -5,7 +5,7 @@ import pytest
 
 from treelang.ai.anthropic import AnthropicTransport
 from treelang.ai.errors import translate_model_error
-from treelang.ai.transport import OpenAITransport
+from treelang.ai.transport import OpenAIResponsesTransport, OpenAITransport
 from treelang.exceptions import (
     ModelAuthenticationError,
     ModelConnectionError,
@@ -86,7 +86,7 @@ def test_normalized_provider_timeout_remains_catchable_as_timeout_error():
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("provider", ["openai", "anthropic"])
+@pytest.mark.parametrize("provider", ["openai", "openai_responses", "anthropic"])
 async def test_adapter_cancellation_propagates_without_translation(provider):
     started = asyncio.Event()
     cancelled = asyncio.Event()
@@ -106,6 +106,13 @@ async def test_adapter_cancellation_propagates_without_translation(provider):
                 chat=SimpleNamespace(
                     completions=SimpleNamespace(create=block),
                 )
+            )
+        )
+        request = {"model": "model", "messages": []}
+    elif provider == "openai_responses":
+        transport = OpenAIResponsesTransport(
+            client=SimpleNamespace(
+                responses=SimpleNamespace(create=block),
             )
         )
         request = {"model": "model", "messages": []}
