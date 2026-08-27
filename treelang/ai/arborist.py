@@ -312,6 +312,9 @@ class OpenAIArborist(BaseArborist):
                 }
                 for tool in available_tools
             ]
+            # Tools describe the vocabulary available to the generated AST. The
+            # model must not invoke them while it is compiling that AST.
+            request["tool_choice"] = "none"
         output_selection = self._configure_structured_output(
             request, available_tools, capabilities
         )
