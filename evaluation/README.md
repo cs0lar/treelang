@@ -20,9 +20,10 @@ The current credentialed questions in `data/v3/live.jsonl` are excluded from
 normal CI. Each case has a stable ID so results remain comparable across runs.
 
 Live dataset 3.0 retains the currency-code composition contract introduced in
-version 2 and requires the Australian population reduction to map cities to
-numeric populations before reducing them. Earlier versions remain committed so
-published results stay reproducible.
+version 2 and requires the Australian population reduction to convert cities to
+numeric populations, either before reduction or inside a reducer with an
+explicit numeric initializer. Earlier versions remain committed so published
+results stay reproducible.
 
 ## Live evaluation
 

@@ -107,7 +107,7 @@ async def test_currency_case_requires_documented_code_lookup_composition():
 
 
 @pytest.mark.asyncio
-async def test_reduce_case_requires_typed_map_then_reduce_composition():
+async def test_reduce_case_requires_typed_population_reduction():
     dataset = load_live_dataset()
     case = next(
         case for case in dataset.cases if case.id == "reduce-australian-population"
@@ -119,7 +119,6 @@ async def test_reduce_case_requires_typed_map_then_reduce_composition():
 
     assert case.must_use == [
         "get_all_cities_in_country",
-        "map",
         "get_city_population",
         "reduce",
         "add",
@@ -190,7 +189,7 @@ async def test_live_runner_categorizes_model_failures(response, case, category):
 
 
 @pytest.mark.asyncio
-async def test_live_runner_rejects_missing_map_before_execution():
+async def test_live_runner_rejects_transformed_reduce_without_initializer():
     response = json.dumps(
         {
             "type": "program",
@@ -200,13 +199,27 @@ async def test_live_runner_rejects_missing_map_before_execution():
                     "type": "reduce",
                     "function": {
                         "type": "lambda",
-                        "params": ["x", "y"],
+                        "params": ["total", "city"],
                         "body": {
                             "type": "function",
                             "name": "add",
                             "params": [
-                                {"type": "value", "name": "x", "value": None},
-                                {"type": "value", "name": "y", "value": None},
+                                {
+                                    "type": "value",
+                                    "name": "total",
+                                    "value": None,
+                                },
+                                {
+                                    "type": "function",
+                                    "name": "get_city_population",
+                                    "params": [
+                                        {
+                                            "type": "value",
+                                            "name": "city",
+                                            "value": None,
+                                        }
+                                    ],
+                                },
                             ],
                         },
                     },
@@ -228,7 +241,6 @@ async def test_live_runner_rejects_missing_map_before_execution():
     case = live_case(
         must_use=[
             "get_all_cities_in_country",
-            "map",
             "get_city_population",
             "reduce",
             "add",
@@ -238,15 +250,14 @@ async def test_live_runner_rejects_missing_map_before_execution():
 
     result = await runner([response]).run_case(case)
 
-    assert result.failure_category == FailureCategory.CORRECTNESS
+    assert result.failure_category == FailureCategory.SCHEMA
     assert result.execution_success is False
-    assert result.error == (
-        "ValueError: Generated AST omitted required operations: "
-        "map, get_city_population"
+    assert result.error is not None
+    assert (
+        "transforms its current item requires an explicit non-null accumulator"
+        in result.error
     )
-    assert result.generated_ast is not None
-    literal = result.generated_ast["body"][0]["iterable"]["params"][0]
-    assert literal["value"] == REDACTED
+    assert result.generated_ast is None
 
 
 @pytest.mark.asyncio

@@ -81,6 +81,38 @@ class TestAST(unittest.TestCase):
             "get_product_price",
         )
 
+    def test_examples_include_initialized_fused_reduction(self):
+        example = next(
+            item
+            for item in ast_v1_examples()
+            if item["q"] == "Sum the scores for all players."
+        )
+        payload = json.loads(example["a"])
+        reduction = payload["body"][0]
+
+        self.assertEqual(reduction["type"], "reduce")
+        self.assertEqual(reduction["function"]["body"]["params"][0]["value"], 0)
+        self.assertEqual(
+            reduction["function"]["body"]["params"][1]["name"],
+            "get_player_score",
+        )
+
+    def test_transformed_reduce_requires_explicit_initializer(self):
+        payload = json.loads(
+            next(
+                item["a"]
+                for item in ast_v1_examples()
+                if item["q"] == "Sum the scores for all players."
+            )
+        )
+        payload["body"][0]["function"]["body"]["params"][0]["value"] = None
+
+        with self.assertRaisesRegex(
+            ValueError,
+            "transforms its current item requires an explicit non-null accumulator",
+        ):
+            AST.parse(payload)
+
     def test_parse_repr_and_visit_v2_program(self):
         payload = {
             "type": "program",

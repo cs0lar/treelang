@@ -7,4 +7,4 @@
 {"id":"coffee-country-capital-rainfall","q":"What's the average annual rainfall in the capital city of the country that produces the most coffee in the world?","a":1.43,"must_use":[]}
 {"id":"map-australian-populations","q":"What are the populations of the three largest cities in Australia?","a":[5312000,5078000,2514000],"must_use":["map","lambda"]}
 {"id":"filter-australian-rainfall","q":"What are the cities in Australia with average rainfall less than 1mm?","a":["Sydney","Melbourne"],"must_use":["filter","lambda"]}
-{"id":"reduce-australian-population","q":"What is the total population of all cities in Australia?","a":12904000,"must_use":["get_all_cities_in_country","map","get_city_population","reduce","add","lambda"]}
+{"id":"reduce-australian-population","q":"What is the total population of all cities in Australia?","a":12904000,"must_use":["get_all_cities_in_country","get_city_population","reduce","add","lambda"]}

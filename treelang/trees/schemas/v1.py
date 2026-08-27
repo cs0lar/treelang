@@ -299,6 +299,26 @@ class AST(RootModel[TreeProgram]):
                 )
             if isinstance(n, TreeReduce) and len(n.function.params) != 2:
                 raise ValueError("Reduce lambda must declare exactly 2 params.")
+            if isinstance(n, TreeReduce) and len(n.function.params) == 2:
+                accumulator_name, item_name = n.function.params
+                values = lambda_values(n.function.body)
+                accumulator = next(
+                    (value for value in values if value.name == accumulator_name),
+                    None,
+                )
+                item_is_combined_directly = any(
+                    isinstance(param, TreeValue) and param.name == item_name
+                    for param in n.function.body.params
+                )
+                if (
+                    accumulator is not None
+                    and accumulator.value is None
+                    and not item_is_combined_directly
+                ):
+                    raise ValueError(
+                        "Reduce lambda that transforms its current item requires "
+                        "an explicit non-null accumulator initializer."
+                    )
 
             if isinstance(n, TreeProgram):
                 for c in n.body:
@@ -572,5 +592,43 @@ def ast_v1_examples() -> list[ASTExample]:
         ).model_dump_json(by_alias=True, exclude_unset=False),
     }
     examples.append(example_6)
+
+    example_7: ASTExample = {
+        "q": "Sum the scores for all players.",
+        "a": AST(
+            root=TreeProgram(
+                body=[
+                    TreeReduce(
+                        function=TreeLambda(
+                            params=["total", "player"],
+                            body=TreeFunction(
+                                name="add",
+                                params=[
+                                    TreeValue(name="total", value=0),
+                                    TreeFunction(
+                                        name="get_player_score",
+                                        params=[
+                                            TreeValue(name="player", value=None),
+                                        ],
+                                    ),
+                                ],
+                            ),
+                        ),
+                        iterable=TreeFunction(
+                            name="get_all_players",
+                            params=[],
+                        ),
+                    )
+                ],
+                mode="single",
+                name="Sum Player Scores",
+                description=(
+                    "Uses an explicit numeric accumulator while transforming each "
+                    "player into a score inside the reducer."
+                ),
+            )
+        ).model_dump_json(by_alias=True, exclude_unset=False),
+    }
+    examples.append(example_7)
 
     return examples
