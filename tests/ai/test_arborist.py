@@ -20,7 +20,7 @@ from treelang.ai.memory import ChatMessage, Memory
 from treelang.ai.prompt import TREE_DESCRIPTOR_SYSTEM_PROMPT
 from treelang.ai.provider import ToolOutput, ToolProvider
 from treelang.ai.responses import TreeDescription
-from treelang.ai.transport import OpenAITransport
+from treelang.ai.transport import OpenAIResponsesTransport, OpenAITransport
 from treelang.exceptions import (
     ExecutionLimitError,
     ModelTransportError,
@@ -228,6 +228,7 @@ async def test_arborist_tree_mode_builds_typed_request_with_memory_and_tools():
         "second",
     ]
     assert request["tools"][0]["function"]["name"] == "identity"
+    assert request["tool_choice"] == "none"
     assert request["response_format"] == {"type": "json_object"}
 
 
@@ -892,6 +893,51 @@ async def test_openai_transport_rejects_missing_text():
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("message", "finish_reason", "expected"),
+    [
+        (
+            SimpleNamespace(content=None, tool_calls=[SimpleNamespace()]),
+            "tool_calls",
+            "tool calls instead of text content",
+        ),
+        (
+            SimpleNamespace(content=None, refusal="Cannot comply"),
+            "stop",
+            "refused to produce text content",
+        ),
+        (
+            SimpleNamespace(content=None),
+            "length",
+            "finish reason: length",
+        ),
+    ],
+)
+async def test_openai_transport_explains_non_text_completion(
+    message, finish_reason, expected
+):
+    client = SimpleNamespace(
+        chat=SimpleNamespace(
+            completions=SimpleNamespace(
+                create=AsyncMock(
+                    return_value=SimpleNamespace(
+                        choices=[
+                            SimpleNamespace(
+                                message=message,
+                                finish_reason=finish_reason,
+                            )
+                        ]
+                    )
+                )
+            )
+        )
+    )
+
+    with pytest.raises(ProviderResponseError, match=expected):
+        await OpenAITransport(client=client).complete({})
+
+
+@pytest.mark.asyncio
 async def test_openai_transport_translates_only_structured_output_rejections():
     response = httpx.Response(
         400,
@@ -929,3 +975,190 @@ async def test_openai_transport_translates_only_structured_output_rejections():
         await transport.complete(strict_request)
     with pytest.raises(ModelTransportError, match="invalid temperature"):
         await transport.complete(strict_request)
+
+
+@pytest.mark.asyncio
+async def test_openai_responses_transport_encodes_catalog_reasoning_and_usage():
+    response = SimpleNamespace(
+        output_text=program_json([]),
+        usage=SimpleNamespace(input_tokens=31, output_tokens=7),
+    )
+    create = AsyncMock(return_value=response)
+    client = SimpleNamespace(responses=SimpleNamespace(create=create))
+    transport = OpenAIResponsesTransport(client=client)
+    tool = {
+        "name": "lookup",
+        "description": "Look up a value",
+        "properties": {"key": {"type": "string"}},
+    }
+
+    content = await transport.complete(
+        {
+            "model": "gpt-5.6-terra",
+            "messages": [
+                {"role": "system", "content": "Return an AST."},
+                {"role": "user", "content": "Look it up."},
+            ],
+            "treelang_tools": [tool],
+            "reasoning_effort": "medium",
+            "response_format": {
+                "type": "json_schema",
+                "json_schema": {
+                    "name": "treelang_ast_v1",
+                    "strict": True,
+                    "schema": {"type": "object"},
+                },
+            },
+        }
+    )
+
+    assert content == program_json([])
+    request = create.await_args.kwargs
+    assert request["model"] == "gpt-5.6-terra"
+    assert request["input"] == [{"role": "user", "content": "Look it up."}]
+    assert request["reasoning"] == {"effort": "medium"}
+    assert request["text"]["format"] == {
+        "type": "json_schema",
+        "name": "treelang_ast_v1",
+        "strict": True,
+        "schema": {"type": "object"},
+    }
+    assert "AVAILABLE TREELANG OPERATIONS" in request["instructions"]
+    assert "lookup" in request["instructions"]
+    assert "tools" not in request
+    assert transport.consume_usage().prompt_tokens == 31
+    assert transport.consume_usage().completion_tokens == 0
+
+
+@pytest.mark.asyncio
+async def test_openai_responses_transport_streams_text_and_usage():
+    events = [
+        SimpleNamespace(type="response.output_text.delta", delta="part"),
+        SimpleNamespace(
+            type="response.completed",
+            response=SimpleNamespace(
+                usage=SimpleNamespace(input_tokens=11, output_tokens=4)
+            ),
+        ),
+    ]
+
+    async def stream_events():
+        for event in events:
+            yield event
+
+    create = AsyncMock(return_value=stream_events())
+    transport = OpenAIResponsesTransport(
+        client=SimpleNamespace(responses=SimpleNamespace(create=create))
+    )
+
+    assert [
+        chunk
+        async for chunk in transport.stream(
+            {"model": "model", "messages": [{"role": "user", "content": "q"}]}
+        )
+    ] == ["part"]
+    assert create.await_args.kwargs["stream"] is True
+    assert transport.consume_usage().completion_tokens == 4
+
+
+@pytest.mark.asyncio
+async def test_openai_responses_transport_rejects_empty_output():
+    client = SimpleNamespace(
+        responses=SimpleNamespace(
+            create=AsyncMock(return_value=SimpleNamespace(output_text="", usage=None))
+        )
+    )
+
+    with pytest.raises(ProviderResponseError, match="no text content"):
+        await OpenAIResponsesTransport(client=client).complete(
+            {"model": "model", "messages": []}
+        )
+
+
+@pytest.mark.asyncio
+async def test_openai_responses_transport_translates_structured_rejection():
+    response = httpx.Response(
+        400,
+        request=httpx.Request("POST", "https://api.openai.com/v1/responses"),
+    )
+    error = BadRequestError(
+        "text.format json_schema is unsupported",
+        response=response,
+        body={"code": "unsupported_value", "param": "text.format"},
+    )
+    client = SimpleNamespace(
+        responses=SimpleNamespace(create=AsyncMock(side_effect=error))
+    )
+
+    with pytest.raises(StructuredOutputUnsupportedError):
+        await OpenAIResponsesTransport(client=client).complete(
+            {
+                "model": "model",
+                "messages": [],
+                "response_format": {
+                    "type": "json_schema",
+                    "json_schema": {
+                        "name": "tree",
+                        "strict": True,
+                        "schema": {"type": "object"},
+                    },
+                },
+            }
+        )
+
+
+def test_arborist_config_validates_responses_reasoning_contract():
+    config = ArboristConfig(
+        model="gpt-5.6-terra",
+        openai_api="responses",
+        reasoning_effort="high",
+    )
+
+    assert config.openai_api == "responses"
+    assert config.reasoning_effort == "high"
+    with pytest.raises(ValueError, match="requires openai_api='responses'"):
+        ArboristConfig(model="model", reasoning_effort="medium")
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("schema_version", "response", "format_name"),
+    [
+        (
+            "1.0",
+            program_json([{"type": "value", "name": "answer", "value": 1}]),
+            "treelang_ast_v1",
+        ),
+        ("2.0", recursive_program_json(), "treelang_ast_v2"),
+    ],
+)
+async def test_arborist_responses_mode_supplies_tools_as_compiler_context(
+    schema_version, response, format_name
+):
+    transport = FakeTransport(
+        response,
+        strict_json_schema=True,
+    )
+    arborist = OpenAIArborist(
+        model="gpt-5.6-terra",
+        provider=FakeProvider(),
+        config=ArboristConfig(
+            model="gpt-5.6-terra",
+            openai_api="responses",
+            reasoning_effort="medium",
+            schema_version=schema_version,
+        ),
+        transport=transport,
+    )
+
+    await arborist.eval("question", EvalType.TREE)
+
+    request = transport.requests[0]
+    assert request["reasoning_effort"] == "medium"
+    assert [tool["name"] for tool in request["treelang_tools"]] == [
+        "identity",
+        "greater_than",
+        "add",
+    ]
+    assert "tools" not in request
+    assert request["response_format"]["json_schema"]["name"] == format_name

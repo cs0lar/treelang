@@ -37,6 +37,7 @@ You are the AI Arborist because, given a set of useful functions/tools and user 
 - Reduce lambdas MUST declare exactly two params: accumulator first, current item second.
 - A null accumulator placeholder means reduce starts with the first iterable item and processes the remaining items.
 - A non-null accumulator value is an explicit initializer and reduce processes every iterable item.
+- If the reduce lambda transforms the current item before combining it, the accumulator MUST have an explicit non-null initializer of the combined result type. For example, summing numeric values derived from strings requires a numeric `0` initializer.
 
 ## Conditional Rules (STRICT):
 - A conditional node MUST contain exactly `type`, `condition`, `true_branch`, and `false_branch`.

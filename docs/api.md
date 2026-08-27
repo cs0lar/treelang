@@ -16,12 +16,12 @@ Represents an Abstract Syntax Tree (AST) for a very simple programming language.
 
 Methods:
 
-- `parse(cls, ast: Union[Dict[str, Any], List[Dict[str, Any]]]) -> SupportedTree | list[SupportedTree]` — Parses the given dictionary or list into a TreeNode.
+- `parse(cls, ast: dict[str, Any] | list[dict[str, Any]]) -> SupportedTree | list[SupportedTree]` — Parses the given dictionary or list into a TreeNode.
 - `eval(cls, ast: SupportedTree, provider: treelang.ai.provider.ToolProvider, *, limits: treelang.trees.budget.ExecutionLimits | None = None, policy: treelang.trees.policy.ExecutionPolicy | None = None) -> Any` — Evaluates the given AST.
-- `visit(cls, ast: TraversableNode, op: collections.abc.Callable[[TraversableNode], None] | collections.abc.Callable[[treelang.trees.schemas.v1.TreeNode], None] | collections.abc.Callable[[TreeNodeV2], None]) -> None` — Performs a depth-first visit of the AST and applies the given operation to each node.
-- `avisit(cls, ast: TraversableNode, op: collections.abc.Callable[[TraversableNode], None] | collections.abc.Callable[[treelang.trees.schemas.v1.TreeNode], None] | collections.abc.Callable[[TreeNodeV2], None] | collections.abc.Callable[[TraversableNode], collections.abc.Awaitable[None]] | collections.abc.Callable[[treelang.trees.schemas.v1.TreeNode], collections.abc.Awaitable[None]] | collections.abc.Callable[[TreeNodeV2], collections.abc.Awaitable[None]]) -> None` — Performs an asynchronous depth-first visit of the AST and applies the given operation to each node.
+- `visit(cls, ast: TraversableNode, op: Callable[[TraversableNode], None] | Callable[[treelang.trees.schemas.v1.TreeNode], None] | Callable[[TreeNodeV2], None]) -> None` — Performs a depth-first visit of the AST and applies the given operation to each node.
+- `avisit(cls, ast: TraversableNode, op: Callable[[TraversableNode], None] | Callable[[treelang.trees.schemas.v1.TreeNode], None] | Callable[[TreeNodeV2], None] | Callable[[TraversableNode], collections.abc.Awaitable[None]] | Callable[[treelang.trees.schemas.v1.TreeNode], collections.abc.Awaitable[None]] | Callable[[TreeNodeV2], collections.abc.Awaitable[None]]) -> None` — Performs an asynchronous depth-first visit of the AST and applies the given operation to each node.
 - `repr(cls, ast: SupportedTree) -> str` — Returns a string representation of the AST.
-- `tool(ast: SupportedTree, provider: treelang.ai.provider.ToolProvider, *, limits: treelang.trees.budget.ExecutionLimits | None = None, policy: treelang.trees.policy.ExecutionPolicy | None = None) -> collections.abc.Callable[..., typing.Any]` — Converts the given AST into a callable function that can be added as a tool.
+- `tool(ast: SupportedTree, provider: treelang.ai.provider.ToolProvider, *, limits: treelang.trees.budget.ExecutionLimits | None = None, policy: treelang.trees.policy.ExecutionPolicy | None = None) -> Callable[..., Any]` — Converts the given AST into a callable function that can be added as a tool.
 
 ## `ASTCompilationError`
 
@@ -54,14 +54,14 @@ Asynchronous boundary for model- or evaluation-guided growth.
 
 Methods:
 
-- `grow(self, programs: 'Sequence[TreeProgram]', *, options: 'GrowthOptions') -> 'TransformResult[TreeProgram]'`
+- `grow(self, programs: Sequence[TreeProgram], *, options: GrowthOptions) -> TransformResult[TreeProgram]`
 
 ## `AnthropicTransport`
 
 **Class** · `treelang.ai.anthropic`
 
 ```python
-AnthropicTransport(*, api_key: 'str | None' = None, timeout: 'float | None' = None, max_tokens: 'int' = 4096, client: 'Any | None' = None, strict_json_schema: 'bool | None' = None) -> 'None'
+AnthropicTransport(*, api_key: str | None = None, timeout: float | None = None, max_tokens: int = 4096, client: Any | None = None, strict_json_schema: bool | None = None) -> None
 ```
 
 Translate provider-neutral model requests to Anthropic Messages.
@@ -69,17 +69,17 @@ Translate provider-neutral model requests to Anthropic Messages.
 
 Methods:
 
-- `capabilities(self, model: 'str') -> 'ModelCapabilities'` — Report Claude features, allowing an explicit deployment override.
-- `complete(self, request: 'ModelRequest') -> 'str'`
-- `consume_usage(self) -> 'ModelUsage'` — Return and clear usage for the latest completion in this async context.
-- `stream(self, request: 'ModelRequest') -> 'AsyncIterator[str]'`
+- `capabilities(self, model: str) -> ModelCapabilities` — Report Claude features, allowing an explicit deployment override.
+- `complete(self, request: ModelRequest) -> str`
+- `consume_usage(self) -> ModelUsage` — Return and clear usage for the latest completion in this async context.
+- `stream(self, request: ModelRequest) -> AsyncIterator[str]`
 
 ## `BranchOutcome`
 
 **Class** · `treelang.trees.policy`
 
 ```python
-BranchOutcome(success: 'bool', value: 'Any' = None, error_type: 'str | None' = None, error_message: 'str | None' = None) -> None
+BranchOutcome(success: bool, value: Any = None, error_type: str | None = None, error_message: str | None = None) -> None
 ```
 
 Serializable outcome for one parallel branch in collection mode.
@@ -87,8 +87,8 @@ Serializable outcome for one parallel branch in collection mode.
 
 Methods:
 
-- `succeeded(cls, value: 'Any') -> 'BranchOutcome'`
-- `failed(cls, error: 'Exception') -> 'BranchOutcome'`
+- `succeeded(cls, value: Any) -> BranchOutcome`
+- `failed(cls, error: Exception) -> BranchOutcome`
 
 ## `CapabilityAwareTransport`
 
@@ -103,14 +103,14 @@ Optional transport extension for model-specific capability discovery.
 
 Methods:
 
-- `capabilities(self, model: 'str') -> 'ModelCapabilities'`
+- `capabilities(self, model: str) -> ModelCapabilities`
 
 ## `compose_programs`
 
 **Function** · `treelang.trees.composition`
 
 ```python
-compose_programs(programs: 'Sequence[TreeProgram]', *, mode: "Literal['single', 'parallel']" = 'single', name: 'str | None' = None, description: 'str | None' = None, limits: 'TransformationLimits | None' = None) -> 'TransformResult[TreeProgram]'
+compose_programs(programs: Sequence[TreeProgram], *, mode: Literal['single', 'parallel'] = 'single', name: str | None = None, description: str | None = None, limits: TransformationLimits | None = None) -> TransformResult[TreeProgram]
 ```
 
 Combine independent programs with hygienic user-function names.
@@ -134,7 +134,7 @@ Fields:
 **Function** · `treelang.trees.compilation`
 
 ```python
-compiled_parameter_sources(compiled: collections.abc.Callable[..., typing.Any]) -> dict[str, treelang.trees.compilation.CompiledParameterSource]
+compiled_parameter_sources(compiled: Callable[..., Any]) -> dict[str, treelang.trees.compilation.CompiledParameterSource]
 ```
 
 Return an isolated parameter-to-origin mapping for a compiled tool.
@@ -148,7 +148,7 @@ Raises:
 **Function** · `treelang.trees.deduplication`
 
 ```python
-deduplicate_pure_tool_calls(program: 'TreeProgram', tools: 'Sequence[ToolDefinition]', *, limits: 'TransformationLimits | None' = None) -> 'TransformResult[TreeProgram]'
+deduplicate_pure_tool_calls(program: TreeProgram, tools: Sequence[ToolDefinition], *, limits: TransformationLimits | None = None) -> TransformResult[TreeProgram]
 ```
 
 Memoize repeated closed calls to declared pure deterministic tools.
@@ -166,7 +166,7 @@ Apply only locally provable rewrites without evaluating external tools.
 
 Methods:
 
-- `prune(self, tree: 'TreeProgram | TreeNode') -> 'TransformResult[TreeProgram] | TransformResult[TreeNode]'` — Return a validated pruned copy, or the original version 1 tree.
+- `prune(self, tree: TreeProgram | TreeNode) -> TransformResult[TreeProgram] | TransformResult[TreeNode]` — Return a validated pruned copy, or the original version 1 tree.
 
 ## `CURRENT_SCHEMA_VERSION`
 
@@ -179,7 +179,7 @@ Current value: `'1.0'`
 **Class** · `treelang.ai.capabilities`
 
 ```python
-DefaultModelCapabilityNegotiator() -> 'None'
+DefaultModelCapabilityNegotiator() -> None
 ```
 
 Conservative capability and structured-output policy.
@@ -193,9 +193,9 @@ written the answer down.
 
 Methods:
 
-- `capabilities(self, transport: 'object', model: 'str') -> 'ModelCapabilities'`
-- `structured_output(self, capabilities: 'ModelCapabilities', *, model: 'str', configured_mode: 'StructuredOutputMode', schema_version: 'SchemaVersion', tools: 'list[ToolDefinition]') -> 'StructuredOutputSelection'`
-- `fallback_after_rejection(self, selection: 'StructuredOutputSelection', configured_mode: 'StructuredOutputMode') -> 'StructuredOutputSelection | None'`
+- `capabilities(self, transport: object, model: str) -> ModelCapabilities`
+- `structured_output(self, capabilities: ModelCapabilities, *, model: str, configured_mode: StructuredOutputMode, schema_version: SchemaVersion, tools: list[ToolDefinition]) -> StructuredOutputSelection`
+- `fallback_after_rejection(self, selection: StructuredOutputSelection, configured_mode: StructuredOutputMode) -> StructuredOutputSelection | None`
 
 ## `ExecutionLimitError`
 
@@ -212,7 +212,7 @@ Raised when an AST invocation exceeds a configured resource limit.
 **Class** · `treelang.trees.budget`
 
 ```python
-ExecutionLimits(max_nodes: 'int | None' = None, max_depth: 'int | None' = None, max_call_depth: 'int | None' = None, max_tool_calls: 'int | None' = None, max_concurrency: 'int | None' = None, timeout_seconds: 'float | None' = None) -> None
+ExecutionLimits(max_nodes: int | None = None, max_depth: int | None = None, max_call_depth: int | None = None, max_tool_calls: int | None = None, max_concurrency: int | None = None, timeout_seconds: float | None = None) -> None
 ```
 
 Optional resource limits for one AST invocation.
@@ -225,7 +225,7 @@ maximum, preserving historical behavior when no limits are supplied.
 **Class** · `treelang.trees.policy`
 
 ```python
-ExecutionPolicy(retry: 'RetryPolicy' = <factory>, parallel_failures: "Literal['raise', 'collect']" = 'raise') -> None
+ExecutionPolicy(retry: RetryPolicy = <factory>, parallel_failures: Literal['raise', 'collect'] = 'raise') -> None
 ```
 
 Opt-in retry and parallel partial-failure behavior.
@@ -235,7 +235,7 @@ Opt-in retry and parallel partial-failure behavior.
 **Class** · `treelang.trees.strategies`
 
 ```python
-GrowthOptions(mode: "Literal['single', 'parallel']" = 'single', name: 'str | None' = None, description: 'str | None' = None, limits: 'TransformationLimits | None' = None) -> None
+GrowthOptions(mode: Literal['single', 'parallel'] = 'single', name: str | None = None, description: str | None = None, limits: TransformationLimits | None = None) -> None
 ```
 
 Deterministic options shared by synchronous and asynchronous growers.
@@ -253,7 +253,7 @@ Tool provider backed by an initialized MCP client session.
 
 Methods:
 
-- `call_tool(self, name: str, arguments: dict[str, typing.Any]) -> treelang.ai.provider.ToolOutput` — Invoke a named tool with validated keyword arguments.
+- `call_tool(self, name: str, arguments: dict[str, Any]) -> treelang.ai.provider.ToolOutput` — Invoke a named tool with validated keyword arguments.
 - `list_tools(self) -> list[treelang.ai.tool.ToolDefinition]` — Return normalized metadata for every available tool.
 
 ## `ModelAuthenticationError`
@@ -271,7 +271,7 @@ Raised when a model provider rejects authentication or authorization.
 **Class** · `treelang.ai.capabilities`
 
 ```python
-ModelCapabilities(strict_json_schema: 'bool' = False, temperature: 'bool' = False) -> None
+ModelCapabilities(strict_json_schema: bool = False, temperature: bool = False) -> None
 ```
 
 Features supported by one model through a transport.
@@ -289,9 +289,9 @@ Policy boundary between model features and request orchestration.
 
 Methods:
 
-- `capabilities(self, transport: 'object', model: 'str') -> 'ModelCapabilities'`
-- `structured_output(self, capabilities: 'ModelCapabilities', *, model: 'str', configured_mode: 'StructuredOutputMode', schema_version: 'SchemaVersion', tools: 'list[ToolDefinition]') -> 'StructuredOutputSelection'`
-- `fallback_after_rejection(self, selection: 'StructuredOutputSelection', configured_mode: 'StructuredOutputMode') -> 'StructuredOutputSelection | None'`
+- `capabilities(self, transport: object, model: str) -> ModelCapabilities`
+- `structured_output(self, capabilities: ModelCapabilities, *, model: str, configured_mode: StructuredOutputMode, schema_version: SchemaVersion, tools: list[ToolDefinition]) -> StructuredOutputSelection`
+- `fallback_after_rejection(self, selection: StructuredOutputSelection, configured_mode: StructuredOutputMode) -> StructuredOutputSelection | None`
 
 ## `ModelConnectionError`
 
@@ -318,7 +318,7 @@ Raised when a model provider reports exhausted request capacity.
 **Class** · `treelang.replay`
 
 ```python
-ModelReplayEntry(request: 'dict[str, Any]', response: 'str | tuple[str, ...]', kind: "Literal['complete', 'stream']" = 'complete') -> None
+ModelReplayEntry(request: dict[str, Any], response: str | tuple[str, ...], kind: Literal['complete', 'stream'] = 'complete') -> None
 ```
 
 One expected model request and completion or stream response.
@@ -328,7 +328,7 @@ One expected model request and completion or stream response.
 **Class** · `treelang.replay`
 
 ```python
-ModelReplayTransport(entries: 'Sequence[ModelReplayEntry]') -> 'None'
+ModelReplayTransport(entries: Sequence[ModelReplayEntry]) -> None
 ```
 
 Replay ordered model requests without credentials or network access.
@@ -336,9 +336,9 @@ Replay ordered model requests without credentials or network access.
 
 Methods:
 
-- `complete(self, request: 'ModelRequest') -> 'str'`
-- `stream(self, request: 'ModelRequest') -> 'AsyncIterator[str]'`
-- `assert_consumed(self) -> 'None'` — Raise when expected requests remain unconsumed.
+- `complete(self, request: ModelRequest) -> str`
+- `stream(self, request: ModelRequest) -> AsyncIterator[str]`
+- `assert_consumed(self) -> None` — Raise when expected requests remain unconsumed.
 
 ## `ModelTimeoutError`
 
@@ -363,8 +363,8 @@ Minimal model interface required by Arborist orchestration.
 
 Methods:
 
-- `complete(self, request: collections.abc.Mapping[str, typing.Any]) -> str`
-- `stream(self, request: collections.abc.Mapping[str, typing.Any]) -> collections.abc.AsyncIterator[str]`
+- `complete(self, request: collections.abc.Mapping[str, Any]) -> str`
+- `stream(self, request: collections.abc.Mapping[str, Any]) -> collections.abc.AsyncIterator[str]`
 
 ## `ModelTransportError`
 
@@ -399,7 +399,7 @@ Trace sink that intentionally discards every event.
 
 Methods:
 
-- `record(self, event: str, attributes: collections.abc.Mapping[str, typing.Any]) -> None`
+- `record(self, event: str, attributes: collections.abc.Mapping[str, Any]) -> None`
 
 ## `Observability`
 
@@ -435,7 +435,7 @@ Default deterministic grower backed by validated program composition.
 
 Methods:
 
-- `grow(self, programs: 'Sequence[TreeProgram]', *, options: 'GrowthOptions') -> 'TransformResult[TreeProgram]'`
+- `grow(self, programs: Sequence[TreeProgram], *, options: GrowthOptions) -> TransformResult[TreeProgram]`
 
 ## `ReplayMismatchError`
 
@@ -448,7 +448,7 @@ Raised when runtime activity diverges from a deterministic replay.
 **Class** · `treelang.trees.policy`
 
 ```python
-RetryPolicy(max_attempts: 'int' = 1, delay_seconds: 'float' = 0, idempotent_tools: 'frozenset[str]' = <factory>, retryable_exceptions: 'tuple[type[Exception], ...]' = (<class 'treelang.exceptions.ToolExecutionError'>, <class 'TimeoutError'>)) -> None
+RetryPolicy(max_attempts: int = 1, delay_seconds: float = 0, idempotent_tools: frozenset[str] = <factory>, retryable_exceptions: tuple[type[Exception], ...] = (<class 'treelang.exceptions.ToolExecutionError'>, <class 'TimeoutError'>)) -> None
 ```
 
 Retry transient failures only for tools declared safe to repeat.
@@ -464,7 +464,7 @@ Raised when a provider rejects strict structured-output configuration.
 **Class** · `treelang.ai.capabilities`
 
 ```python
-StructuredOutputSelection(response_format: 'dict[str, Any]', mode: 'SelectedOutputMode', fallback_reason: 'str | None' = None, negotiated_for: 'tuple[str, SchemaVersion] | None' = None) -> None
+StructuredOutputSelection(response_format: dict[str, Any], mode: SelectedOutputMode, fallback_reason: str | None = None, negotiated_for: tuple[str, SchemaVersion] | None = None) -> None
 ```
 
 Negotiated response format and the reason for compatibility fallback.
@@ -494,7 +494,7 @@ Fields:
 - `properties: Required[dict[str, treelang.ai.tool.ToolProperty]]`
 - `description: NotRequired[str | None]`
 - `input_schema: NotRequired[dict[str, Any]]`
-- `effects: NotRequired[ForwardRef('ToolEffects')]`
+- `effects: NotRequired[ToolEffects]`
 
 ## `ToolEffects`
 
@@ -577,7 +577,7 @@ Provider-neutral interface for tool discovery and invocation.
 Methods:
 
 - `get_tool_definition(self, name: str) -> treelang.ai.tool.ToolDefinition` — Return normalized metadata for one named tool.
-- `call_tool(self, name: str, arguments: dict[str, typing.Any]) -> treelang.ai.provider.ToolOutput` — Invoke a named tool with validated keyword arguments.
+- `call_tool(self, name: str, arguments: dict[str, Any]) -> treelang.ai.provider.ToolOutput` — Invoke a named tool with validated keyword arguments.
 - `list_tools(self) -> list[treelang.ai.tool.ToolDefinition]` — Return normalized metadata for every available tool.
 
 ## `ToolReplayEntry`
@@ -585,7 +585,7 @@ Methods:
 **Class** · `treelang.replay`
 
 ```python
-ToolReplayEntry(name: 'str', arguments: 'dict[str, Any]', output: 'Any') -> None
+ToolReplayEntry(name: str, arguments: dict[str, Any], output: Any) -> None
 ```
 
 One expected provider invocation and its deterministic output.
@@ -595,7 +595,7 @@ One expected provider invocation and its deterministic output.
 **Class** · `treelang.replay`
 
 ```python
-ToolReplayProvider(tools: 'Sequence[ToolDefinition]', entries: 'Sequence[ToolReplayEntry]') -> 'None'
+ToolReplayProvider(tools: Sequence[ToolDefinition], entries: Sequence[ToolReplayEntry]) -> None
 ```
 
 Replay an ordered sequence of tool calls and reject any drift.
@@ -603,9 +603,9 @@ Replay an ordered sequence of tool calls and reject any drift.
 
 Methods:
 
-- `list_tools(self) -> 'list[ToolDefinition]'` — Return normalized metadata for every available tool.
-- `call_tool(self, name: 'str', arguments: 'dict[str, Any]') -> 'ToolOutput'` — Invoke a named tool with validated keyword arguments.
-- `assert_consumed(self) -> 'None'` — Raise when expected calls remain unconsumed.
+- `list_tools(self) -> list[ToolDefinition]` — Return normalized metadata for every available tool.
+- `call_tool(self, name: str, arguments: dict[str, Any]) -> ToolOutput` — Invoke a named tool with validated keyword arguments.
+- `assert_consumed(self) -> None` — Raise when expected calls remain unconsumed.
 
 ## `TraceSink`
 
@@ -620,14 +620,14 @@ Vendor-neutral destination for already-redacted trace events.
 
 Methods:
 
-- `record(self, event: str, attributes: collections.abc.Mapping[str, typing.Any]) -> None`
+- `record(self, event: str, attributes: collections.abc.Mapping[str, Any]) -> None`
 
 ## `TransformationLimits`
 
 **Class** · `treelang.trees.transforms`
 
 ```python
-TransformationLimits(max_nodes: 'int | None' = None, max_depth: 'int | None' = None) -> None
+TransformationLimits(max_nodes: int | None = None, max_depth: int | None = None) -> None
 ```
 
 Optional inclusive structural limits for a transformed program.
@@ -637,7 +637,7 @@ Optional inclusive structural limits for a transformed program.
 **Class** · `treelang.trees.transforms`
 
 ```python
-TransformResult(tree: 'TreeT', lineage: 'tuple[TransformationRecord, ...]' = ()) -> None
+TransformResult(tree: TreeT, lineage: tuple[TransformationRecord, ...] = ()) -> None
 ```
 
 A transformed tree together with its complete reproducible lineage.
@@ -647,7 +647,7 @@ A transformed tree together with its complete reproducible lineage.
 **Class** · `treelang.trees.transforms`
 
 ```python
-TransformationRecord(name: 'str', changes: 'tuple[TreeChange, ...]' = (), seed: 'int | None' = None) -> None
+TransformationRecord(name: str, changes: tuple[TreeChange, ...] = (), seed: int | None = None) -> None
 ```
 
 Named transformation step and the changes it produced.
@@ -657,7 +657,7 @@ Named transformation step and the changes it produced.
 **Class** · `treelang.trees.schemas.v1`
 
 ```python
-TreeConditional(*, type: Literal['conditional'] = 'conditional', condition: Node, true_branch: Node, false_branch: Optional[Node] = None) -> None
+TreeConditional(*, type: Literal['conditional'] = 'conditional', condition: Node, true_branch: Node, false_branch: Node | None = None) -> None
 ```
 
 Represents a conditional statement in the AST.
@@ -666,20 +666,20 @@ Represents a conditional statement in the AST.
 Fields:
 
 - `type: Literal['conditional']`
-- `condition: 'Node'`
-- `true_branch: 'Node'`
-- `false_branch: Optional[ForwardRef('Node')]`
+- `condition: Node`
+- `true_branch: Node`
+- `false_branch: Node | None`
 
 Methods:
 
-- `eval(self, provider: treelang.ai.provider.ToolProvider, context: 'ExecutionContext | None' = None) -> Any`
+- `eval(self, provider: treelang.ai.provider.ToolProvider, context: ExecutionContext | None = None) -> Any`
 
 ## `TreeChange`
 
 **Class** · `treelang.trees.transforms`
 
 ```python
-TreeChange(kind: 'TreeChangeKind', path: 'TreePath', description: 'str', source_path: 'TreePath | None' = None) -> None
+TreeChange(kind: TreeChangeKind, path: TreePath, description: str, source_path: TreePath | None = None) -> None
 ```
 
 One deterministic structural change made by a transformation.
@@ -709,18 +709,18 @@ Fields:
 
 - `type: Literal['filter']`
 - `function: treelang.trees.schemas.v1.TreeLambda`
-- `iterable: 'Node'`
+- `iterable: Node`
 
 Methods:
 
-- `eval(self, provider: treelang.ai.provider.ToolProvider, context: 'ExecutionContext | None' = None) -> Any`
+- `eval(self, provider: treelang.ai.provider.ToolProvider, context: ExecutionContext | None = None) -> Any`
 
 ## `TreeFunction`
 
 **Class** · `treelang.trees.schemas.v1`
 
 ```python
-TreeFunction(*, type: Literal['function'] = 'function', name: Annotated[str, MinLen(min_length=1)], params: List[Node]) -> None
+TreeFunction(*, type: Literal['function'] = 'function', name: Annotated[str, MinLen(min_length=1)], params: list[Node]) -> None
 ```
 
 Represents a function in the abstract syntax tree (AST).
@@ -730,18 +730,18 @@ Fields:
 
 - `type: Literal['function']`
 - `name: str`
-- `params: List[ForwardRef('Node')]`
+- `params: list[Node]`
 
 Methods:
 
-- `eval(self, provider: treelang.ai.provider.ToolProvider, context: 'ExecutionContext | None' = None) -> Any`
+- `eval(self, provider: treelang.ai.provider.ToolProvider, context: ExecutionContext | None = None) -> Any`
 
 ## `TreeLambda`
 
 **Class** · `treelang.trees.schemas.v1`
 
 ```python
-TreeLambda(*, type: Literal['lambda'] = 'lambda', params: List[str], body: treelang.trees.schemas.v1.TreeFunction) -> None
+TreeLambda(*, type: Literal['lambda'] = 'lambda', params: list[str], body: treelang.trees.schemas.v1.TreeFunction) -> None
 ```
 
 Represents an anonymous (lambda) function.
@@ -750,12 +750,12 @@ Represents an anonymous (lambda) function.
 Fields:
 
 - `type: Literal['lambda']`
-- `params: List[str]`
+- `params: list[str]`
 - `body: treelang.trees.schemas.v1.TreeFunction`
 
 Methods:
 
-- `eval(self, provider: treelang.ai.provider.ToolProvider, context: 'ExecutionContext | None' = None) -> Any`
+- `eval(self, provider: treelang.ai.provider.ToolProvider, context: ExecutionContext | None = None) -> Any`
 
 ## `TreeMap`
 
@@ -772,11 +772,11 @@ Fields:
 
 - `type: Literal['map']`
 - `function: treelang.trees.schemas.v1.TreeLambda`
-- `iterable: 'Node'`
+- `iterable: Node`
 
 Methods:
 
-- `eval(self, provider: treelang.ai.provider.ToolProvider, context: 'ExecutionContext | None' = None) -> Any`
+- `eval(self, provider: treelang.ai.provider.ToolProvider, context: ExecutionContext | None = None) -> Any`
 
 ## `TreeNode`
 
@@ -795,7 +795,7 @@ Fields:
 
 Methods:
 
-- `eval(self, provider: treelang.ai.provider.ToolProvider, context: 'ExecutionContext | None' = None) -> Any`
+- `eval(self, provider: treelang.ai.provider.ToolProvider, context: ExecutionContext | None = None) -> Any`
 - `hash(self) -> str`
 
 ## `TreePath`
@@ -803,7 +803,7 @@ Methods:
 **Class** · `treelang.trees.transforms`
 
 ```python
-TreePath(segments: 'tuple[TreePathSegment, ...]' = ()) -> None
+TreePath(segments: tuple[TreePathSegment, ...] = ()) -> None
 ```
 
 Identify a node by field names and zero-based sequence indexes.
@@ -815,7 +815,7 @@ transformation root.
 
 Methods:
 
-- `child(self, segment: 'TreePathSegment') -> 'TreePath'` — Return a new path extended by one field name or sequence index.
+- `child(self, segment: TreePathSegment) -> TreePath` — Return a new path extended by one field name or sequence index.
 
 ## `TreeGrower`
 
@@ -830,7 +830,7 @@ Synchronous deterministic program-growth strategy.
 
 Methods:
 
-- `grow(self, programs: 'Sequence[TreeProgram]', *, options: 'GrowthOptions') -> 'TransformResult[TreeProgram]'`
+- `grow(self, programs: Sequence[TreeProgram], *, options: GrowthOptions) -> TransformResult[TreeProgram]`
 
 ## `TreePruner`
 
@@ -845,14 +845,14 @@ Strategy that returns a tree and reproducible pruning lineage.
 
 Methods:
 
-- `prune(self, tree: 'GeneratedTree') -> 'TransformResult[TreeNode] | TransformResult[TreeProgram]'`
+- `prune(self, tree: GeneratedTree) -> TransformResult[TreeNode] | TransformResult[TreeProgram]`
 
 ## `TreeProgram`
 
 **Class** · `treelang.trees.schemas.v1`
 
 ```python
-TreeProgram(*, type: Literal['program'] = 'program', body: List[Node], mode: Literal['single', 'parallel'], name: Optional[str] = None, description: Optional[str] = None, schema_version: Literal['1.0'] = '1.0') -> None
+TreeProgram(*, type: Literal['program'] = 'program', body: list[Node], mode: Literal['single', 'parallel'], name: str | None = None, description: str | None = None, schema_version: Literal['1.0'] = '1.0') -> None
 ```
 
 Represents a program in the abstract syntax tree (AST).
@@ -861,15 +861,15 @@ Represents a program in the abstract syntax tree (AST).
 Fields:
 
 - `type: Literal['program']`
-- `body: List[ForwardRef('Node')]`
+- `body: list[Node]`
 - `mode: Literal['single', 'parallel']`
-- `name: Optional[str]`
-- `description: Optional[str]`
+- `name: str | None`
+- `description: str | None`
 - `schema_version: Literal['1.0']`
 
 Methods:
 
-- `eval(self, provider: treelang.ai.provider.ToolProvider, context: 'ExecutionContext | None' = None) -> Any`
+- `eval(self, provider: treelang.ai.provider.ToolProvider, context: ExecutionContext | None = None) -> Any`
 
 ## `TreeReduce`
 
@@ -886,11 +886,11 @@ Fields:
 
 - `type: Literal['reduce']`
 - `function: treelang.trees.schemas.v1.TreeLambda`
-- `iterable: 'Node'`
+- `iterable: Node`
 
 Methods:
 
-- `eval(self, provider: treelang.ai.provider.ToolProvider, context: 'ExecutionContext | None' = None) -> Any`
+- `eval(self, provider: treelang.ai.provider.ToolProvider, context: ExecutionContext | None = None) -> Any`
 
 ## `TreeValue`
 
@@ -911,7 +911,7 @@ Fields:
 
 Methods:
 
-- `eval(self, provider: treelang.ai.provider.ToolProvider, context: 'ExecutionContext | None' = None) -> Any`
+- `eval(self, provider: treelang.ai.provider.ToolProvider, context: ExecutionContext | None = None) -> Any`
 
 ## `TreelangError`
 
@@ -944,7 +944,7 @@ Methods:
 
 **Constant** · `treelang`
 
-Current value: `'1.3.0'`
+Current value: `'1.4.0'`
 
 ## `ast_examples`
 
@@ -971,7 +971,7 @@ Return the JSON schema for the Treelang AST model.
 **Function** · `treelang.trees.grafting`
 
 ```python
-graft_expression(program: 'TreeProgram', graft: 'Expression', *, at: 'TreePath', limits: 'TransformationLimits | None' = None) -> 'TransformResult[TreeProgram]'
+graft_expression(program: TreeProgram, graft: Expression, *, at: TreePath, limits: TransformationLimits | None = None) -> TransformResult[TreeProgram]
 ```
 
 Replace the expression at ``at`` with ``graft`` and validate the result.
@@ -981,7 +981,7 @@ Replace the expression at ``at`` with ``graft`` and validate the result.
 **Function** · `treelang.schema_artifacts`
 
 ```python
-json_schema_text(version: 'SupportedSchemaVersion') -> 'str'
+json_schema_text(version: SupportedSchemaVersion) -> str
 ```
 
 Read one canonical schema exactly as distributed in the package.
@@ -991,7 +991,7 @@ Read one canonical schema exactly as distributed in the package.
 **Function** · `treelang.schema_artifacts`
 
 ```python
-load_json_schema(version: 'SupportedSchemaVersion') -> 'dict[str, Any]'
+load_json_schema(version: SupportedSchemaVersion) -> dict[str, Any]
 ```
 
 Load one canonical schema as a JSON-compatible mapping.
@@ -1001,7 +1001,7 @@ Load one canonical schema as a JSON-compatible mapping.
 **Function** · `treelang.trees.pruning`
 
 ```python
-prune_tree(tree: 'TreeProgram | TreeNode') -> 'TransformResult[TreeProgram] | TransformResult[TreeNode]'
+prune_tree(tree: TreeProgram | TreeNode) -> TransformResult[TreeProgram] | TransformResult[TreeNode]
 ```
 
 Prune a version 2 program, preserving version 1 trees unchanged.
@@ -1011,7 +1011,7 @@ Prune a version 2 program, preserving version 1 trees unchanged.
 **Function** · `treelang.trees.grafting`
 
 ```python
-wrap_expression(program: 'TreeProgram', wrapper: 'Expression', *, at: 'TreePath', placeholder: 'str' = 'graft', limits: 'TransformationLimits | None' = None) -> 'TransformResult[TreeProgram]'
+wrap_expression(program: TreeProgram, wrapper: Expression, *, at: TreePath, placeholder: str = 'graft', limits: TransformationLimits | None = None) -> TransformResult[TreeProgram]
 ```
 
 Replace placeholder variables in ``wrapper`` with the expression at ``at``.

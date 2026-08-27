@@ -5,6 +5,8 @@ import json
 from collections.abc import AsyncIterator, Callable
 from typing import Any, cast
 
+from pydantic import TypeAdapter
+
 from evaluation.data.tools import tools
 from evaluation.models import EvaluationCase
 from treelang.ai.provider import ToolOutput, ToolProvider
@@ -37,10 +39,14 @@ class OfflineToolProvider(ToolProvider):
 
     @staticmethod
     def _definition(function: Callable[..., Any]) -> ToolDefinition:
-        properties: dict[str, ToolProperty] = {
-            parameter_name: {}
-            for parameter_name in inspect.signature(function).parameters
-        }
+        properties: dict[str, ToolProperty] = {}
+        for parameter_name, parameter in inspect.signature(function).parameters.items():
+            schema = (
+                {}
+                if parameter.annotation is inspect.Parameter.empty
+                else TypeAdapter(parameter.annotation).json_schema()
+            )
+            properties[parameter_name] = cast(ToolProperty, schema)
         return {
             "name": function.__name__,
             "description": inspect.getdoc(function),

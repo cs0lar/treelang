@@ -5,7 +5,7 @@ import logging
 from collections.abc import Callable
 from datetime import UTC, datetime
 from time import perf_counter
-from typing import Any
+from typing import Any, cast
 
 from evaluation.models import (
     BenchmarkResult,
@@ -17,7 +17,7 @@ from evaluation.models import (
 from treelang.ai.arborist import OpenAIArborist
 from treelang.ai.responses import EvalType
 from treelang.ai.transport import UsageAwareTransport
-from treelang.observability import Observability
+from treelang.observability import REDACTED, Observability, redact
 from treelang.trees.schemas.v1 import TreeProgram
 from treelang.trees.tree import AST
 
@@ -67,6 +67,12 @@ class LiveBenchmarkRunner:
             duration_ms=max(0.0, (self.clock() - started) * 1000),
             model=self.arborist.model,
             provider=self.provider_name,
+            model_api=(
+                self.arborist.config.openai_api
+                if self.provider_name == "openai"
+                else None
+            ),
+            reasoning_effort=self.arborist.config.reasoning_effort,
             results=results,
         )
         self.observability.emit(
@@ -89,6 +95,12 @@ class LiveBenchmarkRunner:
             "latency_ms": 0.0,
             "model": self.arborist.model,
             "provider": self.provider_name,
+            "model_api": (
+                self.arborist.config.openai_api
+                if self.provider_name == "openai"
+                else None
+            ),
+            "reasoning_effort": self.arborist.config.reasoning_effort,
         }
         self.observability.emit(
             "benchmark.case.started",
@@ -115,6 +127,25 @@ class LiveBenchmarkRunner:
                 FailureCategory.SCHEMA,
                 TypeError("Model did not return a tree program"),
             )
+        if response.jsontree is not None:
+            values["generated_ast"] = _redact_generated_ast(response.jsontree)
+        serialized_ast = json.dumps(response.jsontree).lower()
+        missing_operations = [
+            required
+            for required in case.must_use
+            if required.lower() not in serialized_ast
+        ]
+        values["required_tools_used"] = not missing_operations
+        if missing_operations:
+            return self._failure(
+                values,
+                started,
+                FailureCategory.CORRECTNESS,
+                ValueError(
+                    "Generated AST omitted required operations: "
+                    f"{', '.join(missing_operations)}"
+                ),
+            )
         try:
             actual = await AST.eval(tree, self.arborist.provider)
             values["actual"] = actual
@@ -123,10 +154,6 @@ class LiveBenchmarkRunner:
             return self._failure(values, started, FailureCategory.EXECUTION, error)
 
         values["answer_correct"] = actual == case.expected
-        serialized_ast = json.dumps(response.jsontree).lower()
-        values["required_tools_used"] = all(
-            required.lower() in serialized_ast for required in case.must_use
-        )
         if not values["answer_correct"] or not values["required_tools_used"]:
             values["failure_category"] = FailureCategory.CORRECTNESS
         return self._complete(values, started)
@@ -171,3 +198,30 @@ class LiveBenchmarkRunner:
             expected=result.expected,
         )
         return result
+
+
+def _redact_generated_ast(tree: dict[str, Any]) -> dict[str, Any]:
+    """Retain generated structure while removing literal model content."""
+
+    safe_tree = redact(tree, allow_content=True)
+
+    def redact_literals(value: Any) -> Any:
+        if isinstance(value, dict):
+            node_type = value.get("type")
+            return {
+                key: (
+                    REDACTED
+                    if key == "value"
+                    and node_type in {"value", "literal"}
+                    and item is not None
+                    else redact_literals(item)
+                )
+                for key, item in value.items()
+            }
+        if isinstance(value, list):
+            return [redact_literals(item) for item in value]
+        return value
+
+    if not isinstance(safe_tree, dict):  # pragma: no cover - input is typed
+        raise TypeError("Generated AST must be an object")
+    return cast(dict[str, Any], redact_literals(safe_tree))

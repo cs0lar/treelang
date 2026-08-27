@@ -52,12 +52,15 @@ class CaseResult(BaseModel):
     execution_success: bool = False
     answer_correct: bool = False
     required_tools_used: bool = False
+    generated_ast: dict[str, Any] | None = None
     latency_ms: float = Field(ge=0)
     prompt_tokens: int = Field(default=0, ge=0)
     completion_tokens: int = Field(default=0, ge=0)
     estimated_cost_usd: float = Field(default=0, ge=0)
     model: str
     provider: str
+    model_api: str | None = None
+    reasoning_effort: str | None = None
     failure_category: FailureCategory | None = None
     error: str | None = None
 
@@ -80,6 +83,8 @@ class BenchmarkResult(BaseModel):
     duration_ms: float = Field(ge=0)
     model: str
     provider: str
+    model_api: str | None = None
+    reasoning_effort: str | None = None
     results: list[CaseResult]
 
     @computed_field  # type: ignore[prop-decorator]

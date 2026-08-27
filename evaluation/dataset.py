@@ -12,8 +12,8 @@ DEFAULT_DATASET_PATH = Path(__file__).parent / "data" / "v1" / "offline.json"
 DEFAULT_RECURSIVE_DATASET_PATH = (
     Path(__file__).parent / "data" / "v2" / "offline-recursion.json"
 )
-DEFAULT_LIVE_DATASET_VERSION = "2.0"
-DEFAULT_LIVE_DATASET_PATH = Path(__file__).parent / "data" / "v2" / "live.jsonl"
+DEFAULT_LIVE_DATASET_VERSION = "3.0"
+DEFAULT_LIVE_DATASET_PATH = Path(__file__).parent / "data" / "v3" / "live.jsonl"
 
 
 def load_dataset(path: Path = DEFAULT_DATASET_PATH) -> EvaluationDataset:

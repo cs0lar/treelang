@@ -10,6 +10,7 @@ from evaluation.models import FailureCategory, LiveEvaluationCase, LiveEvaluatio
 from evaluation.offline import OfflineToolProvider
 from treelang.ai.arborist import ArboristConfig, OpenAIArborist
 from treelang.ai.transport import ModelUsage
+from treelang.observability import REDACTED
 
 
 def ticking_clock():
@@ -79,7 +80,7 @@ def runner(responses, **kwargs):
 def test_live_dataset_has_stable_case_identifiers():
     dataset = load_live_dataset()
 
-    assert dataset.version == "2.0"
+    assert dataset.version == "3.0"
     assert len(dataset.cases) == 10
     assert len({case.id for case in dataset.cases}) == 10
 
@@ -106,6 +107,36 @@ async def test_currency_case_requires_documented_code_lookup_composition():
 
 
 @pytest.mark.asyncio
+async def test_reduce_case_requires_typed_population_reduction():
+    dataset = load_live_dataset()
+    case = next(
+        case for case in dataset.cases if case.id == "reduce-australian-population"
+    )
+    provider = OfflineToolProvider()
+    definitions = {
+        definition["name"]: definition for definition in await provider.list_tools()
+    }
+
+    assert case.must_use == [
+        "get_all_cities_in_country",
+        "get_city_population",
+        "reduce",
+        "add",
+        "lambda",
+    ]
+    assert definitions["get_all_cities_in_country"]["properties"]["country"] == {
+        "type": "string"
+    }
+    assert definitions["get_city_population"]["properties"]["city"] == {
+        "type": "string"
+    }
+    assert definitions["add"]["properties"] == {
+        "x": {"type": "number"},
+        "y": {"type": "number"},
+    }
+
+
+@pytest.mark.asyncio
 async def test_live_runner_records_quality_usage_cost_and_identity():
     benchmark = runner([value_program(42)])
     dataset = LiveEvaluationDataset(version="1.0", cases=[live_case()])
@@ -115,11 +146,18 @@ async def test_live_runner_records_quality_usage_cost_and_identity():
     assert result.mode == "live"
     assert result.model == "gpt-test"
     assert result.provider == "openai"
+    assert result.model_api == "chat_completions"
+    assert result.reasoning_effort is None
     assert result.passed == result.total == 1
     case = result.results[0]
     assert case.prompt_tokens == 100
     assert case.completion_tokens == 20
     assert case.estimated_cost_usd == pytest.approx(0.00036)
+    assert case.generated_ast == {
+        "type": "program",
+        "mode": "single",
+        "body": [{"type": "value", "name": "answer", "value": REDACTED}],
+    }
 
 
 def test_live_runner_rejects_negative_pricing():
@@ -148,6 +186,78 @@ async def test_live_runner_categorizes_model_failures(response, case, category):
     assert result.failure_category == category
     assert not result.passed
     assert result.prompt_tokens == 100
+
+
+@pytest.mark.asyncio
+async def test_live_runner_rejects_transformed_reduce_without_initializer():
+    response = json.dumps(
+        {
+            "type": "program",
+            "mode": "single",
+            "body": [
+                {
+                    "type": "reduce",
+                    "function": {
+                        "type": "lambda",
+                        "params": ["total", "city"],
+                        "body": {
+                            "type": "function",
+                            "name": "add",
+                            "params": [
+                                {
+                                    "type": "value",
+                                    "name": "total",
+                                    "value": None,
+                                },
+                                {
+                                    "type": "function",
+                                    "name": "get_city_population",
+                                    "params": [
+                                        {
+                                            "type": "value",
+                                            "name": "city",
+                                            "value": None,
+                                        }
+                                    ],
+                                },
+                            ],
+                        },
+                    },
+                    "iterable": {
+                        "type": "function",
+                        "name": "get_all_cities_in_country",
+                        "params": [
+                            {
+                                "type": "value",
+                                "name": "country",
+                                "value": "Australia",
+                            }
+                        ],
+                    },
+                }
+            ],
+        }
+    )
+    case = live_case(
+        must_use=[
+            "get_all_cities_in_country",
+            "get_city_population",
+            "reduce",
+            "add",
+            "lambda",
+        ]
+    )
+
+    result = await runner([response]).run_case(case)
+
+    assert result.failure_category == FailureCategory.SCHEMA
+    assert result.execution_success is False
+    assert result.error is not None
+    assert (
+        "transforms its current item requires an explicit non-null accumulator"
+        in result.error
+    )
+    assert result.generated_ast is None
 
 
 @pytest.mark.asyncio
@@ -203,3 +313,27 @@ def test_live_runtime_rejects_unknown_provider():
 
     with pytest.raises(ValueError, match="Unsupported model provider"):
         create_model_runtime("other", None)  # type: ignore[arg-type]
+
+
+def test_live_runtime_selects_openai_responses_and_reasoning(monkeypatch):
+    from evaluation.live_eval import create_model_runtime
+    from treelang.ai.transport import OpenAIResponsesTransport
+
+    monkeypatch.setenv("OPENAI_API_KEY", "test-key")
+    config, transport = create_model_runtime(
+        "openai",
+        "gpt-5.6-terra",
+        openai_api="responses",
+        reasoning_effort="medium",
+    )
+
+    assert config.openai_api == "responses"
+    assert config.reasoning_effort == "medium"
+    assert isinstance(transport, OpenAIResponsesTransport)
+
+
+def test_live_runtime_rejects_openai_options_for_anthropic():
+    from evaluation.live_eval import create_model_runtime
+
+    with pytest.raises(ValueError, match="require provider_name='openai'"):
+        create_model_runtime("anthropic", None, openai_api="responses")

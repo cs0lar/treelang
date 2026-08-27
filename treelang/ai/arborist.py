@@ -23,6 +23,7 @@ from treelang.ai.selector import AllToolsSelector, BaseToolSelector
 from treelang.ai.tool import ToolDefinition, tool_input_schema
 from treelang.ai.transport import (
     ModelTransport,
+    OpenAIResponsesTransport,
     OpenAITransport,
     complete_with_timeout,
     openai_model_capabilities,
@@ -225,9 +226,16 @@ class OpenAIArborist(BaseArborist):
             async_growth_strategy=async_growth_strategy,
         )
         self.config = runtime_config
-        self.transport = transport or OpenAITransport(
-            api_key=runtime_config.api_key, timeout=runtime_config.timeout
-        )
+        if transport is not None:
+            self.transport = transport
+        elif runtime_config.openai_api == "responses":
+            self.transport = OpenAIResponsesTransport(
+                api_key=runtime_config.api_key, timeout=runtime_config.timeout
+            )
+        else:
+            self.transport = OpenAITransport(
+                api_key=runtime_config.api_key, timeout=runtime_config.timeout
+            )
         # Compatibility for callers that accessed the OpenAI client directly.
         self.openai = getattr(self.transport, "client", None)
         self.memory = memory
@@ -288,7 +296,11 @@ class OpenAIArborist(BaseArborist):
             request["temperature"] = self.config.temperature
 
         available_tools = await self.selector.select(self.provider, query)
-        if available_tools:
+        if self.config.openai_api == "responses":
+            request["treelang_tools"] = available_tools
+            if self.config.reasoning_effort is not None:
+                request["reasoning_effort"] = self.config.reasoning_effort
+        elif available_tools:
             request["tools"] = [
                 {
                     "type": "function",
@@ -300,6 +312,9 @@ class OpenAIArborist(BaseArborist):
                 }
                 for tool in available_tools
             ]
+            # Tools describe the vocabulary available to the generated AST. The
+            # model must not invoke them while it is compiling that AST.
+            request["tool_choice"] = "none"
         output_selection = self._configure_structured_output(
             request, available_tools, capabilities
         )

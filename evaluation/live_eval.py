@@ -16,8 +16,8 @@ from evaluation.live import LiveBenchmarkRunner
 from evaluation.offline import OfflineToolProvider
 from treelang.ai.anthropic import AnthropicTransport
 from treelang.ai.arborist import OpenAIArborist
-from treelang.ai.config import ArboristConfig
-from treelang.ai.transport import OpenAITransport
+from treelang.ai.config import ArboristConfig, OpenAIAPI, ReasoningEffort
+from treelang.ai.transport import OpenAIResponsesTransport, OpenAITransport
 
 type ProviderName = Literal["openai", "anthropic"]
 DEFAULT_ANTHROPIC_MODEL = "claude-sonnet-4-6"
@@ -34,6 +34,15 @@ def parse_args() -> argparse.Namespace:
         default="openai",
     )
     parser.add_argument("--model")
+    parser.add_argument(
+        "--openai-api",
+        choices=("chat_completions", "responses"),
+        default="chat_completions",
+    )
+    parser.add_argument(
+        "--reasoning-effort",
+        choices=("none", "low", "medium", "high", "xhigh"),
+    )
     parser.add_argument("--input-cost-per-million", type=float, default=0.0)
     parser.add_argument("--output-cost-per-million", type=float, default=0.0)
     return parser.parse_args()
@@ -48,9 +57,16 @@ async def run(
     provider_name: ProviderName = "openai",
     input_cost_per_million: float,
     output_cost_per_million: float,
+    openai_api: OpenAIAPI = "chat_completions",
+    reasoning_effort: ReasoningEffort | None = None,
 ) -> int:
     dataset = load_live_dataset(dataset_path, version=dataset_version)
-    config, transport = create_model_runtime(provider_name, model)
+    config, transport = create_model_runtime(
+        provider_name,
+        model,
+        openai_api=openai_api,
+        reasoning_effort=reasoning_effort,
+    )
     tool_provider = OfflineToolProvider()
     arborist = OpenAIArborist(
         model=config.model,
@@ -77,15 +93,35 @@ async def run(
 def create_model_runtime(
     provider: ProviderName,
     model: str | None,
-) -> tuple[ArboristConfig, OpenAITransport | AnthropicTransport]:
+    *,
+    openai_api: OpenAIAPI = "chat_completions",
+    reasoning_effort: ReasoningEffort | None = None,
+) -> tuple[
+    ArboristConfig,
+    OpenAITransport | OpenAIResponsesTransport | AnthropicTransport,
+]:
     """Create one provider transport from provider-specific environment values."""
     if provider == "openai":
-        config = ArboristConfig.from_env(model)
-        return config, OpenAITransport(
+        environment = ArboristConfig.from_env(model)
+        config = ArboristConfig(
+            model=environment.model,
+            api_key=environment.api_key,
+            timeout=environment.timeout,
+            openai_api=openai_api,
+            reasoning_effort=reasoning_effort,
+        )
+        transport_type = (
+            OpenAIResponsesTransport if openai_api == "responses" else OpenAITransport
+        )
+        return config, transport_type(
             api_key=config.api_key,
             timeout=config.timeout,
         )
     if provider == "anthropic":
+        if openai_api != "chat_completions" or reasoning_effort is not None:
+            raise ValueError(
+                "OpenAI API and reasoning options require provider_name='openai'"
+            )
         selected_model = (
             model or os.getenv("ANTHROPIC_MODEL") or DEFAULT_ANTHROPIC_MODEL
         )
@@ -111,6 +147,8 @@ def main() -> int:
             provider_name=arguments.provider,
             input_cost_per_million=arguments.input_cost_per_million,
             output_cost_per_million=arguments.output_cost_per_million,
+            openai_api=arguments.openai_api,
+            reasoning_effort=arguments.reasoning_effort,
         )
     )
 
