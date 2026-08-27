@@ -66,7 +66,7 @@ def get_largest_city_by_rank(country, rank):
         return "Ranking out of range"
 
 
-def get_city_population(city):
+def get_city_population(city: str):
     """Get the population of a given city."""
     city_lower = city.lower()
     if city_lower == "paris":
@@ -246,7 +246,7 @@ def less_than(value, threshold):
     return value < threshold
 
 
-def get_all_cities_in_country(country):
+def get_all_cities_in_country(country: str):
     """Get all cities in a given country."""
     country_lower = country.lower()
     if country_lower == "france":
@@ -261,7 +261,7 @@ def get_all_cities_in_country(country):
         return []
 
 
-def add(x, y):
+def add(x: float, y: float):
     """Add two numbers."""
     return float(x) + float(y)
 

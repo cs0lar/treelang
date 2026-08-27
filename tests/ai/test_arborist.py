@@ -228,6 +228,7 @@ async def test_arborist_tree_mode_builds_typed_request_with_memory_and_tools():
         "second",
     ]
     assert request["tools"][0]["function"]["name"] == "identity"
+    assert request["tool_choice"] == "none"
     assert request["response_format"] == {"type": "json_object"}
 
 
@@ -888,6 +889,51 @@ async def test_openai_transport_rejects_missing_text():
     )
 
     with pytest.raises(ProviderResponseError, match="no text content"):
+        await OpenAITransport(client=client).complete({})
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("message", "finish_reason", "expected"),
+    [
+        (
+            SimpleNamespace(content=None, tool_calls=[SimpleNamespace()]),
+            "tool_calls",
+            "tool calls instead of text content",
+        ),
+        (
+            SimpleNamespace(content=None, refusal="Cannot comply"),
+            "stop",
+            "refused to produce text content",
+        ),
+        (
+            SimpleNamespace(content=None),
+            "length",
+            "finish reason: length",
+        ),
+    ],
+)
+async def test_openai_transport_explains_non_text_completion(
+    message, finish_reason, expected
+):
+    client = SimpleNamespace(
+        chat=SimpleNamespace(
+            completions=SimpleNamespace(
+                create=AsyncMock(
+                    return_value=SimpleNamespace(
+                        choices=[
+                            SimpleNamespace(
+                                message=message,
+                                finish_reason=finish_reason,
+                            )
+                        ]
+                    )
+                )
+            )
+        )
+    )
+
+    with pytest.raises(ProviderResponseError, match=expected):
         await OpenAITransport(client=client).complete({})
 
 

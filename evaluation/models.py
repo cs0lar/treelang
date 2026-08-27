@@ -52,6 +52,7 @@ class CaseResult(BaseModel):
     execution_success: bool = False
     answer_correct: bool = False
     required_tools_used: bool = False
+    generated_ast: dict[str, Any] | None = None
     latency_ms: float = Field(ge=0)
     prompt_tokens: int = Field(default=0, ge=0)
     completion_tokens: int = Field(default=0, ge=0)

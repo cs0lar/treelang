@@ -185,8 +185,22 @@ class OpenAITransport:
         choices = getattr(completion, "choices", None)
         if not isinstance(choices, list) or not choices:
             raise ProviderResponseError("Model response contained no choices")
-        content = getattr(getattr(choices[0], "message", None), "content", None)
+        choice = choices[0]
+        message = getattr(choice, "message", None)
+        content = getattr(message, "content", None)
         if not isinstance(content, str):
+            if getattr(message, "tool_calls", None):
+                raise ProviderResponseError(
+                    "Model returned tool calls instead of text content"
+                )
+            if getattr(message, "refusal", None):
+                raise ProviderResponseError("Model refused to produce text content")
+            finish_reason = getattr(choice, "finish_reason", None)
+            if isinstance(finish_reason, str) and finish_reason:
+                raise ProviderResponseError(
+                    f"Model response contained no text content "
+                    f"(finish reason: {finish_reason})"
+                )
             raise ProviderResponseError("Model response contained no text content")
         return content
 
