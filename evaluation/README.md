@@ -16,12 +16,13 @@ definition.
 
 Datasets live under versioned directories in `evaluation/data/`. Add or change a
 case by creating a new dataset version so benchmark results remain comparable.
-The current credentialed questions in `data/v2/live.jsonl` are excluded from
+The current credentialed questions in `data/v3/live.jsonl` are excluded from
 normal CI. Each case has a stable ID so results remain comparable across runs.
 
-Live dataset 2.0 clarifies that currency exchange tools consume three-letter
-currency codes and requires the country-to-currency lookup in `usd-jpy-rate`.
-Version 1 remains committed so earlier published results stay reproducible.
+Live dataset 3.0 retains the currency-code composition contract introduced in
+version 2 and requires the Australian population reduction to map cities to
+numeric populations before reducing them. Earlier versions remain committed so
+published results stay reproducible.
 
 ## Live evaluation
 
@@ -47,7 +48,10 @@ ANTHROPIC_API_KEY=... uv run python evaluation/live_eval.py \
 The prices are inputs rather than hard-coded values because provider pricing may
 change. Set them to the current USD price per million tokens when cost evidence
 is required. The result records the exact model, provider, dataset version,
-case-level quality, latency, token usage, and estimated cost.
+case-level quality, latency, token usage, estimated cost, and a generated AST
+whose literal values are redacted. Required operations are checked before
+execution so a structurally valid but incomplete composition is reported
+directly.
 
 The `Live evaluation` GitHub Actions workflow runs only on manual dispatch. It
 reads `OPENAI_API_KEY` and `ANTHROPIC_API_KEY` from the protected

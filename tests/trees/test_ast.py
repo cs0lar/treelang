@@ -1,4 +1,5 @@
 import asyncio
+import json
 import unittest
 from unittest.mock import AsyncMock, Mock, patch
 
@@ -16,6 +17,7 @@ from treelang.trees.schemas.v1 import (
     TreeProgram,
     TreeReduce,
     TreeValue,
+    ast_v1_examples,
 )
 from treelang.trees.schemas.v2 import (
     TreeCall as TreeCallV2,
@@ -62,6 +64,22 @@ class TestAST(unittest.TestCase):
         ast_dict = {"type": "program", "body": [], "mode": "single"}
         result = AST.parse(ast_dict)
         self.assertIsInstance(result, TreeProgram)
+
+    def test_examples_include_map_before_reduce_composition(self):
+        example = next(
+            item
+            for item in ast_v1_examples()
+            if item["q"] == "Sum the prices of all products."
+        )
+        payload = json.loads(example["a"])
+        reduction = payload["body"][0]
+
+        self.assertEqual(reduction["type"], "reduce")
+        self.assertEqual(reduction["iterable"]["type"], "map")
+        self.assertEqual(
+            reduction["iterable"]["function"]["body"]["name"],
+            "get_product_price",
+        )
 
     def test_parse_repr_and_visit_v2_program(self):
         payload = {

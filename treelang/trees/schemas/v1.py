@@ -530,4 +530,47 @@ def ast_v1_examples() -> list[ASTExample]:
     }
     examples.append(example_5)
 
+    example_6: ASTExample = {
+        "q": "Sum the prices of all products.",
+        "a": AST(
+            root=TreeProgram(
+                body=[
+                    TreeReduce(
+                        function=TreeLambda(
+                            params=["total", "price"],
+                            body=TreeFunction(
+                                name="add",
+                                params=[
+                                    TreeValue(name="total", value=None),
+                                    TreeValue(name="price", value=None),
+                                ],
+                            ),
+                        ),
+                        iterable=TreeMap(
+                            function=TreeLambda(
+                                params=["product"],
+                                body=TreeFunction(
+                                    name="get_product_price",
+                                    params=[
+                                        TreeValue(name="product", value=None),
+                                    ],
+                                ),
+                            ),
+                            iterable=TreeFunction(
+                                name="get_all_products",
+                                params=[],
+                            ),
+                        ),
+                    )
+                ],
+                mode="single",
+                name="Sum Product Prices",
+                description=(
+                    "Maps products to numeric prices before reducing them to a total."
+                ),
+            )
+        ).model_dump_json(by_alias=True, exclude_unset=False),
+    }
+    examples.append(example_6)
+
     return examples
