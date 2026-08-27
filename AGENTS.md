@@ -120,7 +120,11 @@ provider-rejection negotiation are fixed through PR #162. Release v1.2.1 has
 been published. Schema v2 root API, traversal, compilation, and description
 parity is merged through PR #167; compiler-authoritative parameter metadata
 through PR #169; and nested schema v1 compilation repair through PR #171.
-Release v1.3.0 is the next planned promotion from `dev` to `main`.
+Release v1.3.0 has been published. Phases 16 through 19 are complete through
+PRs #180 through #184, providing compiler-only tool vocabulary, an opt-in OpenAI
+Responses transport with reasoning configuration, comparable live-evaluation
+dimensions, documentation, and hardened Chat Completions AST generation.
+Release v1.4.0 is the next planned promotion from `dev` to `main`.
 
 Before new work, update `dev` and run:
 
@@ -320,6 +324,8 @@ Add deterministic tool-catalog rendering that preserves complete JSON Schema
 metadata. Keep schema versions 1 and 2 supported; do not make a transport change
 implicitly promote callers to schema v2.
 
+Complete through PR #180.
+
 Exit criteria: selected tools can be represented losslessly as compiler context,
 existing selectors are unchanged, and current Chat Completions and Anthropic
 behavior remains characterized.
@@ -333,6 +339,8 @@ extraction, usage accounting, malformed or empty output, cancellation, timeouts,
 provider errors, and structured-output rejection behavior through the existing
 transport contracts.
 
+Complete through PR #181.
+
 Exit criteria: callers can explicitly select Responses generation, reasoning
 models receive no OpenAI function tools, strict AST output works for either schema
 version, and contract tests cover success and failure paths without live access.
@@ -345,6 +353,8 @@ live-evaluation dimensions that compare Chat Completions with Responses reasonin
 Keep Chat Completions as the default during this phase and reject incompatible
 configuration early rather than silently dropping it.
 
+Complete through PR #182.
+
 Exit criteria: existing applications retain their request path by default, live
 evaluation records the selected API and reasoning effort, and Responses requests
 continue through the same validation, pruning, execution, and tool-input checks.
@@ -356,6 +366,8 @@ v1/v2 behavior, reasoning-model example, migration considerations, and provider
 capability matrix. Add an executable or contract-tested cookbook example and
 capture benchmark commands without claiming a quality improvement before live
 evidence exists.
+
+Complete through PRs #183 and #184.
 
 Exit criteria: users can reproduce both OpenAI paths, understand why tools are
 context rather than function calls in Responses mode, and evaluate semantic AST
