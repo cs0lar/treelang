@@ -1,5 +1,53 @@
 # Changelog
 
+## [1.4.0] - 2026-08-27
+
+### Added
+
+- Added deterministic, provider-neutral compiler tool catalogs that preserve
+  complete tool input schemas without exposing those tools for model-side
+  execution.
+- Added an explicit OpenAI Responses API transport with strict structured AST
+  output, normalized usage and error handling, and configurable reasoning
+  effort for supported models.
+- Added OpenAI API and reasoning dimensions to the live-evaluation harness,
+  version 3 of the live dataset, and redacted generated-AST evidence in result
+  artifacts.
+- Added documentation and contract-tested examples for choosing between Chat
+  Completions and Responses while retaining schema versions 1.0 and 2.0.
+
+### Changed
+
+- Updated the OpenAI dependency range to support SDK 3 and the optional
+  Anthropic dependency range to support SDK 1.
+- Made generated API annotation rendering deterministic across supported Python
+  versions.
+
+### Fixed
+
+- Prevented Chat Completions from invoking application tools while compiling an
+  AST, and improved diagnostics for tool-call, refusal, and non-text responses.
+- Added typed evaluation-tool inputs and rejected transformed reductions with a
+  null accumulator during AST validation, allowing the existing validation
+  retry to repair them before execution.
+- Required live-evaluation operations are now checked before execution, with
+  both map-then-reduce and explicitly initialized fused reductions supported.
+
+### Compatibility
+
+- Chat Completions remains the default OpenAI request path; Responses and
+  reasoning effort remain explicit opt-ins.
+- Schema versions 1.0 and 2.0 are unchanged. Existing homogeneous reductions
+  retain their null-accumulator behavior.
+- Live dataset versions 1 and 2 remain available; the default advances to
+  version 3 because its reduction contract and result evidence changed.
+
+### Security
+
+- Updated development tooling past the reported pip vulnerability.
+- Persisted live-evaluation AST evidence redacts non-null literal values and
+  credential patterns.
+
 ## [1.3.0] - 2026-08-15
 
 ### Added
