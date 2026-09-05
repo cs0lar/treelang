@@ -89,6 +89,14 @@ def test_tool_catalog_is_deterministic_and_preserves_complete_schema():
         "tags",
         "profile",
     ]
+    assert list(payload[0]["input_schema"]["properties"]) == [
+        "count",
+        "kind",
+        "code",
+        "tags",
+        "profile",
+        "note",
+    ]
 
 
 def test_complete_schema_accepts_valid_nested_arguments_and_optional_omission():

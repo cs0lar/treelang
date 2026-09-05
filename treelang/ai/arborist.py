@@ -20,7 +20,7 @@ from treelang.ai.prompt import (
 from treelang.ai.provider import ToolProvider
 from treelang.ai.responses import EvalResponse, EvalType, TreeDescription
 from treelang.ai.selector import AllToolsSelector, BaseToolSelector
-from treelang.ai.tool import ToolDefinition, tool_input_schema
+from treelang.ai.tool import ToolDefinition, render_tool_catalog
 from treelang.ai.transport import (
     ModelTransport,
     OpenAIResponsesTransport,
@@ -301,20 +301,13 @@ class OpenAIArborist(BaseArborist):
             if self.config.reasoning_effort is not None:
                 request["reasoning_effort"] = self.config.reasoning_effort
         elif available_tools:
-            request["tools"] = [
-                {
-                    "type": "function",
-                    "function": {
-                        "name": tool["name"],
-                        "description": tool.get("description"),
-                        "parameters": tool_input_schema(tool),
-                    },
-                }
-                for tool in available_tools
-            ]
-            # Tools describe the vocabulary available to the generated AST. The
-            # model must not invoke them while it is compiling that AST.
-            request["tool_choice"] = "none"
+            # Selected tools are compiler vocabulary, not operations available
+            # to the model during generation. Keeping them out of the native
+            # OpenAI tool fields prevents both accidental invocation and models
+            # interpreting ``tool_choice="none"`` as unavailable vocabulary.
+            messages[0]["content"] = (
+                f"{messages[0]['content']}\n\n{render_tool_catalog(available_tools)}"
+            )
         output_selection = self._configure_structured_output(
             request, available_tools, capabilities
         )
