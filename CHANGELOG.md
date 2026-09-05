@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.4.1] - 2026-09-05
+
+### Fixed
+
+- Represent selected operations as textual compiler vocabulary in OpenAI Chat
+  Completions requests instead of combining native function tools with
+  `tool_choice: "none"`, which reasoning models can interpret as the operations
+  being unavailable for planning.
+- Preserve tool-schema property order in rendered compiler catalogs so schema
+  version 1 positional argument compilation matches the order shown to models.
+
 ## [1.4.0] - 2026-08-27
 
 ### Added

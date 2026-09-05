@@ -32,10 +32,12 @@ by the Responses transport: schema version 1 remains supported for compatibility
 ## Compiler vocabulary, not function calls
 
 The configured tool selector still chooses the relevant provider-neutral tool
-definitions. In Responses mode, Treelang serializes their names, descriptions,
-and complete input JSON Schemas into the model instructions. It does not register
-them as OpenAI function tools because the model must not execute anything during
-generation. The sole requested output is a strict Treelang AST.
+definitions. In both Responses and Chat Completions modes, Treelang serializes
+their names, descriptions, and complete input JSON Schemas into the model
+instructions. It does not register them as OpenAI function tools because the
+model must not execute anything during generation. The sole requested output is
+a Treelang AST. Schema property order is preserved because schema version 1 uses
+that order when compiling positional function arguments.
 
 After generation, Treelang performs the same AST validation, pruning, execution,
 and complete tool-input validation used by the existing path. Intermediate tool
