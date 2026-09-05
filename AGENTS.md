@@ -124,7 +124,9 @@ Release v1.3.0 has been published. Phases 16 through 19 are complete through
 PRs #180 through #184, providing compiler-only tool vocabulary, an opt-in OpenAI
 Responses transport with reasoning configuration, comparable live-evaluation
 dimensions, documentation, and hardened Chat Completions AST generation.
-Release v1.4.0 is the next planned promotion from `dev` to `main`.
+Release v1.4.0 has been published. Chat Completions compiler vocabulary is
+aligned with the Responses transport through issue #192 and PR #193. Release
+v1.4.1 is the next planned promotion from `dev` to `main`.
 
 Before new work, update `dev` and run:
 
