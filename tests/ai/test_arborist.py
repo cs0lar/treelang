@@ -227,8 +227,11 @@ async def test_arborist_tree_mode_builds_typed_request_with_memory_and_tools():
         "first",
         "second",
     ]
-    assert request["tools"][0]["function"]["name"] == "identity"
-    assert request["tool_choice"] == "none"
+    system_prompt = request["messages"][0]["content"]
+    assert "AVAILABLE TREELANG OPERATIONS" in system_prompt
+    assert '"name": "identity"' in system_prompt
+    assert "tools" not in request
+    assert "tool_choice" not in request
     assert request["response_format"] == {"type": "json_object"}
 
 

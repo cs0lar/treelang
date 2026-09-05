@@ -199,7 +199,7 @@ def render_tool_catalog(tools: list[ToolDefinition]) -> str:
         "AVAILABLE TREELANG OPERATIONS\n"
         "Use these operations only to construct the requested Treelang AST. "
         "Do not call them during generation.\n"
-        f"{json.dumps(catalog, indent=2, sort_keys=True)}"
+        f"{json.dumps(catalog, indent=2)}"
     )
 
 
