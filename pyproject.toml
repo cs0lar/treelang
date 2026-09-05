@@ -1,6 +1,6 @@
 [project]
 name = "treelang"
-version = "1.4.0"
+version = "1.4.1"
 description = "A typed orchestration language for AI-generated, validated tool programs that execute locally—without model round-trips between steps."
 authors = [
     { name = "csolar", email = "cristiano.solarino@brightminded.com" },
