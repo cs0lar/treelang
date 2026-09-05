@@ -1,0 +1,14 @@
+{
+  "type": "program",
+  "definitions": [],
+  "body": [
+    {
+      "type": "literal",
+      "value": 42
+    }
+  ],
+  "mode": "single",
+  "name": "Answer",
+  "description": "Return the number 42.",
+  "schema_version": "2.0"
+}
