@@ -65,6 +65,12 @@ Benchmark output records `model_api` and `reasoning_effort` alongside semantic
 correctness, latency, token use, and estimated cost. Treat reasoning quality as
 an empirical result rather than an assumed improvement.
 
+Responses compatibility mode uses the legacy `json_object` format. Because the
+API validates JSON instructions against conversation input after system messages
+have been moved to top-level `instructions`, Treelang adds a minimal developer
+input requesting valid JSON only when no existing input message already does so.
+Strict JSON Schema requests are unchanged.
+
 The Responses request follows OpenAI's documented `instructions`, `input`,
 `reasoning`, and `text.format` fields and reads the SDK's aggregate `output_text`.
 See the [official OpenAI Responses API reference](https://developers.openai.com/api/reference/resources/responses/methods/create).
