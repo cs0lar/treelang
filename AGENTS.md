@@ -126,7 +126,10 @@ Responses transport with reasoning configuration, comparable live-evaluation
 dimensions, documentation, and hardened Chat Completions AST generation.
 Release v1.4.0 has been published. Chat Completions compiler vocabulary is
 aligned with the Responses transport through issue #192 and PR #193. Release
-v1.4.1 is the next planned promotion from `dev` to `main`.
+v1.4.1 has been published. Responses compatibility JSON mode retains its
+required input instruction through issue #199 and PR #200, and audited
+dependency updates are merged through PR #198. Release v1.4.2 is the next
+planned promotion from `dev` to `main`.
 
 Before new work, update `dev` and run:
 
