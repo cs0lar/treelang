@@ -1,5 +1,14 @@
 # Changelog
 
+## [Unreleased]
+
+### Fixed
+
+- Keep an explicit JSON instruction in Responses API input messages when using
+  compatibility JSON mode, preventing `describe()` and structured-output
+  fallbacks from being rejected after system prompts are hoisted to
+  `instructions`.
+
 ## [1.4.1] - 2026-09-05
 
 ### Fixed

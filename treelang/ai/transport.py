@@ -347,6 +347,16 @@ def _responses_arguments(request: ModelRequest) -> dict[str, Any]:
                 }
             }
         elif response_format.get("type") == "json_object":
+            if not any(
+                "json" in message["content"].casefold() for message in input_messages
+            ):
+                input_messages.insert(
+                    0,
+                    {
+                        "role": "developer",
+                        "content": "Return the response as valid JSON.",
+                    },
+                )
             arguments["text"] = {"format": {"type": "json_object"}}
     reasoning_effort = request.get("reasoning_effort")
     if reasoning_effort is not None:

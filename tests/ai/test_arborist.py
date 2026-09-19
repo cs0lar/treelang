@@ -1034,6 +1034,44 @@ async def test_openai_responses_transport_encodes_catalog_reasoning_and_usage():
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("user_prompt", "expected_roles"),
+    [
+        ("Describe the tree.", ["developer", "user"]),
+        ("Return a JSON description.", ["user"]),
+    ],
+)
+async def test_openai_responses_transport_keeps_json_mode_instruction_in_input(
+    user_prompt, expected_roles
+):
+    create = AsyncMock(
+        return_value=SimpleNamespace(
+            output_text='{"name":"tree","description":"A tree"}',
+            usage=None,
+        )
+    )
+    transport = OpenAIResponsesTransport(
+        client=SimpleNamespace(responses=SimpleNamespace(create=create))
+    )
+
+    await transport.complete(
+        {
+            "model": "model",
+            "messages": [
+                {"role": "system", "content": "Return valid JSON."},
+                {"role": "user", "content": user_prompt},
+            ],
+            "response_format": {"type": "json_object"},
+        }
+    )
+
+    request = create.await_args.kwargs
+    assert [message["role"] for message in request["input"]] == expected_roles
+    assert any("json" in message["content"].casefold() for message in request["input"])
+    assert request["text"] == {"format": {"type": "json_object"}}
+
+
+@pytest.mark.asyncio
 async def test_openai_responses_transport_streams_text_and_usage():
     events = [
         SimpleNamespace(type="response.output_text.delta", delta="part"),
