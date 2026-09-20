@@ -71,7 +71,8 @@ def test_tool_catalog_is_deterministic_and_preserves_complete_schema():
     tool = constrained_tool()
 
     rendered = render_tool_catalog([tool])
-    payload = json.loads(rendered[rendered.index("[") :])
+    serialized = rendered[rendered.index("[") :]
+    payload = json.loads(serialized)
 
     assert rendered.startswith("AVAILABLE TREELANG OPERATIONS")
     assert payload == [
@@ -97,6 +98,7 @@ def test_tool_catalog_is_deterministic_and_preserves_complete_schema():
         "profile",
         "note",
     ]
+    assert serialized == json.dumps(payload, separators=(",", ":"))
 
 
 def test_complete_schema_accepts_valid_nested_arguments_and_optional_omission():
