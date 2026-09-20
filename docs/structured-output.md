@@ -36,8 +36,12 @@ existing bounded validated-repair loop in either output mode.
 The strict generation schema is intentionally narrower than the serialized
 runtime schema. It removes free-form JSON object literals and provider-unsupported
 annotations, closes every object shape, and specializes schema v2 tool calls to
-the tools selected for that request. Applications that need arbitrary JSON object
-literals can select compatibility mode.
+the tools selected for that request. For schema v2, described object-typed tool
+arguments receive a closed literal shape derived from the tool input schema;
+untyped leaf fields are limited to JSON scalar values. Schema v1 and tools with
+free-form or recursive object arguments continue to use compatibility mode.
+Applications that need arbitrary JSON object literals can select compatibility
+mode explicitly.
 
 Custom transports can implement `CapabilityAwareTransport.capabilities(model)`.
 Transports without that optional protocol are treated as compatibility-only.

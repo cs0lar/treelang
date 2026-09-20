@@ -128,8 +128,10 @@ Release v1.4.0 has been published. Chat Completions compiler vocabulary is
 aligned with the Responses transport through issue #192 and PR #193. Release
 v1.4.1 has been published. Responses compatibility JSON mode retains its
 required input instruction through issue #199 and PR #200, and audited
-dependency updates are merged through PR #198. Release v1.4.2 is the next
-planned promotion from `dev` to `main`.
+dependency updates are merged through PR #198. Release v1.4.2 has been
+published. Compact compiler catalogs and schema v2 strict object-literal
+projection are merged through issues #203 and #204 and PRs #205 and #206.
+Release v1.4.3 is the next planned promotion from `dev` to `main`.
 
 Before new work, update `dev` and run:
 

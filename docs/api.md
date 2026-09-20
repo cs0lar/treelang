@@ -944,7 +944,7 @@ Methods:
 
 **Constant** · `treelang`
 
-Current value: `'1.4.2'`
+Current value: `'1.4.3'`
 
 ## `ast_examples`
 

@@ -2,6 +2,7 @@ from collections.abc import Mapping
 from typing import Any
 
 import pytest
+from jsonschema import Draft202012Validator
 
 from treelang.ai.structured_output import (
     strict_ast_schema,
@@ -132,15 +133,70 @@ def test_a_ref_is_left_standing_alone_because_a_sibling_voids_the_schema(version
     assert "$defs" in schema
 
 
-def test_tools_taking_an_object_cannot_be_expressed_in_the_strict_subset():
-    """The check that stops a schema the model satisfies and the walk rejects.
-
-    `JsonValue` loses its object alternative in the projection, so a tool with
-    an object-typed parameter can never be given a value -- and that failure
-    surfaces at walk time, which no retry and no provider error can reach.
-    """
+def test_v2_projects_described_tool_object_literals_into_the_strict_subset():
     assert strict_ast_schema_supported(TOOLS)
     assert not strict_ast_schema_supported(OBJECT_TOOLS)
+    assert strict_ast_schema_supported(OBJECT_TOOLS, schema_version="2.0")
+
+    schema = strict_ast_schema("2.0", OBJECT_TOOLS)
+    Draft202012Validator.check_schema(schema)
+    validator = Draft202012Validator(schema)
+    argument = schema["$defs"]["TreeToolCall"]["anyOf"][0]["properties"]["arguments"][
+        "properties"
+    ]["object"]
+    literal = next(
+        option
+        for option in argument["anyOf"]
+        if option.get("properties", {}).get("type", {}).get("const") == "literal"
+    )
+    value = literal["properties"]["value"]
+
+    assert value["type"] == "object"
+    assert value["required"] == ["kind", "value"]
+    assert value["additionalProperties"] is False
+    assert value["properties"]["kind"]["enum"] == ["text", "int64"]
+    assert [option["type"] for option in value["properties"]["value"]["anyOf"]] == [
+        "string",
+        "integer",
+        "number",
+        "boolean",
+    ]
+
+    program = {
+        "type": "program",
+        "definitions": [],
+        "body": [
+            {
+                "type": "tool_call",
+                "tool": "commit",
+                "arguments": {
+                    "object": {
+                        "type": "literal",
+                        "value": {"kind": "text", "value": "hello"},
+                    }
+                },
+            }
+        ],
+        "mode": "single",
+        "name": None,
+        "description": None,
+        "schema_version": "2.0",
+    }
+    assert validator.is_valid(program)
+    del program["body"][0]["arguments"]["object"]["value"]["kind"]
+    assert not validator.is_valid(program)
+
+
+def test_unsupported_object_shapes_still_decline_strict_output():
+    free_form = [
+        {
+            "name": "t",
+            "properties": {"x": {"type": "object"}},
+        }
+    ]
+    assert not strict_ast_schema_supported(free_form)
+    assert not strict_ast_schema_supported(free_form, schema_version="2.0")
+
     # Reached through a union too: an optional object is still an object.
     assert not strict_ast_schema_supported(
         [
@@ -148,7 +204,8 @@ def test_tools_taking_an_object_cannot_be_expressed_in_the_strict_subset():
                 "name": "t",
                 "properties": {"x": {"anyOf": [{"type": "null"}, {"type": "object"}]}},
             }
-        ]
+        ],
+        schema_version="2.0",
     )
     # Reached through a type union too: ToolProperty permits JSON Schema's
     # array form, and a nullable object remains object-capable.
@@ -158,5 +215,6 @@ def test_tools_taking_an_object_cannot_be_expressed_in_the_strict_subset():
                 "name": "t",
                 "properties": {"x": {"type": ["object", "null"]}},
             }
-        ]
+        ],
+        schema_version="2.0",
     )
