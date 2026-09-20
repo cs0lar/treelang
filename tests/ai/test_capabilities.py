@@ -121,7 +121,13 @@ OBJECT_TOOLS = [
     {
         "name": "commit",
         "description": "Record a typed literal",
-        "properties": {"object": {"type": "object", "properties": {}}},
+        "properties": {
+            "object": {
+                "type": "object",
+                "properties": {"kind": {"type": "string"}},
+                "required": ["kind"],
+            }
+        },
     }
 ]
 
@@ -219,6 +225,19 @@ def test_strict_output_is_declined_for_tools_the_subset_cannot_express():
             schema_version="1.0",
             tools=OBJECT_TOOLS,
         )
+
+
+def test_v2_strict_output_accepts_described_object_tool_arguments():
+    selection = DefaultModelCapabilityNegotiator().structured_output(
+        ModelCapabilities(strict_json_schema=True),
+        model="model",
+        configured_mode="auto",
+        schema_version="2.0",
+        tools=OBJECT_TOOLS,
+    )
+
+    assert selection.mode == "strict"
+    assert selection.fallback_reason is None
 
 
 def test_strict_output_is_declined_for_object_type_unions():
