@@ -171,7 +171,7 @@ class DefaultModelCapabilityNegotiator:
             return "capability_unavailable"
         if negotiated_for in self._rejected:
             return "provider_rejected"
-        if not strict_ast_schema_supported(tools):
+        if not strict_ast_schema_supported(tools, schema_version=negotiated_for[1]):
             return "tool_schema_unsupported"
         return None
 

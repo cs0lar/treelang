@@ -5,7 +5,7 @@ from __future__ import annotations
 from copy import deepcopy
 from typing import Any, Literal, Mapping, Sequence
 
-from treelang.ai.tool import ToolDefinition
+from treelang.ai.tool import ToolDefinition, tool_input_schema
 from treelang.trees.schemas.v1 import AST as ASTV1
 from treelang.trees.schemas.v2 import AST as ASTV2
 
@@ -98,8 +98,10 @@ def _specialize_v2_tool_calls(
 
 def _tool_call_variant(tool: ToolDefinition) -> dict[str, Any]:
     argument_names = list(tool["properties"])
+    input_schema = tool_input_schema(tool)
     argument_properties = {
-        name: {"$ref": "#/$defs/Expression"} for name in argument_names
+        name: _tool_argument_expression(parameter, input_schema)
+        for name, parameter in tool["properties"].items()
     }
     return {
         "type": "object",
@@ -118,7 +120,177 @@ def _tool_call_variant(tool: ToolDefinition) -> dict[str, Any]:
     }
 
 
-def strict_ast_schema_supported(tools: Sequence[ToolDefinition]) -> bool:
+def _tool_argument_expression(
+    parameter: Mapping[str, Any], input_schema: Mapping[str, Any]
+) -> dict[str, Any]:
+    expression = {"$ref": "#/$defs/Expression"}
+    if not _accepts_object(parameter, input_schema):
+        return expression
+    projected = _project_tool_schema(parameter, input_schema)
+    if projected is None:
+        return expression
+    return {
+        "anyOf": [
+            expression,
+            {
+                "type": "object",
+                "additionalProperties": False,
+                "properties": {
+                    "type": {"type": "string", "const": "literal"},
+                    "value": projected,
+                },
+                "required": ["type", "value"],
+            },
+        ]
+    }
+
+
+def _project_tool_schema(
+    schema: Mapping[str, Any],
+    root: Mapping[str, Any],
+    references: frozenset[str] = frozenset(),
+) -> dict[str, Any] | None:
+    reference = schema.get("$ref")
+    if isinstance(reference, str):
+        if reference in references:
+            return None
+        resolved = _resolve_local_reference(root, reference)
+        if resolved is None:
+            return None
+        return _project_tool_schema(resolved, root, references | {reference})
+
+    alternatives = schema.get("anyOf", schema.get("oneOf"))
+    if isinstance(alternatives, list):
+        projected_alternatives = [
+            _project_tool_schema(alternative, root, references)
+            if isinstance(alternative, Mapping)
+            else None
+            for alternative in alternatives
+        ]
+        if any(alternative is None for alternative in projected_alternatives):
+            return None
+        result: dict[str, Any] = {"anyOf": projected_alternatives}
+        if isinstance(schema.get("description"), str):
+            result["description"] = schema["description"]
+        return result
+
+    if "allOf" in schema:
+        return None
+
+    parameter_type = schema.get("type")
+    if isinstance(parameter_type, list):
+        projected_alternatives = [
+            _project_tool_schema({**schema, "type": item}, root, references)
+            for item in parameter_type
+        ]
+        if any(alternative is None for alternative in projected_alternatives):
+            return None
+        return {"anyOf": projected_alternatives}
+
+    if parameter_type == "object" or "properties" in schema:
+        properties = schema.get("properties")
+        if not isinstance(properties, Mapping):
+            return None
+        if not properties and schema.get("additionalProperties") is not False:
+            return None
+        projected_properties: dict[str, Any] = {}
+        for name, value in properties.items():
+            if not isinstance(name, str) or not isinstance(value, Mapping):
+                return None
+            projected_property = _project_tool_schema(value, root, references)
+            if projected_property is None:
+                return None
+            projected_properties[name] = projected_property
+        result = {
+            "type": "object",
+            "properties": projected_properties,
+            "required": list(projected_properties),
+            "additionalProperties": False,
+        }
+        if isinstance(schema.get("description"), str):
+            result["description"] = schema["description"]
+        return result
+
+    if parameter_type == "array":
+        items = schema.get("items")
+        if not isinstance(items, Mapping):
+            return None
+        projected_items = _project_tool_schema(items, root, references)
+        if projected_items is None:
+            return None
+        result = deepcopy(dict(schema))
+        result["items"] = projected_items
+        return result
+
+    if isinstance(parameter_type, str) and parameter_type in {
+        "string",
+        "integer",
+        "number",
+        "boolean",
+        "null",
+    }:
+        return deepcopy(dict(schema))
+
+    if parameter_type is not None:
+        return None
+
+    const = schema.get("const")
+    enum = schema.get("enum")
+    if "const" in schema:
+        scalar_type = _json_scalar_type(const)
+        if scalar_type is None:
+            return None
+        result = {"type": scalar_type, "const": const}
+    elif isinstance(enum, list):
+        alternatives = []
+        for item in enum:
+            scalar_type = _json_scalar_type(item)
+            if scalar_type is None:
+                return None
+            alternatives.append({"type": scalar_type, "const": item})
+        result = {"anyOf": alternatives}
+    else:
+        result = {
+            "anyOf": [
+                {"type": scalar_type}
+                for scalar_type in ("string", "integer", "number", "boolean")
+            ]
+        }
+    if isinstance(schema.get("description"), str):
+        result["description"] = schema["description"]
+    return result
+
+
+def _json_scalar_type(value: Any) -> str | None:
+    if value is None:
+        return "null"
+    if isinstance(value, bool):
+        return "boolean"
+    if isinstance(value, str):
+        return "string"
+    if isinstance(value, int):
+        return "integer"
+    if isinstance(value, float):
+        return "number"
+    return None
+
+
+def _resolve_local_reference(
+    root: Mapping[str, Any], reference: str
+) -> Mapping[str, Any] | None:
+    if not reference.startswith("#/"):
+        return None
+    value: Any = root
+    for token in reference[2:].split("/"):
+        if not isinstance(value, Mapping):
+            return None
+        value = value.get(token.replace("~1", "/").replace("~0", "~"))
+    return value if isinstance(value, Mapping) else None
+
+
+def strict_ast_schema_supported(
+    tools: Sequence[ToolDefinition], *, schema_version: SchemaVersion = "1.0"
+) -> bool:
     """Whether the strict projection can express what these tools accept.
 
     Strict JSON Schema has no way to describe a free-form object, so the
@@ -128,21 +300,38 @@ def strict_ast_schema_supported(tools: Sequence[ToolDefinition]) -> bool:
     type constraint, which is the one failure the provider cannot report and
     the caller cannot retry.
 
-    Declining strict for the whole request is the honest answer until the
-    projection learns to build closed object shapes out of the tool schemas
-    themselves, the way ``_specialize_v2_tool_calls`` already does for tool
-    calls.
+    Schema v2 can specialize described object literals for the named argument
+    that receives them. Schema v1 cannot associate its positional arguments
+    with tool parameters, and both versions still decline free-form or
+    recursively referenced object shapes that cannot be projected safely.
     """
-    return not any(
-        _accepts_object(parameter)
-        for tool in tools
-        for parameter in tool.get("properties", {}).values()
-    )
+    for tool in tools:
+        input_schema = tool_input_schema(tool)
+        for parameter in tool.get("properties", {}).values():
+            if not _accepts_object(parameter, input_schema):
+                continue
+            if schema_version == "1.0":
+                return False
+            if _project_tool_schema(parameter, input_schema) is None:
+                return False
+    return True
 
 
-def _accepts_object(parameter: Any) -> bool:
+def _accepts_object(
+    parameter: Any,
+    root: Mapping[str, Any],
+    references: frozenset[str] = frozenset(),
+) -> bool:
     if not isinstance(parameter, Mapping):
         return False
+    reference = parameter.get("$ref")
+    if isinstance(reference, str):
+        if reference in references:
+            return True
+        resolved = _resolve_local_reference(root, reference)
+        return resolved is None or _accepts_object(
+            resolved, root, references | {reference}
+        )
     parameter_type = parameter.get("type")
     if (
         parameter_type == "object"
@@ -155,7 +344,10 @@ def _accepts_object(parameter: Any) -> bool:
         *parameter.get("oneOf", []),
         *parameter.get("allOf", []),
     ]
-    return any(_accepts_object(alternative) for alternative in nested)
+    items = parameter.get("items")
+    if isinstance(items, Mapping):
+        nested.append(items)
+    return any(_accepts_object(alternative, root, references) for alternative in nested)
 
 
 def _strictify(value: Any) -> Any:
