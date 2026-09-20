@@ -1,5 +1,24 @@
 # Changelog
 
+## [1.4.3] - 2026-09-20
+
+### Changed
+
+- Compact compiler tool catalogs in model prompts, removing whitespace-only
+  tokens without changing operation order or JSON Schema metadata.
+
+### Fixed
+
+- Keep schema version 2 strict structured output available when selected tools
+  use safely projectable, described object arguments. Closed literal shapes are
+  derived from tool input schemas, while schema version 1 and unsupported
+  free-form or recursive objects retain compatibility JSON mode.
+
+### Compatibility
+
+- Public Python APIs and serialized schema versions are unchanged. Runtime tool
+  input validation remains authoritative for every generated program.
+
 ## [1.4.2] - 2026-09-19
 
 ### Fixed
