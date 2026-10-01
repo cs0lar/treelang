@@ -1,5 +1,12 @@
 # Changelog
 
+## [Unreleased]
+
+### Security
+
+- Updated PyJWT, Tornado, urllib3, and virtualenv past newly reported
+  vulnerabilities detected by Dependabot and the locked dependency audit.
+
 ## [1.4.3] - 2026-09-20
 
 ### Changed
