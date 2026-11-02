@@ -6,6 +6,9 @@
 
 - Updated PyJWT, Tornado, urllib3, and virtualenv past newly reported
   vulnerabilities detected by Dependabot and the locked dependency audit.
+- Further updated Tornado and virtualenv, and updated certifi, filelock, MCP,
+  msgpack, and nbconvert past newly reported vulnerabilities; also refreshed
+  audited development dependencies.
 
 ## [1.4.3] - 2026-09-20
 
