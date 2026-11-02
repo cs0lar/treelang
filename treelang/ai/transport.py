@@ -27,7 +27,9 @@ def openai_model_capabilities(
     """Return OpenAI adapter capabilities for one model or deployment."""
     strict = strict_json_schema
     if strict is None:
-        strict = model.startswith(("gpt-4o", "gpt-4.1", "gpt-5", "o1", "o3", "o4"))
+        strict = model.startswith(
+            ("gpt-4o", "gpt-4.1", "gpt-5", "gpt-6", "o1", "o3", "o4")
+        )
     return ModelCapabilities(
         strict_json_schema=strict,
         temperature=model.startswith(("gpt-4o", "gpt-4.1", "o1")),

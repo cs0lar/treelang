@@ -41,7 +41,7 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--reasoning-effort",
-        choices=("none", "low", "medium", "high", "xhigh"),
+        choices=("none", "low", "medium", "high", "xhigh", "max"),
     )
     parser.add_argument("--input-cost-per-million", type=float, default=0.0)
     parser.add_argument("--output-cost-per-million", type=float, default=0.0)

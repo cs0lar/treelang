@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+### Changed
+
+- Replaced the deprecated GPT-4o default and active examples with GPT-6 Luna,
+  including strict-output capability metadata and the model's `max` Responses
+  reasoning effort. Chat Completions remains the compatibility default.
+
 ### Security
 
 - Updated PyJWT, Tornado, urllib3, and virtualenv past newly reported

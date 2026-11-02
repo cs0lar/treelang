@@ -34,7 +34,7 @@ provider, with explicit pricing for the selected model:
 OPENAI_API_KEY=... uv run python evaluation/live_eval.py \
   --provider openai \
   --output evaluation-results/live-openai.json \
-  --model gpt-4o-2024-11-20 \
+  --model gpt-6-luna \
   --input-cost-per-million 0 \
   --output-cost-per-million 0
 

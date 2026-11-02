@@ -1,4 +1,5 @@
 import json
+import sys
 from itertools import count
 
 import pytest
@@ -322,14 +323,32 @@ def test_live_runtime_selects_openai_responses_and_reasoning(monkeypatch):
     monkeypatch.setenv("OPENAI_API_KEY", "test-key")
     config, transport = create_model_runtime(
         "openai",
-        "gpt-5.6-terra",
+        "gpt-6-luna",
         openai_api="responses",
-        reasoning_effort="medium",
+        reasoning_effort="max",
     )
 
     assert config.openai_api == "responses"
-    assert config.reasoning_effort == "medium"
+    assert config.reasoning_effort == "max"
     assert isinstance(transport, OpenAIResponsesTransport)
+
+
+def test_live_cli_accepts_max_reasoning_effort(monkeypatch, tmp_path):
+    from evaluation.live_eval import parse_args
+
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "live_eval.py",
+            "--output",
+            str(tmp_path / "result.json"),
+            "--reasoning-effort",
+            "max",
+        ],
+    )
+
+    assert parse_args().reasoning_effort == "max"
 
 
 def test_live_runtime_rejects_openai_options_for_anthropic():
