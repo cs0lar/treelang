@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [1.5.0] - 2026-11-02
 
 ### Changed
 
@@ -15,6 +15,13 @@
 - Further updated Tornado and virtualenv, and updated certifi, filelock, MCP,
   msgpack, and nbconvert past newly reported vulnerabilities; also refreshed
   audited development dependencies.
+
+### Compatibility
+
+- Callers that omit both an explicit model and `OPENAI_MODEL` now use
+  `gpt-6-luna`; explicit model selection remains unchanged. Chat Completions
+  remains the default OpenAI transport, and serialized schema versions 1.0 and
+  2.0 are unchanged.
 
 ## [1.4.3] - 2026-09-20
 
