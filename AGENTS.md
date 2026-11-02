@@ -131,7 +131,10 @@ required input instruction through issue #199 and PR #200, and audited
 dependency updates are merged through PR #198. Release v1.4.2 has been
 published. Compact compiler catalogs and schema v2 strict object-literal
 projection are merged through issues #203 and #204 and PRs #205 and #206.
-Release v1.4.3 is the next planned promotion from `dev` to `main`.
+Release v1.4.3 has been published. Audited dependency updates are merged through
+PRs #212 and #228, and the deprecated GPT-4o default is migrated to GPT-6 Luna
+through PR #229. Release v1.5.0 is the next planned promotion from `dev` to
+`main`.
 
 Before new work, update `dev` and run:
 
