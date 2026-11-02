@@ -45,7 +45,7 @@ recursive version 2 language is opt-in:
 from treelang.ai.config import ArboristConfig
 
 config = ArboristConfig(
-    model="gpt-4o-2024-11-20",
+    model="gpt-6-luna",
     schema_version="2.0",
 )
 ```

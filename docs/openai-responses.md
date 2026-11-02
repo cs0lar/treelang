@@ -5,11 +5,16 @@ complete, validated AST before any external tool executes. This path is useful
 for reasoning-capable models and is explicit so existing Chat Completions users
 do not change transport unexpectedly.
 
+When neither a model argument nor `OPENAI_MODEL` is set, Treelang defaults to
+`gpt-6-luna`. This replaces the deprecated GPT-4o snapshots scheduled for
+shutdown on January 14, 2027, following the
+[official OpenAI deprecation guidance](https://developers.openai.com/api/docs/deprecations).
+
 ```python
 from treelang.ai.arborist import ArboristConfig, EvalType, OpenAIArborist
 
 config = ArboristConfig(
-    model="gpt-5.6-terra",
+    model="gpt-6-luna",
     openai_api="responses",
     reasoning_effort="medium",
     schema_version="2.0",
@@ -47,15 +52,15 @@ results remain local and are never sent back to the model.
 
 Chat Completions remains the default. `reasoning_effort` is rejected unless
 `openai_api="responses"`, preventing a configuration from being silently ignored.
-Supported values are `none`, `low`, `medium`, `high`, and `xhigh`; actual model
-support remains model-dependent.
+Supported values are `none`, `low`, `medium`, `high`, `xhigh`, and `max`; actual
+model support remains model-dependent.
 
 Compare paths with the credentialed live harness:
 
 ```sh
 uv run python evaluation/live_eval.py \
   --provider openai \
-  --model gpt-5.6-terra \
+  --model gpt-6-luna \
   --openai-api responses \
   --reasoning-effort medium \
   --output evaluation-results/responses-medium.json

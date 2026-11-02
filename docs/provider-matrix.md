@@ -28,10 +28,10 @@ selected through declared capabilities; **unsupported** is rejected or omitted.
 - Install: `treelang`
 - Contract tests: [`tests/test_testing.py`](https://github.com/cs0lar/treelang/blob/dev/tests/test_testing.py)
 - Guide: [`docs/provider-capabilities.md`](provider-capabilities.md)
-- [Official documentation](https://platform.openai.com/docs/guides/structured-outputs)
+- [Official documentation](https://developers.openai.com/api/docs/models/gpt-6-luna)
 - Checked model profiles:
 
-  - `gpt-4o`: strict JSON Schema yes; temperature yes
+  - `gpt-6-luna`: strict JSON Schema yes; temperature no
   - `unknown-model`: strict JSON Schema no; temperature no
 
 ### Anthropic

@@ -15,7 +15,7 @@ on:
       openai_model:
         description: OpenAI model identifier
         required: true
-        default: gpt-4o-2024-11-20
+        default: gpt-6-luna
         type: string
       openai_api:
         description: OpenAI generation API

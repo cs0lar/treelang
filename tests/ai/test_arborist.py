@@ -199,6 +199,13 @@ def test_config_reads_environment_once(monkeypatch):
     assert ArboristConfig.from_env("explicit").model == "explicit"
 
 
+def test_config_defaults_to_gpt_6_luna(monkeypatch):
+    monkeypatch.setattr("treelang.ai.config.load_dotenv", lambda: None)
+    monkeypatch.delenv("OPENAI_MODEL", raising=False)
+
+    assert ArboristConfig.from_env().model == "gpt-6-luna"
+
+
 @pytest.mark.asyncio
 async def test_arborist_tree_mode_builds_typed_request_with_memory_and_tools():
     transport = FakeTransport(
@@ -863,6 +870,8 @@ async def test_openai_transport_complete_and_stream_without_network():
     transport = OpenAITransport(client=client)
 
     assert await transport.complete({"model": "model", "messages": []}) == "complete"
+    assert transport.capabilities("gpt-6-luna").strict_json_schema is True
+    assert transport.capabilities("gpt-6-luna").temperature is False
     assert transport.capabilities("gpt-4o").strict_json_schema is True
     assert transport.capabilities("gpt-4o").temperature is True
     assert transport.capabilities("unknown-model").strict_json_schema is False
@@ -997,13 +1006,13 @@ async def test_openai_responses_transport_encodes_catalog_reasoning_and_usage():
 
     content = await transport.complete(
         {
-            "model": "gpt-5.6-terra",
+            "model": "gpt-6-luna",
             "messages": [
                 {"role": "system", "content": "Return an AST."},
                 {"role": "user", "content": "Look it up."},
             ],
             "treelang_tools": [tool],
-            "reasoning_effort": "medium",
+            "reasoning_effort": "max",
             "response_format": {
                 "type": "json_schema",
                 "json_schema": {
@@ -1017,9 +1026,9 @@ async def test_openai_responses_transport_encodes_catalog_reasoning_and_usage():
 
     assert content == program_json([])
     request = create.await_args.kwargs
-    assert request["model"] == "gpt-5.6-terra"
+    assert request["model"] == "gpt-6-luna"
     assert request["input"] == [{"role": "user", "content": "Look it up."}]
-    assert request["reasoning"] == {"effort": "medium"}
+    assert request["reasoning"] == {"effort": "max"}
     assert request["text"]["format"] == {
         "type": "json_schema",
         "name": "treelang_ast_v1",
@@ -1150,13 +1159,13 @@ async def test_openai_responses_transport_translates_structured_rejection():
 
 def test_arborist_config_validates_responses_reasoning_contract():
     config = ArboristConfig(
-        model="gpt-5.6-terra",
+        model="gpt-6-luna",
         openai_api="responses",
-        reasoning_effort="high",
+        reasoning_effort="max",
     )
 
     assert config.openai_api == "responses"
-    assert config.reasoning_effort == "high"
+    assert config.reasoning_effort == "max"
     with pytest.raises(ValueError, match="requires openai_api='responses'"):
         ArboristConfig(model="model", reasoning_effort="medium")
 
@@ -1181,10 +1190,10 @@ async def test_arborist_responses_mode_supplies_tools_as_compiler_context(
         strict_json_schema=True,
     )
     arborist = OpenAIArborist(
-        model="gpt-5.6-terra",
+        model="gpt-6-luna",
         provider=FakeProvider(),
         config=ArboristConfig(
-            model="gpt-5.6-terra",
+            model="gpt-6-luna",
             openai_api="responses",
             reasoning_effort="medium",
             schema_version=schema_version,

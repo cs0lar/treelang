@@ -148,7 +148,7 @@ async def main() -> None:
     )
 
     arborist = OpenAIArborist(
-        model="gpt-4o-2024-11-20",
+        model="gpt-6-luna",
         provider=provider,
     )
     response = await arborist.eval(

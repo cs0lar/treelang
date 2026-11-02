@@ -10,10 +10,10 @@ Configure the policy through `ArboristConfig`:
 from treelang.ai.arborist import ArboristConfig, OpenAIArborist
 
 arborist = OpenAIArborist(
-    model="gpt-4o",
+    model="gpt-6-luna",
     provider=provider,
     config=ArboristConfig(
-        model="gpt-4o",
+        model="gpt-6-luna",
         schema_version="2.0",
         structured_output_mode="auto",
     ),

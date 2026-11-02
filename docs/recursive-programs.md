@@ -14,9 +14,9 @@ from treelang import ExecutionLimits
 from treelang.ai.arborist import ArboristConfig, OpenAIArborist
 
 arborist = OpenAIArborist(
-    model="gpt-4o",
+    model="gpt-6-luna",
     provider=provider,
-    config=ArboristConfig(model="gpt-4o", schema_version="2.0"),
+    config=ArboristConfig(model="gpt-6-luna", schema_version="2.0"),
     execution_limits=ExecutionLimits(
         max_call_depth=100,
         max_nodes=10_000,
