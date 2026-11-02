@@ -9,7 +9,9 @@ from dotenv import load_dotenv
 type SchemaVersion = Literal["1.0", "2.0"]
 type StructuredOutputMode = Literal["auto", "required", "compatibility"]
 type OpenAIAPI = Literal["chat_completions", "responses"]
-type ReasoningEffort = Literal["none", "low", "medium", "high", "xhigh"]
+type ReasoningEffort = Literal["none", "low", "medium", "high", "xhigh", "max"]
+
+DEFAULT_OPENAI_MODEL = "gpt-6-luna"
 
 
 @dataclass(frozen=True, slots=True)
@@ -48,6 +50,7 @@ class ArboristConfig:
             "medium",
             "high",
             "xhigh",
+            "max",
         ):
             raise ValueError("reasoning_effort has an unsupported value")
         if self.reasoning_effort is not None and self.openai_api != "responses":
@@ -58,7 +61,7 @@ class ArboristConfig:
         """Read compatibility defaults once at the composition boundary."""
         load_dotenv()
         timeout_value = os.getenv("OPENAI_TIMEOUT")
-        configured_model = model or os.getenv("OPENAI_MODEL") or "gpt-4o-2024-11-20"
+        configured_model = model or os.getenv("OPENAI_MODEL") or DEFAULT_OPENAI_MODEL
         return cls(
             model=configured_model,
             api_key=os.getenv("OPENAI_API_KEY"),

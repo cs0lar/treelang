@@ -83,7 +83,7 @@ Generate and validate a program without executing it:
 OPENAI_API_KEY=... treelang generate \
   "Square each number in this list" \
   --provider openai \
-  --model gpt-4o-2024-11-20 \
+  --model gpt-6-luna \
   --schema-version 1.0 \
   --tools tools.json \
   --output program.json

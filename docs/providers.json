@@ -37,9 +37,9 @@
       },
       "model_profiles": [
         {
-          "model": "gpt-4o",
+          "model": "gpt-6-luna",
           "strict_json_schema": true,
-          "temperature": true
+          "temperature": false
         },
         {
           "model": "unknown-model",
@@ -47,7 +47,7 @@
           "temperature": false
         }
       ],
-      "official_documentation": "https://platform.openai.com/docs/guides/structured-outputs"
+      "official_documentation": "https://developers.openai.com/api/docs/models/gpt-6-luna"
     },
     {
       "id": "anthropic",
