@@ -1,0 +1,335 @@
+{
+  "$defs": {
+    "JsonValue": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "integer"
+        },
+        {
+          "type": "number"
+        },
+        {
+          "type": "boolean"
+        },
+        {
+          "items": {
+            "$ref": "#/$defs/JsonValue"
+          },
+          "type": "array"
+        },
+        {
+          "additionalProperties": {
+            "$ref": "#/$defs/JsonValue"
+          },
+          "type": "object"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "Node": {
+      "discriminator": {
+        "mapping": {
+          "conditional": "#/$defs/TreeConditional",
+          "filter": "#/$defs/TreeFilter",
+          "function": "#/$defs/TreeFunction",
+          "lambda": "#/$defs/TreeLambda",
+          "map": "#/$defs/TreeMap",
+          "program": "#/$defs/TreeProgram",
+          "reduce": "#/$defs/TreeReduce",
+          "value": "#/$defs/TreeValue"
+        },
+        "propertyName": "type"
+      },
+      "oneOf": [
+        {
+          "$ref": "#/$defs/TreeProgram"
+        },
+        {
+          "$ref": "#/$defs/TreeFunction"
+        },
+        {
+          "$ref": "#/$defs/TreeValue"
+        },
+        {
+          "$ref": "#/$defs/TreeConditional"
+        },
+        {
+          "$ref": "#/$defs/TreeLambda"
+        },
+        {
+          "$ref": "#/$defs/TreeMap"
+        },
+        {
+          "$ref": "#/$defs/TreeFilter"
+        },
+        {
+          "$ref": "#/$defs/TreeReduce"
+        }
+      ]
+    },
+    "TreeConditional": {
+      "additionalProperties": false,
+      "description": "Represents a conditional statement in the AST.",
+      "properties": {
+        "type": {
+          "const": "conditional",
+          "default": "conditional",
+          "title": "Type",
+          "type": "string"
+        },
+        "condition": {
+          "$ref": "#/$defs/Node"
+        },
+        "true_branch": {
+          "$ref": "#/$defs/Node"
+        },
+        "false_branch": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Node"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "condition",
+        "true_branch"
+      ],
+      "title": "TreeConditional",
+      "type": "object"
+    },
+    "TreeFilter": {
+      "additionalProperties": false,
+      "description": "Represents a filter operation in the abstract syntax tree (AST).",
+      "properties": {
+        "type": {
+          "const": "filter",
+          "default": "filter",
+          "title": "Type",
+          "type": "string"
+        },
+        "function": {
+          "$ref": "#/$defs/TreeLambda"
+        },
+        "iterable": {
+          "$ref": "#/$defs/Node"
+        }
+      },
+      "required": [
+        "function",
+        "iterable"
+      ],
+      "title": "TreeFilter",
+      "type": "object"
+    },
+    "TreeFunction": {
+      "additionalProperties": false,
+      "description": "Represents a function in the abstract syntax tree (AST).",
+      "properties": {
+        "type": {
+          "const": "function",
+          "default": "function",
+          "title": "Type",
+          "type": "string"
+        },
+        "name": {
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        },
+        "params": {
+          "items": {
+            "$ref": "#/$defs/Node"
+          },
+          "title": "Params",
+          "type": "array"
+        }
+      },
+      "required": [
+        "name",
+        "params"
+      ],
+      "title": "TreeFunction",
+      "type": "object"
+    },
+    "TreeLambda": {
+      "additionalProperties": false,
+      "description": "Represents an anonymous (lambda) function.",
+      "properties": {
+        "type": {
+          "const": "lambda",
+          "default": "lambda",
+          "title": "Type",
+          "type": "string"
+        },
+        "params": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Params",
+          "type": "array"
+        },
+        "body": {
+          "$ref": "#/$defs/TreeFunction"
+        }
+      },
+      "required": [
+        "params",
+        "body"
+      ],
+      "title": "TreeLambda",
+      "type": "object"
+    },
+    "TreeMap": {
+      "additionalProperties": false,
+      "description": "Represents a map operation in the abstract syntax tree (AST).",
+      "properties": {
+        "type": {
+          "const": "map",
+          "default": "map",
+          "title": "Type",
+          "type": "string"
+        },
+        "function": {
+          "$ref": "#/$defs/TreeLambda"
+        },
+        "iterable": {
+          "$ref": "#/$defs/Node"
+        }
+      },
+      "required": [
+        "function",
+        "iterable"
+      ],
+      "title": "TreeMap",
+      "type": "object"
+    },
+    "TreeProgram": {
+      "additionalProperties": false,
+      "description": "Represents a program in the abstract syntax tree (AST).",
+      "properties": {
+        "type": {
+          "const": "program",
+          "default": "program",
+          "title": "Type",
+          "type": "string"
+        },
+        "body": {
+          "items": {
+            "$ref": "#/$defs/Node"
+          },
+          "title": "Body",
+          "type": "array"
+        },
+        "mode": {
+          "enum": [
+            "single",
+            "parallel"
+          ],
+          "title": "Mode",
+          "type": "string"
+        },
+        "name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Name"
+        },
+        "description": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Description"
+        },
+        "schema_version": {
+          "const": "1.0",
+          "default": "1.0",
+          "title": "Schema Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "body",
+        "mode"
+      ],
+      "title": "TreeProgram",
+      "type": "object"
+    },
+    "TreeReduce": {
+      "additionalProperties": false,
+      "description": "Represents a reduce operation in the abstract syntax tree (AST).",
+      "properties": {
+        "type": {
+          "const": "reduce",
+          "default": "reduce",
+          "title": "Type",
+          "type": "string"
+        },
+        "function": {
+          "$ref": "#/$defs/TreeLambda"
+        },
+        "iterable": {
+          "$ref": "#/$defs/Node"
+        }
+      },
+      "required": [
+        "function",
+        "iterable"
+      ],
+      "title": "TreeReduce",
+      "type": "object"
+    },
+    "TreeValue": {
+      "additionalProperties": false,
+      "description": "Represents a value in the abstract syntax tree (AST).",
+      "properties": {
+        "type": {
+          "const": "value",
+          "default": "value",
+          "title": "Type",
+          "type": "string"
+        },
+        "name": {
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        },
+        "value": {
+          "$ref": "#/$defs/JsonValue"
+        }
+      },
+      "required": [
+        "name",
+        "value"
+      ],
+      "title": "TreeValue",
+      "type": "object"
+    }
+  },
+  "$ref": "#/$defs/TreeProgram",
+  "description": "Root wrapper for top level node validation.",
+  "title": "Treelang AST Program 1.0",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://cs0lar.github.io/treelang/latest/schemas/treelang-1.0.schema.json"
+}

@@ -1,0 +1,343 @@
+{
+  "$defs": {
+    "Expression": {
+      "discriminator": {
+        "mapping": {
+          "call": "#/$defs/TreeCall",
+          "conditional": "#/$defs/TreeConditional",
+          "literal": "#/$defs/TreeLiteral",
+          "memo": "#/$defs/TreeMemo",
+          "tool_call": "#/$defs/TreeToolCall",
+          "variable": "#/$defs/TreeVariable"
+        },
+        "propertyName": "type"
+      },
+      "oneOf": [
+        {
+          "$ref": "#/$defs/TreeLiteral"
+        },
+        {
+          "$ref": "#/$defs/TreeVariable"
+        },
+        {
+          "$ref": "#/$defs/TreeCall"
+        },
+        {
+          "$ref": "#/$defs/TreeToolCall"
+        },
+        {
+          "$ref": "#/$defs/TreeConditional"
+        },
+        {
+          "$ref": "#/$defs/TreeMemo"
+        }
+      ]
+    },
+    "JsonValue": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "integer"
+        },
+        {
+          "type": "number"
+        },
+        {
+          "type": "boolean"
+        },
+        {
+          "items": {
+            "$ref": "#/$defs/JsonValue"
+          },
+          "type": "array"
+        },
+        {
+          "additionalProperties": {
+            "$ref": "#/$defs/JsonValue"
+          },
+          "type": "object"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "TreeCall": {
+      "additionalProperties": false,
+      "description": "A call to a user-defined function.",
+      "properties": {
+        "type": {
+          "const": "call",
+          "default": "call",
+          "title": "Type",
+          "type": "string"
+        },
+        "function": {
+          "minLength": 1,
+          "pattern": "^[A-Za-z_][A-Za-z0-9_]*$",
+          "title": "Function",
+          "type": "string"
+        },
+        "arguments": {
+          "items": {
+            "$ref": "#/$defs/Expression"
+          },
+          "title": "Arguments",
+          "type": "array"
+        }
+      },
+      "required": [
+        "function"
+      ],
+      "title": "TreeCall",
+      "type": "object"
+    },
+    "TreeConditional": {
+      "additionalProperties": false,
+      "description": "A lazily evaluated conditional expression.",
+      "properties": {
+        "type": {
+          "const": "conditional",
+          "default": "conditional",
+          "title": "Type",
+          "type": "string"
+        },
+        "condition": {
+          "$ref": "#/$defs/Expression"
+        },
+        "true_branch": {
+          "$ref": "#/$defs/Expression"
+        },
+        "false_branch": {
+          "$ref": "#/$defs/Expression"
+        }
+      },
+      "required": [
+        "condition",
+        "true_branch",
+        "false_branch"
+      ],
+      "title": "TreeConditional",
+      "type": "object"
+    },
+    "TreeFunctionDefinition": {
+      "additionalProperties": false,
+      "description": "A globally declared user function with a lexical parameter scope.",
+      "properties": {
+        "type": {
+          "const": "function_definition",
+          "default": "function_definition",
+          "title": "Type",
+          "type": "string"
+        },
+        "name": {
+          "minLength": 1,
+          "pattern": "^[A-Za-z_][A-Za-z0-9_]*$",
+          "title": "Name",
+          "type": "string"
+        },
+        "params": {
+          "items": {
+            "minLength": 1,
+            "pattern": "^[A-Za-z_][A-Za-z0-9_]*$",
+            "type": "string"
+          },
+          "title": "Params",
+          "type": "array"
+        },
+        "body": {
+          "$ref": "#/$defs/Expression"
+        }
+      },
+      "required": [
+        "name",
+        "body"
+      ],
+      "title": "TreeFunctionDefinition",
+      "type": "object"
+    },
+    "TreeLiteral": {
+      "additionalProperties": false,
+      "description": "A JSON-compatible literal value.",
+      "properties": {
+        "type": {
+          "const": "literal",
+          "default": "literal",
+          "title": "Type",
+          "type": "string"
+        },
+        "value": {
+          "$ref": "#/$defs/JsonValue"
+        }
+      },
+      "required": [
+        "value"
+      ],
+      "title": "TreeLiteral",
+      "type": "object"
+    },
+    "TreeMemo": {
+      "additionalProperties": false,
+      "description": "Memoize one closed expression within a program invocation.",
+      "properties": {
+        "type": {
+          "const": "memo",
+          "default": "memo",
+          "title": "Type",
+          "type": "string"
+        },
+        "key": {
+          "minLength": 1,
+          "pattern": "^[A-Za-z_][A-Za-z0-9_]*$",
+          "title": "Key",
+          "type": "string"
+        },
+        "expression": {
+          "$ref": "#/$defs/Expression"
+        }
+      },
+      "required": [
+        "key",
+        "expression"
+      ],
+      "title": "TreeMemo",
+      "type": "object"
+    },
+    "TreeProgram": {
+      "additionalProperties": false,
+      "description": "A version 2 program containing declarations and root expressions.",
+      "properties": {
+        "type": {
+          "const": "program",
+          "default": "program",
+          "title": "Type",
+          "type": "string"
+        },
+        "definitions": {
+          "items": {
+            "$ref": "#/$defs/TreeFunctionDefinition"
+          },
+          "title": "Definitions",
+          "type": "array"
+        },
+        "body": {
+          "items": {
+            "$ref": "#/$defs/Expression"
+          },
+          "minItems": 1,
+          "title": "Body",
+          "type": "array"
+        },
+        "mode": {
+          "default": "single",
+          "enum": [
+            "single",
+            "parallel"
+          ],
+          "title": "Mode",
+          "type": "string"
+        },
+        "name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Name"
+        },
+        "description": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Description"
+        },
+        "schema_version": {
+          "const": "2.0",
+          "default": "2.0",
+          "title": "Schema Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "body"
+      ],
+      "title": "TreeProgram",
+      "type": "object"
+    },
+    "TreeToolCall": {
+      "additionalProperties": false,
+      "description": "A call to an external provider tool.",
+      "properties": {
+        "type": {
+          "const": "tool_call",
+          "default": "tool_call",
+          "title": "Type",
+          "type": "string"
+        },
+        "tool": {
+          "minLength": 1,
+          "pattern": "^[A-Za-z_][A-Za-z0-9_]*$",
+          "title": "Tool",
+          "type": "string"
+        },
+        "arguments": {
+          "patternProperties": {
+            "^[A-Za-z_][A-Za-z0-9_]*$": {
+              "$ref": "#/$defs/Expression"
+            }
+          },
+          "propertyNames": {
+            "minLength": 1
+          },
+          "title": "Arguments",
+          "type": "object"
+        }
+      },
+      "required": [
+        "tool"
+      ],
+      "title": "TreeToolCall",
+      "type": "object"
+    },
+    "TreeVariable": {
+      "additionalProperties": false,
+      "description": "A lexical variable reference.",
+      "properties": {
+        "type": {
+          "const": "variable",
+          "default": "variable",
+          "title": "Type",
+          "type": "string"
+        },
+        "name": {
+          "minLength": 1,
+          "pattern": "^[A-Za-z_][A-Za-z0-9_]*$",
+          "title": "Name",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "title": "TreeVariable",
+      "type": "object"
+    }
+  },
+  "$ref": "#/$defs/TreeProgram",
+  "description": "Validate the complete static contract of a version 2 program.",
+  "title": "Treelang AST Program 2.0",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://cs0lar.github.io/treelang/latest/schemas/treelang-2.0.schema.json"
+}
