@@ -1,5 +1,14 @@
 # Changelog
 
+## [Unreleased]
+
+### Security
+
+- Updated the locked Soup Sieve and Tornado dependencies to 4.0 and 6.6.1,
+  respectively, to address five Dependabot alerts.
+- Updated the locked Mistune dependency to 3.3.4 to address two additional
+  vulnerabilities reported by the dependency audit.
+
 ## [1.5.0] - 2026-11-02
 
 ### Changed
